@@ -19,6 +19,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private BaseAbility[] abilities = new BaseAbility[6];
     [SerializeField] private float[] abilityCooldowns = new float[6];
     
+    // Public accessors for external systems
+    public BaseAbility[] Abilities => abilities;
+    public float[] AbilityCooldowns => abilityCooldowns;
+    
     // Components
     private Rigidbody2D rb;
     private PlayerInput playerInput;
@@ -28,7 +32,7 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private Vector2 currentVelocity;
     
-    // Actions (will be set from Input System)
+    // Actions
     private InputAction moveAction;
     private InputAction[] abilityActions = new InputAction[6];
     
@@ -37,17 +41,14 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         playerInput = GetComponent<PlayerInput>();
         
-        // Try to get ManaSystem component - might not exist yet
         manaSystem = GetComponent<ManaSystem>();
         if (manaSystem == null)
         {
-            Debug.LogWarning("ManaSystem component not found on Player. Add it manually or some abilities won't work.");
+            Debug.LogWarning("ManaSystem component not found on Player.");
         }
         
-        // Get the move action from Input System
         moveAction = playerInput.actions["Move"];
         
-        // Get ability actions with error checking
         for (int i = 0; i < 6; i++)
         {
             string actionName = $"Ability{i + 1}";
@@ -55,10 +56,6 @@ public class PlayerController : MonoBehaviour
             if (action != null)
             {
                 abilityActions[i] = action;
-            }
-            else
-            {
-                Debug.LogWarning($"Action '{actionName}' not found in Input Actions!");
             }
         }
     }
@@ -78,15 +75,6 @@ public class PlayerController : MonoBehaviour
         HandleInput();
         HandleAbilities();
         UpdateCooldowns();
-        
-        // Debug all joystick buttons
-        for (int i = 0; i < 10; i++)
-        {
-            if (Input.GetKeyDown($"joystick button {i}"))
-            {
-                Debug.Log($"Physical joystick button {i} pressed!");
-            }
-        }
     }
     
     void FixedUpdate()
@@ -106,51 +94,30 @@ public class PlayerController : MonoBehaviour
         {
             if (abilityActions[i] != null && abilityActions[i].WasPressedThisFrame())
             {
-                Debug.Log($"Button {i+1} pressed!");
                 TryUseAbility(i);
             }
         }
     }
     
-    void TryUseAbility(int abilityIndex)
+    bool TryUseAbility(int abilityIndex)
     {
-        Debug.Log($"TryUseAbility called for index {abilityIndex}");
+        if (manaSystem == null) return false;
         
-        // Check if we have mana system
-        if (manaSystem == null)
-        {
-            Debug.LogWarning("No ManaSystem found - cannot use abilities!");
-            return;
-        }
-        
-        Debug.Log($"ManaSystem found, checking ability...");
-        
-        // Check if ability exists and is off cooldown
         if (abilities[abilityIndex] == null || abilityCooldowns[abilityIndex] > 0)
-        {
-            Debug.Log($"Ability check failed - ability null: {abilities[abilityIndex] == null}, cooldown: {abilityCooldowns[abilityIndex]}");
-            return;
-        }
+            return false;
             
         BaseAbility ability = abilities[abilityIndex];
-        Debug.Log($"Found ability: {ability.abilityName}");
         
-        // Check if we have enough mana
         if (!ability.CanActivate(manaSystem))
-        {
-            Debug.Log($"Not enough mana for {ability.abilityName}!");
-            return;
-        }
+            return false;
         
-        Debug.Log($"All checks passed, activating {ability.abilityName}!");
-        
-        // Always shoot forward (right) in sidescroller - FIXED LINE
         Vector2 direction = Vector2.right;
         ability.Activate(transform.position, direction, transform);
         
-        // Spend mana and start cooldown
         manaSystem.SpendMana(ability.manaCost);
         abilityCooldowns[abilityIndex] = ability.cooldownDuration;
+        
+        return true;
     }
     
     void UpdateCooldowns()
@@ -167,8 +134,6 @@ public class PlayerController : MonoBehaviour
     void HandleMovement()
     {
         Vector2 targetVelocity = moveInput * moveSpeed;
-        
-        // Smooth acceleration/deceleration
         float accelRate = (moveInput.magnitude > 0) ? acceleration : deceleration;
         
         currentVelocity = Vector2.MoveTowards(currentVelocity, targetVelocity, 
@@ -185,7 +150,6 @@ public class PlayerController : MonoBehaviour
         transform.position = pos;
     }
     
-    // Visual debugging in Scene view
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;

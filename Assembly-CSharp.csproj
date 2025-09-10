@@ -65,7 +65,9 @@
     <Analyzer Include="C:\Program Files\Unity\Hub\Editor\6000.0.38f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.UIToolkit.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\Environment\ParallaxBackground.cs" />
     <Compile Include="Assets\Scripts\Abilities\BaseAbility.cs" />
+    <Compile Include="Assets\Scripts\Camera\CameraFollow.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
     <Compile Include="Assets\Scripts\Managers\ManaSystem.cs" />
     <Compile Include="Assets\Scripts\Abilities\Projectile.cs" />
