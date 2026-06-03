@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T02:43:24.990Z",
+  "generated_at": "2026-06-03T02:59:42.577Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -11,6 +11,12 @@
       "key": "TASK-002",
       "title": "Define initial milestone",
       "status": "todo",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-003",
+      "title": "Train the team on Godot 4 game development (researcher skill)",
+      "status": "done",
       "priority": "high"
     }
   ]

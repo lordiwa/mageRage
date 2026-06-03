@@ -1,0 +1,33 @@
+{
+  "key": "TASK-003",
+  "title": "Train the team on Godot 4 game development (researcher skill)",
+  "description": "Spawn the researcher to investigate Godot 4.x (4.6.3) 2D game-development best practices for Mage Rage and capture them as a reusable Agent Skill under .claude/skills/ so the developer/reviewer are \"trained\" on the stack cheaply. Focus on the architecture the GDD mandates: node-based Finite State Machine for movement, custom Resource (SpellData) data-driven design, collision Layers/Masks, TileMapLayer + terrains/autotiling, CharacterBody2D 2D movement, signals/scene composition/autoloads, and headless GUT unit testing. Ground all guidance in official Godot 4 docs and verify against Godot 4.6. Use the agentic-framework tech-training-template as the skill scaffold; the frontmatter description must state WHEN to load the skill (any Godot/GDScript/.tscn/.tres/.gd work). Source canon: docs/GDD.md, docs/LORE-BIBLE.md, .claude/agents/project-context.md.",
+  "acceptance_criteria": [
+    "A new Agent Skill exists under .claude/skills/<godot-stack-name>/SKILL.md with valid frontmatter (name + WHEN-to-load description).",
+    "Skill covers, with GDScript code snippets and pitfalls: node-based FSM for movement states, SpellData custom Resource pattern, collision Layers/Masks scheme, TileMapLayer autotiling/terrains, CharacterBody2D movement, signals/autoloads/scene composition.",
+    "Skill documents headless test workflow with GUT, including the exact C:\\Godot console-binary command to run tests.",
+    "All non-obvious claims cite official Godot 4 documentation (docs.godotengine.org) and are valid for Godot 4.6.",
+    "Guidance is consistent with docs/GDD.md (no contradictions) and references the canon docs where relevant."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "research",
+    "godot",
+    "training"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-03T02:59:33.929Z",
+      "body": "Researcher delivered skill at .claude/skills/godot-game-dev/ (SKILL.md + references/fsm-states.md + references/gut-testing.md). Covers node FSM, SpellData Resource, collision layers/masks, CharacterBody2D movement, TileMapLayer, project hygiene, headless GUT (exact console-binary command). All claims cited to official Godot 4 docs, verified for 4.6. Orchestrator fixed one mismatched FSM citation (was pointing at scene_unique_nodes). Caveat to revisit: confirm exact GUT addon version once addons/gut/ is installed. AC met."
+    }
+  ],
+  "created_at": "2026-06-03T02:54:00.816Z",
+  "updated_at": "2026-06-03T02:59:42.577Z",
+  "jira_key": null
+}
