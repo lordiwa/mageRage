@@ -81,3 +81,27 @@ enemigo debe forzar el cambio.
   ingeniería → inglés** (estándar de industria; coincide con `godot-game-dev` y GUT).
 - `LORE-BIBLE.md` se mantiene en inglés (es el system-prompt canónico para generación
   de lore; reescribirlo no aporta y rompería referencias).
+
+---
+
+## DD-006 — Matchup elemento vs. armadura (RPS de combate)  ·  **PROVISIONAL**
+
+**Tensión:** El GDD §3 dice "mezclar Fuego/Hielo/Electricidad según el tipo de armadura
+del enemigo", pero no define la tabla. Sin tabla no hay loop micro ni anti-dominancia.
+
+**Regla (intuitiva y simétrica):** cada enemigo tiene un `armor_type` ∈ {Fuego, Hielo,
+Electricidad}. Un dron **blindado en X resiste X** y es **débil a la contra de X**;
+el tercer elemento es neutro. Ciclo de contras: **Electricidad → Fuego → Hielo →
+Electricidad** (Fuego derrite blindaje de Hielo; Hielo congela sistemas Eléctricos;
+Electricidad cortocircuita sistemas de Fuego).
+
+| Armadura del dron | Resiste (×0.5) | Débil a (×1.5) | Neutro (×1.0) |
+|---|---|---|---|
+| **Fuego**         | Fuego          | Electricidad   | Hielo         |
+| **Hielo**         | Hielo          | Fuego          | Electricidad  |
+| **Electricidad**  | Electricidad   | Hielo          | Fuego         |
+
+**Multiplicadores provisionales:** resiste 0.5×, débil 1.5×, neutro 1.0× — a afinar en
+el playtest de greybox de DD-004. Ningún elemento es dominante contra todas las
+armaduras → fuerza el intercambio (loop micro). Identidades de DD-004 intactas
+(Fuego = burst objetivo único, Hielo = control/slow, Electricidad = cadena multi).

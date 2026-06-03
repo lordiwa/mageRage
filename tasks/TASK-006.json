@@ -1,0 +1,29 @@
+{
+  "key": "TASK-006",
+  "title": "Elemental combat slice: SpellData + MagicManager + projectiles + armored Empire drone",
+  "description": "Build the GDD micro-loop combat vertical slice on top of the movement demo: the hero casts Fire/Ice/Electricity spells, swaps elements moment-to-moment, and a dummy Empire drone takes damage modified by the element-vs-armor matchup (DD-006), dying at 0 HP. Follow .claude/skills/godot-game-dev (SpellData custom Resource, MagicManager, collision Layers/Masks: player magic on layer 4 PlayerMagic masking Enemies layer 3 only) and .claude/skills/game-design (element identities, telegraphing, anti-dominance), honoring docs/DECISIONES-DISENO.md DD-004 (identities: Fire=single-target burst, Ice=control/slow, Electricity=chain multi-target) and DD-006 (armor RPS table + 0.5/1.0/1.5 multipliers). Deliver: SpellData extends Resource (element enum, damage, speed, mana_cost, projectile PackedScene, optional vfx); three .tres spells (firebolt, ice_shard, lightning) reflecting the identities; a MagicManager on the Player that equips/cycles the three elements (keys 1/2/3 and/or cycle), casts on input (mouse or a cast key), spawns the projectile in facing/aim direction, and gates on a simple mana system (mana resource/component with cost per cast + regen); a Projectile scene (Area2D on PlayerMagic layer 4, mask Enemies layer 3 only — never hits the player) that carries element+damage and applies matchup-modified damage on hit; an EmpireDrone enemy (Health + armor_type, on Enemies layer 3) that takes damage, shows current HP (debug label) and the damage dealt, and is destroyed at 0; place one drone of each armor type in the test level so swapping is required; extend the debug HUD to show the currently-equipped element and current mana. Keep movement intact. Tests-first with GUT for the PURE logic: SpellData defaults/serialization, the DD-006 matchup damage calculation (resist 0.5x / weak 1.5x / neutral 1.0x for all 9 element-vs-armor pairs), mana gating (cannot cast with insufficient mana; cast consumes cost), Health takes damage and dies at <=0, MagicManager cycling selects the right SpellData. Verify the project imports/loads headless with zero errors and the full GUT suite exits 0. Engine binary paths + GUT command are in .claude/agents/project-context.md. Visuals can be ColorRect/placeholder; no art.",
+  "acceptance_criteria": [
+    "SpellData extends Resource with element/damage/speed/mana_cost/projectile fields; three .tres spells (Fire/Ice/Electricity) exist reflecting DD-004 identities; loads headless with zero errors.",
+    "A MagicManager on the Player equips and swaps among the three elements (moment-to-moment), casts on input spawning a projectile in the aim/facing direction, and is gated by a mana system (insufficient mana => no cast; a cast consumes its cost).",
+    "A Projectile (Area2D) is on the PlayerMagic physics layer masking Enemies only and never collides with the player; on hitting a drone it applies matchup-modified damage and is consumed.",
+    "An EmpireDrone (Enemies layer) has a Health and armor_type, takes DD-006 matchup-correct damage, shows HP + damage taken via debug label, and is destroyed at 0 HP; one drone of each armor type is placed in the test level so element-swapping is required.",
+    "GUT tests cover: all 9 element-vs-armor matchup multipliers (DD-006), mana gating (no-cast when insufficient, cost consumed on cast), Health damage/death at <=0, and MagicManager element cycling selecting the correct SpellData; the headless GUT suite exits 0.",
+    "Movement demo still works (no regressions); the debug HUD additionally shows equipped element and current mana."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "combat",
+    "magic",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-03T03:43:42.376Z",
+  "updated_at": "2026-06-03T03:43:42.376Z",
+  "jira_key": null
+}
