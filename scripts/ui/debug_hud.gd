@@ -52,5 +52,5 @@ func _refresh() -> void:
 				element_txt = _ELEMENT_NAMES[spell.element]
 		if _player.has_method("current_mana"):
 			mana_txt = "%d/%d" % [int(_player.current_mana()), int(_player.max_mana())]
-	_label.text = "STATE: %s    ELEMENT: %s    MANA: %s\n[A/D]/[←/→] move  [Space] jump  [Shift] dash  [Alt] glide (hold)  [F] fly\n[1] Fire  [2] Ice  [3] Electricity  [Q] cycle  [E]/[LMB] cast" % [
+	_label.text = "STATE: %s    ELEMENT: %s    MANA: %s\n[A/D]/[←/→] move  [Space] jump  [Shift] dash  [Alt] glide (hold)  [F] fly\n[1] Fire  [2] Ice  [3] Electricity  [Q] cycle  [E]/[LMB] cast\nPAD: L-stick move  A jump  B dash  LT glide  Y fly  RT cast  D-pad/RB element" % [
 		_state_name, element_txt, mana_txt]
