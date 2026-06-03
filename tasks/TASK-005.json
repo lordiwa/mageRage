@@ -10,7 +10,7 @@
     "GUT unit tests cover the FSM transition rules including ability gating (no electricity => no Flight), and the headless GUT suite exits 0 (all pass).",
     "Movement feel honors docs/DECISIONES-DISENO.md and the game-design skill: coyote time + jump buffering present; deterministic, fair movement."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -22,8 +22,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-03T03:37:21.319Z",
+      "body": "Developer built the movement demo tests-first (commits fbb3cac/a491ad0/730a159/9811a49/45c6309). Reviewer BLOCKed on a HIGH (jump buffering consumed before coyote check) + 2 MED. Developer fixed all (peek-then-consume jump buffer with load-bearing regression test; FlightState floor-exit + one-shot suppress_jump_impulse; air-dash tests; mutually-exclusive exits) in commit f4743ed. Orchestrator independently verified 24/24 GUT pass exit 0 + clean headless run, and committed the fix (dev sandbox blocked commit). Reviewer re-reviewed f4743ed and gave ACCEPT (no new defects). AC met. Done."
+    }
+  ],
   "created_at": "2026-06-03T03:10:33.832Z",
-  "updated_at": "2026-06-03T03:10:37.669Z",
+  "updated_at": "2026-06-03T03:37:23.833Z",
   "jira_key": null
 }
