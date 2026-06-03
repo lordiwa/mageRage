@@ -1,0 +1,27 @@
+# ---- Godot 4+ ----
+# Godot's auto-generated cache/import folder
+.godot/
+# Legacy import folder
+.import/
+# Mono / .NET (only if using C# in Godot)
+.mono/
+data_*/
+mono_crash.*.json
+# Imported translations (generated from CSV)
+*.translation
+
+# ---- Export artifacts ----
+export.cfg
+export_presets.cfg
+build/
+*.exe
+*.pck
+*.zip
+
+# ---- OS / editor cruft ----
+.DS_Store
+Thumbs.db
+*.tmp
+
+# ---- Claude Code local settings (machine-specific) ----
+.claude/settings.local.json

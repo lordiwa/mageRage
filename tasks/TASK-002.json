@@ -1,0 +1,29 @@
+{
+  "key": "TASK-002",
+  "title": "Define initial milestone",
+  "description": "The project type is open-ended. Pick the first measurable milestone and write down what shipping it means.",
+  "acceptance_criteria": [
+    "Milestone has a one-sentence definition of done.",
+    "Milestone has at least one verifiable success criterion."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "seed",
+    "planning"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "backlog-seeder",
+      "at": "2026-06-03T02:43:24.990Z",
+      "body": "Triggered by primary_use_case: other"
+    }
+  ],
+  "created_at": "2026-06-03T02:43:24.960Z",
+  "updated_at": "2026-06-03T02:43:24.990Z",
+  "jira_key": null
+}

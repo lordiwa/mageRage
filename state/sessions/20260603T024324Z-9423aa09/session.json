@@ -1,0 +1,15 @@
+{
+  "schema_version": 2,
+  "session_id": "20260603T024324Z-9423aa09",
+  "lifecycle_state": "active",
+  "updated_at": "2026-06-03T02:43:24.850Z",
+  "active_task": null,
+  "workflow_step": "idle",
+  "next_action": null,
+  "handoff_summary": "session started",
+  "open_questions": [],
+  "blockers": [],
+  "decisions": [],
+  "subagent_results": [],
+  "pending_human_confirmation": null
+}

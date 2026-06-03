@@ -1,0 +1,30 @@
+{
+  "key": "TASK-001",
+  "title": "Set up project CI",
+  "description": "Wire up a basic continuous-integration pipeline that runs the test suite and the linter on every push and pull request. This is the first piece of automation every fresh project needs.",
+  "acceptance_criteria": [
+    "CI pipeline runs the full test suite on every push to the default branch.",
+    "CI pipeline runs the linter and fails the build on any lint error.",
+    "CI status is visible from the repository host (badge or required check)."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "seed",
+    "ci"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "backlog-seeder",
+      "at": "2026-06-03T02:43:24.942Z",
+      "body": "common starter ticket — applies to every fresh project"
+    }
+  ],
+  "created_at": "2026-06-03T02:43:24.917Z",
+  "updated_at": "2026-06-03T02:43:24.942Z",
+  "jira_key": null
+}
