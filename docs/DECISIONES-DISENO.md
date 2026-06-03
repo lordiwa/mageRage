@@ -105,3 +105,26 @@ Electricidad cortocircuita sistemas de Fuego).
 el playtest de greybox de DD-004. Ningún elemento es dominante contra todas las
 armaduras → fuerza el intercambio (loop micro). Identidades de DD-004 intactas
 (Fuego = burst objetivo único, Hielo = control/slow, Electricidad = cadena multi).
+
+---
+
+## DD-007 — Soporte de gamepad y layout de control  ·  **ACEPTADA (ajustable)**
+
+**Decisión:** El juego se controla con **gamepad** (objetivo principal) y también con
+teclado/mouse (additive — ambos activos a la vez). Layout estándar tipo Xbox:
+
+| Acción | Gamepad | Teclado |
+|---|---|---|
+| Mover / vertical (vuelo) | Stick izq (analógico) + D-pad | A/D o ←/→ ; W/S o ↑/↓ |
+| Salto | **A** (botón 0) | Espacio |
+| Dash | **B** (botón 1) | Shift |
+| Planeo (mantener) | **LT** / gatillo izq (mantener) | Alt |
+| Vuelo (toggle) | **Y** (botón 3) | F |
+| Lanzar hechizo | **RT** / gatillo der | E / clic izq |
+| Elemento directo (Fuego/Hielo/Elec) | **D-pad** ← / ↑ / → | 1 / 2 / 3 |
+| Ciclar elemento | **RB** sig / **LB** ant (botones 5/4) | Q |
+
+**Notas técnicas:** sticks con deadzone ~0.3; `Input.get_axis` da movimiento analógico
+gratis. Gatillos = ejes 4 (LT) / 5 (RT) en Godot; planeo se mapea como *mantener*. El
+casteo sigue siendo en la dirección de `facing` por ahora; **aim con stick derecho**
+queda como mejora futura. Layout afinable en playtest.

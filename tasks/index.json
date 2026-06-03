@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T04:15:44.204Z",
+  "generated_at": "2026-06-03T04:18:47.777Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -35,6 +35,12 @@
       "key": "TASK-006",
       "title": "Elemental combat slice: SpellData + MagicManager + projectiles + armored Empire drone",
       "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-007",
+      "title": "Gamepad support: add controller bindings to all input actions (DD-007)",
+      "status": "todo",
       "priority": "high"
     }
   ]

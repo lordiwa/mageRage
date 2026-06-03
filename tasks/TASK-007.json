@@ -1,0 +1,28 @@
+{
+  "key": "TASK-007",
+  "title": "Gamepad support: add controller bindings to all input actions (DD-007)",
+  "description": "Add full gamepad/controller support to the demo while keeping keyboard/mouse working (additive), per docs/DECISIONES-DISENO.md DD-007. Add JoypadButton / JoypadMotion events to every existing InputMap action in project.godot so the game is fully playable on an Xbox-style controller. Mapping (DD-007): left stick + D-pad for move_left/move_right and move_up/move_down (analog, deadzone ~0.3); jump=A(btn 0); dash=B(btn 1); glide=LT hold (left trigger, axis 4 value 1.0); fly=Y(btn 3); cast=RT (right trigger, axis 5 value 1.0); element_1/2/3 = D-pad left/up/right (buttons 13/11/14 — verify Godot 4 JOY_BUTTON_DPAD constants); element_cycle stays Q on keyboard, and add RB(btn 5)=cycle-next; optionally add an element_cycle_prev action on LB(btn 4). Keep all existing keyboard/mouse events. Note: D-pad up/down are used for element select while the LEFT STICK handles flight vertical, to avoid conflict — confirm move_up/move_down keep stick (axis 1) bindings and that D-pad up is element_2, not movement. Use Godot 4 joypad axis/button indices correctly (JOY_AXIS_LEFT_X=0, LEFT_Y=1, TRIGGER_LEFT=4, TRIGGER_RIGHT=5; JOY_BUTTON_A=0, B=1, Y=3, LEFT_SHOULDER=4, RIGHT_SHOULDER=5, DPAD_UP=11, DPAD_LEFT=13, DPAD_RIGHT=14). Update the debug HUD control hints to mention the gamepad. Movement and combat behavior/logic must not change — this is an input-binding layer only; verify no regression. Engine binary + GUT command in .claude/agents/project-context.md.",
+  "acceptance_criteria": [
+    "Every gameplay InputMap action (move_left, move_right, move_up, move_down, jump, dash, glide, fly, cast, element_1, element_2, element_3, element_cycle) has at least one gamepad event (JoypadButton or JoypadMotion) in project.godot, matching the DD-007 layout, with all existing keyboard/mouse events preserved.",
+    "Left-stick movement is analog with a sensible deadzone (~0.3); glide and cast are bound to the left/right triggers as hold/press; jump/dash/fly on A/B/Y; element select on D-pad and element cycle on RB.",
+    "The project loads headless with zero script/scene parse errors, and the full GUT suite still passes (62 existing + any new) exit 0 — no movement/combat regression.",
+    "A GUT test asserts, via InputMap.action_get_events, that each gameplay action has at least one InputEventJoypadButton or InputEventJoypadMotion (gamepad coverage), so missing controller bindings are caught automatically.",
+    "The debug HUD control hints mention the gamepad controls (not only keyboard)."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "input",
+    "gamepad",
+    "polish"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-03T04:18:47.777Z",
+  "updated_at": "2026-06-03T04:18:47.777Z",
+  "jira_key": null
+}
