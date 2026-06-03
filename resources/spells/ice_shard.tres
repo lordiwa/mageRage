@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SpellData" load_steps=3 format=3 uid="uid://b8magerage00ic"]
+
+[ext_resource type="Script" path="res://scripts/resources/spell_data.gd" id="1_spell"]
+[ext_resource type="PackedScene" uid="uid://b8mageragepr0j" path="res://scenes/projectile.tscn" id="2_proj"]
+
+[resource]
+script = ExtResource("1_spell")
+display_name = "Ice Shard"
+element = 1
+damage = 18.0
+speed = 380.0
+mana_cost = 12.0
+projectile = ExtResource("2_proj")
+applies_slow = true
+max_targets = 1

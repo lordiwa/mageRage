@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b8mageragepl0r"]
+[gd_scene load_steps=13 format=3 uid="uid://b8mageragepl0r"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/fsm/state_machine.gd" id="2_sm"]
@@ -6,6 +6,12 @@
 [ext_resource type="Script" path="res://scripts/fsm/states/jump_state.gd" id="4_jump"]
 [ext_resource type="Script" path="res://scripts/fsm/states/glide_state.gd" id="5_glide"]
 [ext_resource type="Script" path="res://scripts/fsm/states/flight_state.gd" id="6_flight"]
+[ext_resource type="Script" path="res://scripts/combat/mana.gd" id="7_mana"]
+[ext_resource type="Script" path="res://scripts/managers/magic_manager.gd" id="8_magic"]
+[ext_resource type="Script" path="res://scripts/resources/spell_data.gd" id="12_spelldata"]
+[ext_resource type="Resource" uid="uid://b8magerage000f" path="res://resources/spells/firebolt.tres" id="9_fire"]
+[ext_resource type="Resource" uid="uid://b8magerage00ic" path="res://resources/spells/ice_shard.tres" id="10_ice"]
+[ext_resource type="Resource" uid="uid://b8magerage00el" path="res://resources/spells/lightning.tres" id="11_elec"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
@@ -53,3 +59,16 @@ player = NodePath("../..")
 [node name="FlightState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
 script = ExtResource("6_flight")
 player = NodePath("../..")
+
+[node name="Muzzle" type="Marker2D" parent="."]
+position = Vector2(10, 0)
+
+[node name="Mana" type="Node" parent="."]
+script = ExtResource("7_mana")
+max_mana = 100.0
+regen_per_second = 12.0
+
+[node name="MagicManager" type="Node" parent="." node_paths=PackedStringArray("mana")]
+script = ExtResource("8_magic")
+spells = Array[ExtResource("12_spelldata")]([ExtResource("9_fire"), ExtResource("10_ice"), ExtResource("11_elec")])
+mana = NodePath("../Mana")

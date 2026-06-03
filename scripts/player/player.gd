@@ -23,6 +23,13 @@ var suppress_jump_impulse := false
 
 var _jump_buffer := 0.0
 
+## Combat (TASK-006): the MagicManager holds Fire/Ice/Electricity SpellData and
+## casts via the Mana child; Muzzle is the projectile spawn origin. All optional
+## so the movement-only tests/fakes that don't add these nodes still work.
+@onready var _magic: MagicManager = get_node_or_null("MagicManager")
+@onready var _mana: Mana = get_node_or_null("Mana")
+@onready var _muzzle: Node2D = get_node_or_null("Muzzle")
+
 func _ready() -> void:
 	# GDD 5.C: I am Player; I collide with Environment and Enemies.
 	set_collision_layer_value(2, true)
@@ -35,6 +42,37 @@ func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer = JUMP_BUFFER
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
+
+	_process_magic(delta)
+
+## Element swap + cast. Swapping is moment-to-moment (the GDD micro-loop); cast
+## fires the equipped spell in the facing direction, paying mana via MagicManager.
+func _process_magic(delta: float) -> void:
+	if _magic == null:
+		return
+	if _mana != null:
+		_mana.regenerate(delta)
+	if Input.is_action_just_pressed("element_1"):
+		_magic.equip(0)
+	elif Input.is_action_just_pressed("element_2"):
+		_magic.equip(1)
+	elif Input.is_action_just_pressed("element_3"):
+		_magic.equip(2)
+	elif Input.is_action_just_pressed("element_cycle"):
+		_magic.cycle()
+	if Input.is_action_just_pressed("cast"):
+		var origin: Node2D = _muzzle if _muzzle != null else self
+		_magic.cast(origin, Vector2(facing, 0.0))
+
+## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
+func current_mana() -> float:
+	return _mana.current_mana if _mana != null else 0.0
+
+func max_mana() -> float:
+	return _mana.max_mana if _mana != null else 0.0
+
+func equipped_spell() -> SpellData:
+	return _magic.equipped if _magic != null else null
 
 ## Peek: is a jump currently buffered? Does NOT clear the buffer, so a state can
 ## check the floor/coyote condition before committing to fire.
