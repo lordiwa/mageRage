@@ -30,6 +30,13 @@ Write a failing test before any new behavior lands. Tests live under a top-level
 (FSM transitions, `SpellData` math, mana/resource systems) are the priority to
 cover since they don't need a rendered scene.
 
+> **Bash gotcha (important):** do NOT prefix Godot/GUT commands with `cd "<path>" && ...`.
+> The Bash tool's working dir is already the project root, and a `cd` inside a compound
+> command triggers a permission prompt that HANGS the run indefinitely. Invoke the binary
+> directly with an absolute `--path`, e.g.
+> `"C:\Godot\Godot_v4.6.3-stable_win64_console.exe" --headless --path "C:\Users\srpar\OneDrive\Documents\mage-rage" -s "res://addons/gut/gut_cmdln.gd" -gdir=res://test -ginclude_subdirs -gexit`.
+> Set a Bash timeout so a stuck run returns control.
+
 ## Linting and formatting
 Run the project's linter and formatter before every commit. If the repo ships a config (e.g., .eslintrc, ruff.toml, .prettierrc, gofmt defaults), defer to it without arguing; if no config exists yet, use the ecosystem-standard tool and add a minimal config rather than reformatting the whole tree in a drive-by change.
 
