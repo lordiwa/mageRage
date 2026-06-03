@@ -71,3 +71,5 @@ Utiliza los Terrains (Autotiling) de Godot para que al pintar pisos, paredes tec
 ---
 
 > Para el canon narrativo completo (cosmología, facciones, arco del héroe, temas), ver [`LORE-BIBLE.md`](./LORE-BIBLE.md).
+> Para decisiones de diseño que resuelven ambigüedades de este GDD (DDA, ultimate de
+> antimateria, UI de mapa, anti-dominancia, idioma), ver [`DECISIONES-DISENO.md`](./DECISIONES-DISENO.md).

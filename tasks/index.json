@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T03:06:51.159Z",
+  "generated_at": "2026-06-03T03:10:37.669Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -23,6 +23,12 @@
       "key": "TASK-004",
       "title": "Train the team on game design (metroidvania / Mage Rage design doctrine skill)",
       "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-005",
+      "title": "Movement demo: playable hero with all movement states (run/leap+dash/glide/flight)",
+      "status": "in_progress",
       "priority": "high"
     }
   ]

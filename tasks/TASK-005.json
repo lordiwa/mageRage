@@ -1,0 +1,29 @@
+{
+  "key": "TASK-005",
+  "title": "Movement demo: playable hero with all movement states (run/leap+dash/glide/flight)",
+  "description": "Bootstrap the Godot 4.6 project and build a playable movement demo where the hero exercises EVERY movement verb so we can test game feel. This is a movement test, not a progression test: all elements are pre-unlocked from the start. Build per .claude/skills/godot-game-dev (node FSM EstadoBase->MoveState/JumpState/GlideState/FlightState, CharacterBody2D with gravity + coyote time + jump buffering, collision Layers/Masks, project hygiene) and honor the feel intent in .claude/skills/game-design and docs/DECISIONES-DISENO.md. Deliver: project.godot with an InputMap (move_left/move_right/jump/dash/glide/fly); a Player scene (CharacterBody2D) with a StateMachine and the four movement states; abilities pre-set to {fire,ice,electricity}=true so leap+dash (Fire), glide (Ice), and free 8-direction flight (Electricity) are all immediately usable; a test level (TileMapLayer or StaticBody2D platforms) with gaps, ledges, walls and a tall vertical shaft so every verb has something to exercise; a camera that follows the player; an on-screen debug label showing the current FSM state name; a main scene set as the run target. Tests-first with GUT for the pure FSM transition logic (Move->Jump on jump-from-floor; air + glide-input -> Glide; flight unlocked + fly-input -> Flight; land -> Move; ability gating: without electricity, fly-input does NOT enter Flight). Verify the project imports and loads without script/scene errors by running the Godot console binary headless. Engine binary paths and the exact GUT command are in .claude/agents/project-context.md.",
+  "acceptance_criteria": [
+    "The repo contains a valid Godot 4.6 project (project.godot) with an InputMap covering move_left, move_right, jump, dash, glide, fly; the project imports and loads headless with zero script/scene parse errors.",
+    "A Player (CharacterBody2D) scene exists with a node-based StateMachine and the four states MoveState, JumpState (leap + air dash), GlideState, FlightState, following the godot-game-dev FSM pattern (no boolean-flag soup).",
+    "All movement abilities are pre-unlocked in the demo so running, jumping, dashing, gliding, and free 8-directional flight are all playable immediately; a camera follows the player and an on-screen label shows the active state name.",
+    "A test level provides gaps, ledges, walls, and a tall vertical shaft so each movement verb is exercisable; a designated main scene launches the demo.",
+    "GUT unit tests cover the FSM transition rules including ability gating (no electricity => no Flight), and the headless GUT suite exits 0 (all pass).",
+    "Movement feel honors docs/DECISIONES-DISENO.md and the game-design skill: coyote time + jump buffering present; deterministic, fair movement."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "movement",
+    "demo",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-03T03:10:33.832Z",
+  "updated_at": "2026-06-03T03:10:37.669Z",
+  "jira_key": null
+}
