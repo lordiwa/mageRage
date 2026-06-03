@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T04:18:47.777Z",
+  "generated_at": "2026-06-03T15:24:30.531Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -40,7 +40,7 @@
     {
       "key": "TASK-007",
       "title": "Gamepad support: add controller bindings to all input actions (DD-007)",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     }
   ]

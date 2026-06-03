@@ -9,7 +9,7 @@
     "A GUT test asserts, via InputMap.action_get_events, that each gameplay action has at least one InputEventJoypadButton or InputEventJoypadMotion (gamepad coverage), so missing controller bindings are caught automatically.",
     "The debug HUD control hints mention the gamepad controls (not only keyboard)."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -21,8 +21,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-03T15:24:27.599Z",
+      "body": "Gamepad bindings added per DD-007 (commits e7f48a0 feat + a30004a test). The interrupted gamepad-dev agent had hung on a `cd ... && godot` permission prompt (root cause: cd in a compound Bash command, not OneDrive); fixed the run pattern to absolute --path with no cd. Agent had correctly authored most bindings (using the real Godot 4 JoyButton indices: A=0,B=1,Y=3,RB=10,DPAD up/left/right=11/13/14, triggers axis 4/5) but missed jump; orchestrator added the A(0) binding to jump. Verified independently: full GUT 64/64 pass exit 0, clean headless scene load. test_gamepad_bindings asserts joypad coverage for all 13 actions + keyboard parity (additive) — load-bearing (failed on jump before the fix). HUD shows gamepad controls. Done."
+    }
+  ],
   "created_at": "2026-06-03T04:18:47.777Z",
-  "updated_at": "2026-06-03T04:18:47.777Z",
+  "updated_at": "2026-06-03T15:24:30.531Z",
   "jira_key": null
 }
