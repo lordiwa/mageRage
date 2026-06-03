@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T02:59:42.577Z",
+  "generated_at": "2026-06-03T03:06:51.159Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -16,6 +16,12 @@
     {
       "key": "TASK-003",
       "title": "Train the team on Godot 4 game development (researcher skill)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-004",
+      "title": "Train the team on game design (metroidvania / Mage Rage design doctrine skill)",
       "status": "done",
       "priority": "high"
     }

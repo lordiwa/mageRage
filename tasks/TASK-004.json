@@ -1,0 +1,33 @@
+{
+  "key": "TASK-004",
+  "title": "Train the team on game design (metroidvania / Mage Rage design doctrine skill)",
+  "description": "Spawn the researcher to investigate game-design best practices for a 2D side-scroller / metroidvania action-platformer and distill them — together with Mage Rage's own design pillars and canon — into a reusable Agent Skill under .claude/skills/ so the orchestrator/developer/reviewer make consistent, on-theme design decisions when speccing features, abilities, enemies, levels, progression gates, and difficulty tuning. Cover: the GDD design pillars and how to keep features thematically aligned; the layered core loop (micro/minute/macro) as an evaluation lens; metroidvania ability-gated progression (Fire->leap, Ice->glide, Electricity->flight) and lock-and-key / backtracking / map-readability design; elemental combat vs enemy armor types (readability, telegraphing, moment-to-moment element swapping); feedback loops (Empire escalation as lore-justified dynamic difficulty; galactic powers as slow macro tension); pacing/difficulty curve and boss progression (mechanical mini-bosses -> element trials -> Empire core -> final ascent/sacrifice); the antimatter charge-and-release ultimate as climax mechanic; game feel (juice, hit-stop, camera, movement tech tie-in to coyote time/jump buffer); environmental mobility puzzles in the prison labyrinth. Ground guidance in reputable game-design sources (e.g. GDC talks, Game Maker's Toolkit / Boss Keys on metroidvania structure, Game Feel by Swink, The Art of Game Design lenses by Schell) and cite them; be explicit that design is principled rather than factual. Provide a concrete feature-vetting checklist (pillars + loop + canon). Source canon: docs/GDD.md, docs/LORE-BIBLE.md, .claude/agents/project-context.md. Complements the godot-game-dev technical skill (cross-link it).",
+  "acceptance_criteria": [
+    "A new Agent Skill exists under .claude/skills/<game-design-name>/SKILL.md with valid frontmatter whose description states WHEN to load it (any gameplay/feature/level/ability/enemy/progression/difficulty design or spec work).",
+    "Skill covers: GDD design pillars + thematic-consistency guidance; the layered core loop as an evaluation lens; metroidvania ability-gated progression and lock-and-key/backtracking/map design; elemental combat vs armor with readability/telegraphing; feedback loops (Empire escalation, macro galactic tension); pacing/difficulty curve and boss progression; the antimatter ultimate climax; game feel; environmental mobility puzzles.",
+    "Skill includes a concrete, reusable feature-vetting checklist that scores a proposed feature against the design pillars, the core loop, and the canon.",
+    "Guidance cites reputable game-design sources (with URLs/titles) and is explicitly consistent with docs/GDD.md and docs/LORE-BIBLE.md (no contradictions).",
+    "Skill cross-links the godot-game-dev technical skill so design decisions map to the implementation patterns (FSM movement, SpellData, collision layers)."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "research",
+    "game-design",
+    "training"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-03T03:06:48.708Z",
+      "body": "Researcher delivered .claude/skills/game-design/ (SKILL.md + references/worked-example.md). Covers pillars-as-filter, layered core loop lens, metroidvania lock-and-key + element->verb->route table, elemental combat RPS/anti-dominance/telegraphing, lore-justified DDA, pacing/boss progression, antimatter ultimate, game feel, level design, and a copy-pasteable 4-gate feature-vetting checklist (Pillars/Core-loop/Canon/Teaches-a-verb + implementation handoff). Every claim labeled [principle] vs [judgment]. Cross-links godot-game-dev. Cites GMTK Boss Keys, Swink Game Feel, Nijman Art of Screenshake, DDA articles. AC met. Surfaced 5 design tensions to the human (DDA-vs-earned-tone, antimatter tuning unspecified, map/UI legibility TBD, 3-element anti-dominance tightness, GDD-Spanish vs skills-English)."
+    }
+  ],
+  "created_at": "2026-06-03T03:01:54.361Z",
+  "updated_at": "2026-06-03T03:06:51.159Z",
+  "jira_key": null
+}
