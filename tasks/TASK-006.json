@@ -10,7 +10,7 @@
     "GUT tests cover: all 9 element-vs-armor matchup multipliers (DD-006), mana gating (no-cast when insufficient, cost consumed on cast), Health damage/death at <=0, and MagicManager element cycling selecting the correct SpellData; the headless GUT suite exits 0.",
     "Movement demo still works (no regressions); the debug HUD additionally shows equipped element and current mana."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -22,8 +22,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-03T04:15:41.712Z",
+      "body": "Combat slice built tests-first (commits ed4bcd4 feat + 5958654 test). Orchestrator independently verified 62/62 GUT pass exit 0 + clean headless run. Reviewer (fresh context) ACCEPT: all 6 AC met; projectile collision (PlayerMagic L4 mask Enemies L3 only, no self-hit/no wall-hit) correct; DD-006 table exact for all 9 pairs; mana gating non-exploitable; tests substantive; movement non-regressed. LOWs only: Electricity is pierce not nearest-neighbor chain (deferred to DD-004 greybox playtest), facing=0 cosmetic, drone _on_health_changed no-op. Done."
+    }
+  ],
   "created_at": "2026-06-03T03:43:42.376Z",
-  "updated_at": "2026-06-03T03:43:42.376Z",
+  "updated_at": "2026-06-03T04:15:44.204Z",
   "jira_key": null
 }

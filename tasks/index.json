@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T03:43:42.376Z",
+  "generated_at": "2026-06-03T04:15:44.204Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -34,7 +34,7 @@
     {
       "key": "TASK-006",
       "title": "Elemental combat slice: SpellData + MagicManager + projectiles + armored Empire drone",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     }
   ]
