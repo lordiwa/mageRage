@@ -128,3 +128,44 @@ teclado/mouse (additive — ambos activos a la vez). Layout estándar tipo Xbox:
 gratis. Gatillos = ejes 4 (LT) / 5 (RT) en Godot; planeo se mapea como *mantener*. El
 casteo sigue siendo en la dirección de `facing` por ahora; **aim con stick derecho**
 queda como mejora futura. Layout afinable en playtest.
+
+> **Revisado por DD-008** — el layout de arriba (vuelo en Y, gatillos = planeo/cast,
+> un solo cast, element_cycle) queda reemplazado por el esquema de DD-008.
+
+---
+
+## DD-008 — Esquema de control revisado (gamepad-first) + loadout de 2 elementos  ·  **ACEPTADA (ajustable)**
+
+Reemplaza el layout de DD-007. Gamepad principal, teclado additive.
+
+### Movimiento
+- **Mover / vertical de vuelo:** stick izquierdo (analógico, deadzone 0.3). Teclado A/D, ←/→, W/S.
+- **Salto:** A (botón 0) / Espacio.
+- **Vuelo:** **doble salto** — el segundo salto en el aire entra a `FlightState`. **No hay
+  botón dedicado de vuelo.** Sigue gateado por Electricidad (sin Electricidad no hay
+  segundo salto / vuelo). Se sale del vuelo al tocar piso.
+- **Planeo (Hielo):** **mantener LB** (botón 9, left shoulder) / Alt. Gateado por Hielo.
+- **Dash:** **RB** (botón 10, right shoulder) / Shift. Gateado por Fuego.
+
+### Magia — loadout de 2 elementos (primario + secundario)
+- **Slots:** PRIMARIO y SECUNDARIO, cada uno con un elemento.
+- **Asignar (X/Y/B / teclas 1/2/3):** X = Fuego, Y = Hielo, B = Electricidad. Al apretar
+  un elemento, **pasa a PRIMARIO** y el que estaba en primario **baja a SECUNDARIO**
+  (stack de los últimos dos elementos distintos; apretar el ya-primario no hace nada).
+  Esto produce las "combinaciones de poderes".
+- **Disparo PRIMARIO:** **RT** (eje 5) / E / clic izquierdo — lanza el elemento del slot primario.
+- **Disparo SECUNDARIO:** **LT** (eje 4) / Q / clic derecho — lanza el elemento del slot secundario.
+
+### Tabla resumen
+
+| Acción | Gamepad | Teclado |
+|---|---|---|
+| Mover / vertical | Stick izq | A/D, ←/→, W/S |
+| Salto / (doble = vuelo) | A | Espacio |
+| Planeo (mantener) | LB | Alt |
+| Dash | RB | Shift |
+| Asignar Fuego/Hielo/Elec | X / Y / B | 1 / 2 / 3 |
+| Disparo primario | RT | E / clic izq |
+| Disparo secundario | LT | Q / clic der |
+
+Índices Godot 4 verificados: A=0, B=1, X=2, Y=3, LB=9, RB=10, gatillos eje 4/5.

@@ -1,0 +1,30 @@
+{
+  "key": "TASK-008",
+  "title": "Control scheme revision: double-jump fly, 2-element loadout, dual-trigger fire (DD-008)",
+  "description": "Rework input + the affected movement/magic behavior to the DD-008 scheme (gamepad-first, keyboard additive). This supersedes DD-007's layout. Changes: (1) MOVEMENT — flight is now entered by DOUBLE JUMP (second jump while airborne), no dedicated fly button; still gated by electricity (no electricity => no double jump/flight); exit flight on landing. Glide moves to hold LB (button 9) / Alt (still gated by ice). Dash moves to RB (button 10) / Shift. Jump stays A (button 0) / Space. (2) MAGIC — MagicManager becomes a 2-slot loadout: PRIMARY and SECONDARY element slots. Element buttons X=Fire(btn 2), Y=Ice(btn 3), B=Electricity(btn 1) / keys 1/2/3 promote the pressed element to PRIMARY and demote the displaced primary to SECONDARY (a stack of the last two distinct elements; pressing the already-primary element is a no-op). Replace the single cast with cast_primary (RT axis 5 / E / left mouse) firing the primary slot, and cast_secondary (LT axis 4 / Q / right mouse) firing the secondary slot. (3) INPUT — update project.godot InputMap: remove the old `fly` and `element_cycle` actions; rename/replace `cast` with `cast_primary` and add `cast_secondary`; move glide to LB, dash to RB; rebind element_1/2/3 to X/Y/B (face buttons) keeping keyboard 1/2/3; keep all keyboard/mouse additive. (4) HUD — show PRIMARY and SECONDARY equipped elements + mana, and the new control hints. Follow .claude/skills/godot-game-dev (FSM, SpellData/MagicManager) and the project-context Bash gotcha (NEVER prefix Godot/GUT commands with `cd ... &&` — run the absolute binary with absolute --path; it hangs otherwise). Update all affected GUT tests (flight is now double-jump not the fly action; gamepad-bindings test action list changes: drop fly/element_cycle/cast, add cast_primary/cast_secondary). Keep combat matchup/mana/health logic intact.",
+  "acceptance_criteria": [
+    "Flight is entered by a double jump (second jump in air) and only when electricity is unlocked; there is no `fly` input action; flight exits on landing. Glide is hold-LB/Alt (ice-gated); dash is RB/Shift (fire-gated); jump is A/Space. Movement otherwise unchanged.",
+    "MagicManager holds a 2-slot loadout (primary+secondary). Pressing an element (X/Y/B or 1/2/3) promotes it to primary and demotes the previous primary to secondary (last-two-distinct stack; re-pressing primary is a no-op).",
+    "cast_primary (RT / E / LMB) fires the primary slot's element; cast_secondary (LT / Q / RMB) fires the secondary slot's element; mana gating still applies per cast.",
+    "project.godot InputMap matches DD-008 exactly (fly and element_cycle removed; cast_primary + cast_secondary present; glide=LB, dash=RB, jump=A, elements=X/Y/B) with keyboard/mouse events preserved additively; project loads headless with zero parse errors.",
+    "All GUT tests updated and green headless (exit 0): FSM tests reflect double-jump-to-fly + electricity gate; gamepad-bindings test covers the new action set (incl. cast_primary/cast_secondary, no fly/element_cycle); new tests cover the loadout stack promotion and that primary/secondary fire the correct element.",
+    "The debug HUD shows primary + secondary equipped elements, mana, and the DD-008 gamepad/keyboard hints; movement+combat have no behavioral regressions beyond the intended changes."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "input",
+    "gamepad",
+    "movement",
+    "combat"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-03T16:03:42.752Z",
+  "updated_at": "2026-06-03T16:03:42.752Z",
+  "jira_key": null
+}

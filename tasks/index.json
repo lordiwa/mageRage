@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T15:24:30.531Z",
+  "generated_at": "2026-06-03T16:03:42.752Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -41,6 +41,12 @@
       "key": "TASK-007",
       "title": "Gamepad support: add controller bindings to all input actions (DD-007)",
       "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-008",
+      "title": "Control scheme revision: double-jump fly, 2-element loadout, dual-trigger fire (DD-008)",
+      "status": "todo",
       "priority": "high"
     }
   ]
