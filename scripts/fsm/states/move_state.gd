@@ -28,7 +28,13 @@ func physics_update(delta: float) -> void:
 		player.facing = signf(dir)
 	player.move_and_slide()
 
-	# Buffered jump: Player records "jump pressed" for a short window; we fire it
-	# as soon as we are within coyote grace. Fire unlock gates the leap.
-	if player.abilities.has("fire") and player.consume_jump_buffer() and _coyote > 0.0:
+	# Buffered jump: the Player records "jump pressed" for a short window. We must
+	# only CONSUME the buffer on the frame the jump actually fires, otherwise a
+	# press made while falling (coyote already 0) would be cleared every frame and
+	# the buffered jump would be lost before landing. So: check the floor/coyote
+	# condition FIRST (peek, don't clear), then consume when we commit. On the
+	# landing frame is_on_floor() re-seeds _coyote above, so a jump buffered in
+	# mid-air fires on touchdown. Fire unlock gates the leap.
+	if player.abilities.has("fire") and _coyote > 0.0 and player.has_buffered_jump():
+		player.consume_jump_buffer()
 		transition_to("JumpState")

@@ -19,9 +19,12 @@ func physics_update(delta: float) -> void:
 		player.facing = signf(dir)
 	player.move_and_slide()
 
-	if not Input.is_action_pressed("glide"):
-		transition_to("JumpState")
-	if player.abilities.has("electricity") and Input.is_action_just_pressed("fly"):
-		transition_to("FlightState")
+	# Exits are mutually exclusive: at most one transition request per frame.
 	if player.is_on_floor():
 		transition_to("MoveState")
+		return
+	if player.abilities.has("electricity") and Input.is_action_just_pressed("fly"):
+		transition_to("FlightState")
+		return
+	if not Input.is_action_pressed("glide"):
+		transition_to("JumpState")

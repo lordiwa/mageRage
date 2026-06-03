@@ -16,6 +16,11 @@ const JUMP_BUFFER := 0.10      # grace window before landing for a buffered jump
 ## -1 = facing left, +1 = facing right. Used by air dash for its burst direction.
 var facing := 1.0
 
+## One-shot: when true, the next JumpState entry skips the launch impulse + dash
+## reset. Set by FlightState when toggling flight off so leaving flight does not
+## grant a free upward leap (and re-grant the air dash).
+var suppress_jump_impulse := false
+
 var _jump_buffer := 0.0
 
 func _ready() -> void:
@@ -31,7 +36,13 @@ func _process(delta: float) -> void:
 		_jump_buffer = JUMP_BUFFER
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 
-## Returns true once if a jump was buffered and still valid, clearing it.
+## Peek: is a jump currently buffered? Does NOT clear the buffer, so a state can
+## check the floor/coyote condition before committing to fire.
+func has_buffered_jump() -> bool:
+	return _jump_buffer > 0.0
+
+## Returns true once if a jump was buffered, clearing it. Call only when the jump
+## actually fires.
 func consume_jump_buffer() -> bool:
 	if _jump_buffer > 0.0:
 		_jump_buffer = 0.0

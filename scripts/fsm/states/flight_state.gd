@@ -21,6 +21,14 @@ func physics_update(_delta: float) -> void:
 		player.facing = signf(input.x)
 	player.move_and_slide()
 
-	# Toggle out of flight -> resume gravity-bound airborne handling.
+	# Landed while flying -> grounded handling (no free re-launch through Jump).
+	if player.is_on_floor():
+		transition_to("MoveState")
+		return
+
+	# Toggle out of flight -> resume gravity-bound airborne handling. Flag the
+	# next JumpState entry to skip the launch impulse / dash reset, so leaving
+	# flight is not a free upward leap that also re-grants the air dash.
 	if Input.is_action_just_pressed("fly"):
+		player.suppress_jump_impulse = true
 		transition_to("JumpState")

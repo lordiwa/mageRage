@@ -16,6 +16,11 @@ func _ready() -> void:
 	var sm := get_node_or_null(state_machine_path) as StateMachine
 	if sm != null:
 		sm.state_changed.connect(_on_state_changed)
+		# Load-order note: the StateMachine emits state_changed during its own
+		# _ready (initial-state activation), which runs before this HUD's _ready
+		# (the Player is authored above DebugHUD in the level, and Godot readies
+		# nodes in tree order). We therefore miss that first emission and must
+		# seed the label from current_state here.
 		if sm.current_state != null:
 			_state_name = sm.current_state.name
 	_refresh()
