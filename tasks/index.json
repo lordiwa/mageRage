@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T22:12:54.848Z",
+  "generated_at": "2026-06-04T22:47:48.660Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -185,6 +185,36 @@
       "key": "TASK-031",
       "title": "Combat feel: soft aim-assist (aim magnetism) toward nearby enemies (DD-012)",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-032",
+      "title": "M2 T0 — Researcher: parallax2d skill (train the team on Godot 4.6 Parallax2D)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-033",
+      "title": "M2 T1 — Reusable greybox parallax background component (Parallax2D)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-034",
+      "title": "M2 T2 — sector_02 greybox sidescroller layout + Sector02 controller + parallax",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-035",
+      "title": "M2 T3 — Wire gate + anti-magic zone + enemies + dormant Warden into sector_02",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-036",
+      "title": "M2 T4 — Switch main_scene to sector_02 + integration pass",
+      "status": "todo",
       "priority": "medium"
     }
   ]

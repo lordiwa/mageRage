@@ -1,0 +1,27 @@
+{
+  "key": "TASK-032",
+  "title": "M2 T0 — Researcher: parallax2d skill (train the team on Godot 4.6 Parallax2D)",
+  "description": "First step of the approved sector_02 plan (C:\\\\Users\\\\srpar\\\\.claude\\\\plans\\\\mighty-sparking-wall.md). Parallax is the one genuinely new technique; the team trains on new stacks via skills. Produce .claude/skills/parallax2d/SKILL.md: the decision to use Parallax2D (Node2D-based, 4.6-recommended) over the legacy ParallaxBackground/ParallaxLayer; the exact node tree for 3 greybox depth layers; the property table (scroll_scale, scroll_offset, repeat_size, autoscroll, follow_viewport); how it interacts with the player-mounted Camera2D (follow_viewport=true, smoothing 8.0, zero camera changes); the gl_compatibility note (pure CanvasItem transform, supported); and CRITICALLY the headless-test caveat (parallax doesn't scroll in GUT — assert structure/scroll_scale/ordering, never motion). Frontmatter description must state WHEN to load. Cite the Godot 4.6 doc URLs (class_parallax2d.html, tutorials/2d/2d_parallax.html). No production code. Unblocks T1.",
+  "acceptance_criteria": [
+    ".claude/skills/parallax2d/SKILL.md exists with frontmatter (name + WHEN-to-load description) and covers: Parallax2D-vs-legacy decision, the 3-layer node tree, the property table, the player-camera/follow_viewport interaction, the gl_compatibility note, and the headless-test caveat (assert structure not motion).",
+    "Cites the two Godot 4.6 official doc URLs.",
+    "No production code or scene changes; skill file only."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "parallax",
+    "researcher",
+    "skill",
+    "milestone-m2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T22:46:59.518Z",
+  "updated_at": "2026-06-04T22:46:59.518Z",
+  "jira_key": null
+}

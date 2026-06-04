@@ -1,0 +1,25 @@
+{
+  "key": "TASK-036",
+  "title": "M2 T4 — Switch main_scene to sector_02 + integration pass",
+  "description": "Final step of the approved sector_02 plan. DEPENDS ON T3 (TASK-035). Make exactly ONE edit to an existing file: project.godot line 15 run/main_scene='res://levels/sector_01.tscn' -> 'res://levels/sector_02.tscn'. Nothing else in project.godot changes (inputs/autoloads/layer_names/renderer untouched). Do NOT delete or modify any other level/script/test. Then run the FULL GUT suite multiple times to confirm sector_01/arena/encounter/test_level tests all still pass and nothing is poisoned, gdlint clean, both sector_02 and the old levels load headless clean. Optional manual verification: run the game (now sector_02) and confirm the 3 parallax layers scroll at different speeds and the full loop is playable.",
+  "acceptance_criteria": [
+    "project.godot run/main_scene points to res://levels/sector_02.tscn; no other line in project.godot changed.",
+    "No existing level/script/test deleted or modified; arena/sector_01/encounter/test_level still load headless clean and their tests pass.",
+    "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise; CI green on push."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "integration",
+    "milestone-m2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T22:47:48.660Z",
+  "updated_at": "2026-06-04T22:47:48.660Z",
+  "jira_key": null
+}

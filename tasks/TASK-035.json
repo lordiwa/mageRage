@@ -1,0 +1,28 @@
+{
+  "key": "TASK-035",
+  "title": "M2 T3 — Wire gate + anti-magic zone + enemies + dormant Warden into sector_02",
+  "description": "Fourth step of the approved sector_02 plan. DEPENDS ON T2 (TASK-034, sector_02 layout). Drop the REUSED M1 components into levels/sector_02.tscn at the T2 markers: ElementalGate (scenes/elemental_gate.tscn) with required_element=FIRE (red per DD-003; auto-derives BURN fiction; variety vs sector_01's ICE) at the ElementalGate marker; AntiMagicZone (scenes/anti_magic_zone.tscn) with purge_element=ELECTRICITY (flight is the Electricity verb, DD-008) at the AntiMagicZone marker; 3 enemies with MIXED armor_type per DD-006 (EmpireDrone armor 2, Charger armor 0, ShieldDrone/second drone different armor), all in the 'enemies' group; the Warden (scenes/warden.tscn) instanced dormant=true as the sector boss; reuse DebugHUD + BossHUD (re-point NodePaths). Wire Sector02 controller signals like sector_01: BossRoomTrigger.body_entered -> start_boss_encounter() -> warden.activate(); warden.defeated -> sector_victory. Tests-first: extend test/test_sector_02.gd with gate sealed/wrong-no-op/FIRE-opens-persistently + blocker-spans-corridor (CEIL_BOTTOM=-288/FLOOR_TOP=328/MAX_GAP=60), zone suppress/ELECTRICITY-purge + barrier-above-jump-apex, BossRoomTrigger is Player-masked Area2D, Warden is_dormant() at load, >=3 enemies, and the REAL-PHYSICS reachability test (copy test_sector_boss_reachability.gd retargeted to sector_02's boss wall; HELD-axis input only, after_each releases input + InputGate.clear_test_overrides()). CRITICAL: hero flies from spawn — real-physics-verify no flight-bypass (see memory gating-with-flight-from-spawn; 3 such HIGHs in M1).",
+  "acceptance_criteria": [
+    "sector_02 has a FIRE ElementalGate (sealed full-height, opens persistently on FIRE, wrong element no-op), an ELECTRICITY AntiMagicZone (suppresses flight until purged), 3 mixed-armor enemies in the 'enemies' group, and a dormant Warden that activates on the boss trigger and fires sector_victory on defeat.",
+    "The boss room is reachable end-to-end: a real-physics held-input test drives a flier over the boss wall and asserts the encounter starts; gate/zone are not flight-bypassable (real-physics verified, corridor metrics -288/+328).",
+    "Death respawns at the sector spawn (DD-009).",
+    "Tests-first; full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise.",
+    "The full M2 loop (spawn -> FIRE gate -> ELEC purge+fly -> boss -> sector victory) is satisfiable in sector_02."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "metroidvania-gate",
+    "boss",
+    "milestone-m2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T22:47:35.801Z",
+  "updated_at": "2026-06-04T22:47:35.801Z",
+  "jira_key": null
+}

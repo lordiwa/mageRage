@@ -1,0 +1,26 @@
+{
+  "key": "TASK-033",
+  "title": "M2 T1 — Reusable greybox parallax background component (Parallax2D)",
+  "description": "Second step of the approved sector_02 plan. DEPENDS ON T0 (parallax2d skill). Build scenes/parallax_background.tscn (root Node2D; optional class_name ParallaxBackdrop with a typed layer accessor for tests) with 3 greybox Parallax2D depth layers, each holding ColorRect silhouettes: FarSky scroll_scale.x=0.15 z_index=-30 (horizon band Color(0.07,0.08,0.13)); MidStructures 0.45 z=-25 (3-4 distant Empire towers Color(0.11,0.12,0.18)); NearPillars 0.80 z=-20 (2-3 foreground pillars Color(0.14,0.15,0.22)). Keep a flat fill Background ColorRect at z=-40. repeat_size=(0,0) (size bands to full level width, not tiling); Y scroll at 1.0; autoscroll off (determinism). Tests-first: test/test_parallax_background.gd asserts STRUCTURE only (3 Parallax2D children, scroll_scale.x ~0.15/0.45/0.80 strictly increasing, each layer >=1 ColorRect, all z_index<-10) per the headless caveat. Follow godot-game-dev skill + the new parallax2d skill.",
+  "acceptance_criteria": [
+    "scenes/parallax_background.tscn exists with 3 Parallax2D layers (far/mid/near) of greybox ColorRect silhouettes + a flat z=-40 fill, loads headless clean.",
+    "Layer scroll_scale.x values are ~0.15/0.45/0.80 and strictly increasing; all parallax layers z_index<-10.",
+    "Tests-first test/test_parallax_background.gd asserts the structure/scroll_scale/ordering (NO motion assertions, per the headless caveat) and is green.",
+    "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "parallax",
+    "milestone-m2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T22:47:07.481Z",
+  "updated_at": "2026-06-04T22:47:07.481Z",
+  "jira_key": null
+}

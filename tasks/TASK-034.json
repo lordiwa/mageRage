@@ -1,0 +1,27 @@
+{
+  "key": "TASK-034",
+  "title": "M2 T2 — sector_02 greybox sidescroller layout + Sector02 controller + parallax",
+  "description": "Third step of the approved sector_02 plan (C:\\\\Users\\\\srpar\\\\.claude\\\\plans\\\\mighty-sparking-wall.md). DEPENDS ON T1 (TASK-033, parallax component). Build levels/sector_02.tscn modeled on sector_01.tscn (Node2D root; StaticBody2D+CollisionShape2D+ColorRect Vis geometry). KEEP the proven corridor metrics ceiling-bottom y=-288 / floor-top y=+328 so the reused full-height gate/zone stay flight-verified. Horizontal extent ~4600px. Spine L->R: PlayerSpawn (220,288); a platforming segment with 3 staggered ledges (260x24); marker positions for ElementalGate (~x=1400) and AntiMagicZone (~x=2600); a combat pocket (~x=3000-3400); the boss approach (BossWallLeft+BossStep+BossRoom+BossRoomTrigger with the ~98px flight-only top gap) copied from sector_01. Add an Enemies container. Instance the T1 scenes/parallax_background.tscn. Write scripts/levels/sector_02.gd (class_name Sector02 extends Node2D) as a near-verbatim copy of sector_01.gd (snap player + record_spawn, typed accessors). This ticket does the LAYOUT + controller + parallax + deterministic STRUCTURE tests; gates/enemies/boss wiring is T3. Tests-first: test/test_sector_02.gd structure half (loads clean, player snapped to PlayerSpawn, flight at spawn, markers monotone L->R, parallax layers present). Do NOT switch main_scene yet (that's T4). Do NOT modify other levels.",
+  "acceptance_criteria": [
+    "levels/sector_02.tscn exists, loads headless clean, Node2D root, greybox geometry with corridor metrics ceiling-bottom -288 / floor-top +328, ~4600px extent, instances the parallax background.",
+    "scripts/levels/sector_02.gd (class_name Sector02) snaps the player to PlayerSpawn and exposes typed marker accessors; player starts with flight available (DD-011).",
+    "Named markers (PlayerSpawn, ElementalGate, AntiMagicZone, BossRoom, BossRoomTrigger) exist, monotone left-to-right; Enemies container present.",
+    "Tests-first test/test_sector_02.gd deterministic structure assertions pass; parallax layers resolve under the level.",
+    "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean; arena/sector_01/encounter/test_level still load clean (not modified)."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "level",
+    "milestone-m2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T22:47:25.106Z",
+  "updated_at": "2026-06-04T22:47:25.106Z",
+  "jira_key": null
+}
