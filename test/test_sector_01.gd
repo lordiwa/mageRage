@@ -128,6 +128,30 @@ func test_boss_room_marker_node_is_present() -> void:
 	assert_not_null(boss_room, "a BossRoom region node exists (TASK-029 anchor)")
 
 
+func test_elemental_gate_instance_resolves_and_blocks_a_required_route() -> void:
+	# TASK-027 (criteria 1 & 3): the placed gate is a real ElementalGate component
+	# that resolves via Sector01.elemental_gate(), starts sealed (blocking a route on
+	# the spine the player must traverse toward the boss), and opens with its element.
+	var level := SECTOR.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	var gate := (level as Sector01).elemental_gate()
+	assert_not_null(gate, "the elemental gate resolves via Sector01.elemental_gate()")
+	assert_true(gate is ElementalGate, "the placed gate is the reusable ElementalGate component")
+	var eg := gate as ElementalGate
+	assert_false(eg.is_open(), "the placed gate starts sealed (blocks the route)")
+	assert_true(eg.is_blocking(), "the placed gate physically blocks the spine while sealed")
+	# Wrong element keeps it sealed; the configured element opens it persistently.
+	var wrong := SpellData.Element.FIRE
+	if eg.required_element == wrong:
+		wrong = SpellData.Element.ICE
+	eg.apply_element(wrong)
+	assert_false(eg.is_open(), "the wrong element leaves the placed gate sealed")
+	eg.apply_element(eg.required_element)
+	assert_true(eg.is_open(), "the configured element opens the placed gate")
+	assert_false(eg.is_blocking(), "the opened placed gate no longer blocks the route")
+
+
 func test_sector_seeds_a_couple_of_enemies_along_the_path() -> void:
 	# A light combat presence on the path (criterion: enemies sprinkled along the
 	# route). Gates/boss are later tickets; a couple of existing enemies is enough.
