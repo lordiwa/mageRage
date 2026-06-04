@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://b8mageraswgrp"]
+
+[ext_resource type="Script" path="res://scripts/enemies/swarm_group.gd" id="1_group"]
+[ext_resource type="PackedScene" uid="uid://b8mageraswrml" path="res://scenes/swarmling.tscn" id="2_swarm"]
+
+[node name="SwarmGroup" type="Node2D"]
+script = ExtResource("1_group")
+swarmling_scene = ExtResource("2_swarm")
+member_count = 3
+spawn_radius = 40.0
+member_health = 20.0

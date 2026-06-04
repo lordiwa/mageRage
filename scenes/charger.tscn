@@ -1,0 +1,77 @@
+[gd_scene load_steps=14 format=3 uid="uid://b8mageragechrg"]
+
+[ext_resource type="Script" path="res://scripts/enemies/charger.gd" id="1_charger"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
+[ext_resource type="PackedScene" uid="uid://b8mageragedn01" path="res://scenes/damage_number.tscn" id="3_dn"]
+[ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="4_sp"]
+[ext_resource type="Script" path="res://scripts/fsm/state_machine.gd" id="5_sm"]
+[ext_resource type="Script" path="res://scripts/enemies/states/charger_patrol_state.gd" id="6_patrol"]
+[ext_resource type="Script" path="res://scripts/enemies/states/charger_chase_state.gd" id="7_chase"]
+[ext_resource type="Script" path="res://scripts/enemies/states/charger_windup_state.gd" id="8_windup"]
+[ext_resource type="Script" path="res://scripts/enemies/states/charger_charge_state.gd" id="9_charge"]
+[ext_resource type="Script" path="res://scripts/enemies/states/charger_recovery_state.gd" id="10_recovery"]
+
+[sub_resource type="RectangleShape2D" id="Rect_charger"]
+size = Vector2(36, 44)
+
+[sub_resource type="RectangleShape2D" id="Rect_lunge"]
+size = Vector2(48, 40)
+
+[node name="Charger" type="CharacterBody2D" groups=["enemies"]]
+script = ExtResource("1_charger")
+damage_number_scene = ExtResource("3_dn")
+impact_spark_scene = ExtResource("4_sp")
+death_effect_scene = ExtResource("4_sp")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("Rect_charger")
+
+[node name="Sprite" type="ColorRect" parent="."]
+offset_left = -18.0
+offset_top = -22.0
+offset_right = 18.0
+offset_bottom = 22.0
+color = Color(0.85, 0.3, 0.2, 1)
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("2_health")
+max_health = 80.0
+
+[node name="Label" type="Label" parent="."]
+offset_left = -48.0
+offset_top = -72.0
+offset_right = 60.0
+offset_bottom = -24.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "CHARGER"
+
+[node name="LungeHitbox" type="Area2D" parent="."]
+monitoring = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="LungeHitbox"]
+shape = SubResource("Rect_lunge")
+
+[node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
+script = ExtResource("5_sm")
+initial_state = NodePath("ChargerPatrolState")
+
+[node name="ChargerPatrolState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
+script = ExtResource("6_patrol")
+player = NodePath("../..")
+
+[node name="ChargerChaseState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
+script = ExtResource("7_chase")
+player = NodePath("../..")
+
+[node name="ChargerWindUpState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
+script = ExtResource("8_windup")
+player = NodePath("../..")
+
+[node name="ChargerChargeState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
+script = ExtResource("9_charge")
+player = NodePath("../..")
+
+[node name="ChargerRecoveryState" type="Node" parent="StateMachine" node_paths=PackedStringArray("player")]
+script = ExtResource("10_recovery")
+player = NodePath("../..")
