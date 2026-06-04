@@ -67,7 +67,10 @@ func _try_hit(target: Node) -> void:
 	if _hit.has(id):
 		return
 	_hit[id] = true
-	drone.apply_elemental_hit(element, base_damage, applies_slow)
+	# TASK-010: pass the projectile's travel direction so the drone can drive
+	# knockback + the hit signal away from where the shot came from.
+	var hit_dir := _velocity.normalized()
+	drone.apply_elemental_hit(element, base_damage, applies_slow, hit_dir)
 	_remaining_targets -= 1
 	if _remaining_targets <= 0:
 		queue_free()

@@ -1,13 +1,17 @@
-[gd_scene load_steps=4 format=3 uid="uid://b8mageragedr0n"]
+[gd_scene load_steps=6 format=3 uid="uid://b8mageragedr0n"]
 
 [ext_resource type="Script" path="res://scripts/enemies/empire_drone.gd" id="1_drone"]
 [ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
+[ext_resource type="PackedScene" uid="uid://b8mageragedn01" path="res://scenes/damage_number.tscn" id="3_dn"]
+[ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="4_sp"]
 
 [sub_resource type="RectangleShape2D" id="Rect_drone"]
 size = Vector2(28, 36)
 
 [node name="EmpireDrone" type="CharacterBody2D"]
 script = ExtResource("1_drone")
+damage_number_scene = ExtResource("3_dn")
+impact_spark_scene = ExtResource("4_sp")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Rect_drone")

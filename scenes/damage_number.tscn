@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8mageragedn01"]
+
+[ext_resource type="Script" path="res://scripts/juice/damage_number.gd" id="1_dn"]
+
+[node name="DamageNumber" type="Label"]
+script = ExtResource("1_dn")
+text = "0"
+theme_override_font_sizes/font_size = 16
+horizontal_alignment = 1
+vertical_alignment = 1

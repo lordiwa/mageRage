@@ -12,6 +12,7 @@
 [ext_resource type="Resource" uid="uid://b8magerage000f" path="res://resources/spells/firebolt.tres" id="9_fire"]
 [ext_resource type="Resource" uid="uid://b8magerage00ic" path="res://resources/spells/ice_shard.tres" id="10_ice"]
 [ext_resource type="Resource" uid="uid://b8magerage00el" path="res://resources/spells/lightning.tres" id="11_elec"]
+[ext_resource type="Script" path="res://scripts/juice/screen_shake.gd" id="13_shake"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
@@ -39,6 +40,9 @@ color = Color(1, 0.85, 0.3, 1)
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
+
+[node name="ScreenShake" type="Node" parent="Camera2D" groups=["screen_shake"]]
+script = ExtResource("13_shake")
 
 [node name="StateMachine" type="Node" parent="." node_paths=PackedStringArray("initial_state")]
 script = ExtResource("2_sm")

@@ -16,6 +16,10 @@ run/main_scene="res://levels/test_level.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
+[autoload]
+
+HitStop="*res://scripts/juice/hit_stop.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gut/plugin.cfg")
