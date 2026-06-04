@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T02:53:53.830Z",
+  "generated_at": "2026-06-04T03:18:10.866Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -64,7 +64,7 @@
     {
       "key": "TASK-011",
       "title": "Basic drone AI: patrol/chase/telegraphed attack, real Ice slow, player damage (DD-009)",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     }
   ]

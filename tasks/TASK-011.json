@@ -10,7 +10,7 @@
     "GUT tests (pure logic) cover: aggro in-range detection, attack cooldown gating, telegraph timing, the slow multiplier/decay/refresh/recovery, steering direction sign, and player Health damage/i-frames/death-respawn; full suite passes headless exit 0 with no regression.",
     "Project loads headless with zero parse errors; placeholder visuals only; matchup/mana/movement/loadout/juice behavior unchanged except as intended by DD-009."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -23,8 +23,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T03:18:07.792Z",
+      "body": "Drone AI slice built tests-first (commits 3c1721e feat + 5fe5d2a test). Orchestrator verified (after --import): GUT 117/117 exit 0, clean headless load. Reviewer (fresh) ACCEPT: telegraph fairness sound (Attack resets _telegraph on enter, gated on accumulated wind-up, can't skip even after slow refresh); enemy projectile on layer 5 masks Player(2) only (no friendly fire/self-hit), damage routed through i-frame-gated take_player_damage; i-frames block all damage in-window, no leak, no control-stun; respawn resets HP+position, spawn recorded once, Health.revive clears _dead; SlowEffect 0.5x on BOTH move and attack rate, refresh/decay/recovery to exactly 1.0; FSM has no stuck state; no regression (additive diff, only health.gd gains revive()). LOWs (in-spec, optional follow-ups): no post-respawn spawn-protection i-frames; enemy projectile consumed during player i-frames. Done."
+    }
+  ],
   "created_at": "2026-06-04T02:53:53.830Z",
-  "updated_at": "2026-06-04T02:53:53.830Z",
+  "updated_at": "2026-06-04T03:18:10.866Z",
   "jira_key": null
 }
