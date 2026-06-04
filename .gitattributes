@@ -1,0 +1,15 @@
+# Normalize line endings to LF on checkout/commit so the Linux CI runner and
+# gdlint/Godot see consistent files regardless of contributor OS.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending-normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.ttf binary
+*.otf binary
+*.res binary

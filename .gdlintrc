@@ -1,0 +1,24 @@
+# Tolerant gdlint config for Mage Rage (gdtoolkit 4.x).
+#
+# Philosophy: correctness checks stay ON so real bugs fail the build
+# (unused-argument, unused-variable, unnecessary-pass, expression-not-assigned,
+#  comparison-with-itself, duplicated-load, private-method-call, etc.).
+# Pure-style checks that would redden the existing codebase are relaxed below so
+# the first CI run is green without a style cleanup.
+
+# Disable style-only checks.
+disable:
+  - max-public-methods
+  - max-file-lines
+  - max-line-length
+  - trailing-whitespace
+  - no-else-return
+  - no-elif-return
+  - class-definitions-order
+
+# Loosen naming via regex (not on/off) so existing identifiers pass.
+# Allows snake_case incl. leading underscore and Godot _on_Signal handlers.
+function-name: '(_on_([A-Z][a-z0-9]*)+(_[a-z0-9]+)*|_?[a-z][a-z0-9]*(_[a-z0-9]+)*)'
+function-argument-name: '_?[a-z][a-z0-9]*(_[a-z0-9]+)*'
+class-variable-name: '_?[a-z][a-z0-9]*(_[a-z0-9]+)*'
+function-variable-name: '_?[a-z][a-z0-9]*(_[a-z0-9]+)*'

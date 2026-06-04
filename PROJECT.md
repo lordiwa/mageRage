@@ -7,6 +7,8 @@ schema_version: 1
 
 # mage-rage
 
+[![CI](https://github.com/lordiwa/mageRage/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/lordiwa/mageRage/actions/workflows/ci.yml)
+
 ## Description
 Metroidvania / side-scroller 2D de accion y plataformas en Godot 4: un nino mago, arma humana disenada para acabar una guerra galactica, escapa de una prision tecno-magica dominando fuego, hielo, electricidad y antimateria.
 
