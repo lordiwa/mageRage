@@ -271,3 +271,88 @@ func test_glide_to_flight_allowed_when_not_suppressed() -> void:
 	assert_signal_emitted_with_parameters(
 		st, "transition_requested", [st, "FlightState"])
 	Input.action_release("glide")
+
+
+# --- B. FSM integration: SUSTAINED flight is dropped inside an un-purged zone --
+# REGRESSION (review HIGH): gating only the ENTRY edge let a hero who was ALREADY
+# FLYING on entry sustain flight straight through an un-purged field (skipping the
+# purge). FlightState must re-read the flag and drop the hero out the moment the
+# field suppresses, so they fall and become grounded inside the zone.
+
+func test_active_flight_drops_out_when_suppressed_mid_flight() -> void:
+	# Criterion 2 ("cannot enter OR sustain FlightState"): an already-flying hero whose
+	# field becomes suppressing must be forced out of FlightState (no landing needed).
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false                 # airborne, NOT on the floor
+	fake.set_flight_suppressed(true)      # flew into an un-purged field
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+	st.physics_update(0.016)
+	# It must request a transition OUT of flight (to a grounded-falling state), not
+	# silently keep flying through the field.
+	assert_signal_emitted(st, "transition_requested",
+		"a suppressed active flight requests a transition out (cannot sustain flight)")
+	assert_false(_requested_to(st, "FlightState"),
+		"the suppressed flight does not stay in / re-request FlightState")
+
+
+func test_active_flight_continues_when_not_suppressed() -> void:
+	# DD-008 preserved: outside a zone (flag false) an airborne hero keeps flying —
+	# FlightState only exits on landing, exactly as before.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+	fake.set_flight_suppressed(false)
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+	st.physics_update(0.016)
+	assert_signal_not_emitted(st, "transition_requested",
+		"unsuppressed airborne flight is sustained (no forced exit) — DD-008 unaffected")
+
+
+# Helper: did `st` request a transition to `target` on its watched signal?
+func _requested_to(st: EstadoBase, target: String) -> bool:
+	var calls: int = get_signal_emit_count(st, "transition_requested")
+	for i in range(calls):
+		var params: Array = get_signal_parameters(st, "transition_requested", i)
+		if params != null and params.size() >= 2 and params[1] == target:
+			return true
+	return false
+
+
+# --- End-to-end: a real zone forces a flying body out, until purged ----------
+
+func test_real_zone_forces_a_flying_body_out_until_purged() -> void:
+	# REGRESSION (review HIGH), no entry-edge involved: an ALREADY-FLYING hero who is
+	# flagged by a real un-purged zone is forced out of FlightState (can't coast over the
+	# barrier). After purging the zone, the flag clears and the same airborne hero
+	# sustains flight. Exercises the zone->flag->FlightState path end-to-end (not geometry).
+	var zone := _make_zone(SpellData.Element.ELECTRICITY)
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false                 # airborne the whole time
+	# The hero flies into the un-purged field -> flagged suppressed.
+	zone._on_body_entered(fake)
+	assert_true(fake.is_flight_suppressed(), "flying into the un-purged field suppresses the hero")
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+	st.physics_update(0.016)
+	assert_signal_emitted(st, "transition_requested",
+		"the un-purged field forces the flying hero out of FlightState (no coast-over)")
+	assert_false(_requested_to(st, "FlightState"), "it does not re-request flight while suppressed")
+	# Purge the field while the hero is still inside -> flag clears -> flight sustains.
+	zone.purge(SpellData.Element.ELECTRICITY)
+	assert_false(fake.is_flight_suppressed(), "purge lifts the standing hero's suppression")
+	var st2 := _make_state(FlightState, fake)
+	st2.enter()
+	watch_signals(st2)
+	st2.physics_update(0.016)
+	assert_signal_not_emitted(st2, "transition_requested",
+		"after purge the airborne hero sustains flight over the barrier")

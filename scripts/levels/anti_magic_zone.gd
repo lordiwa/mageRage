@@ -18,7 +18,10 @@
 ##     toggles `player.set_flight_suppressed(true/false)` — the clean flag the FSM reads.
 ##   - Emitter (Area2D, Enemies layer 3): the power node a PLAYER projectile strikes. The
 ##     existing projectile masks Enemies (3) only and calls `apply_elemental_hit`, so the
-##     zone reuses that path with ZERO projectile changes — it forwards to `purge`.
+##     zone reuses that path with ZERO projectile changes — it forwards to `purge`. Its
+##     hit-shape is deliberately offset DOWN-LEFT (Col position ~(-120, 120) in the scene)
+##     so the strikable volume sits at the hero's ground/jump height on the field's
+##     approach side — a level-height shot reaches it before the hero is at the barrier.
 ##   - Barrier (StaticBody2D, Environment layer 1): an in-zone obstruction rising from the
 ##     floor higher than the jump apex, so the gated route genuinely REQUIRES flight (a
 ##     grounded/jumping/dashing hero can't clear it; once purged the hero flies over).
