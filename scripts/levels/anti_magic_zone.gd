@@ -22,9 +22,13 @@
 ##     hit-shape is deliberately offset DOWN-LEFT (Col position ~(-120, 120) in the scene)
 ##     so the strikable volume sits at the hero's ground/jump height on the field's
 ##     approach side — a level-height shot reaches it before the hero is at the barrier.
-##   - Barrier (StaticBody2D, Environment layer 1): an in-zone obstruction rising from the
-##     floor higher than the jump apex, so the gated route genuinely REQUIRES flight (a
-##     grounded/jumping/dashing hero can't clear it; once purged the hero flies over).
+##   - Barrier (StaticBody2D, Environment layer 1): an in-zone wall spanning the corridor
+##     from the floor up to near the ceiling, leaving only a high FLIGHT-ONLY gap at the
+##     top. So the gated route genuinely REQUIRES sustained flight: a grounded/jumping/
+##     dashing hero can't clear it, and a hero who enters airborne while the field is
+##     un-purged is dropped to a FALL (FlightState -> MoveState, no upward impulse) and
+##     ends up behind the wall — they can't drift or re-loft over it. Once purged, the
+##     hero flies up through the top gap and over.
 ##
 ## The clean `purge(elem)` / `is_suppressing()` API is what tests drive directly (no
 ## projectile physics) AND what the live projectile-hit path calls — one code path.

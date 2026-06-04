@@ -15,12 +15,15 @@ func physics_update(_delta: float) -> void:
 	# TASK-028 (DD-011) — SUSTAIN gate. Gating only the entry edge let a hero who was
 	# ALREADY FLYING on entry coast through an un-purged anti-magic field (skipping the
 	# purge). Re-read the flag every physics frame: while suppressed, drop OUT of flight
-	# to JumpState so the hero falls and becomes grounded inside the field. Synchronous
-	# (plain bool, no await). The flag defaults false, so flight outside a zone is
-	# unaffected — DD-008 preserved. (We exit here rather than in enter() to avoid
-	# mutating the machine mid-activation; the drop fires on the first physics frame.)
+	# so the hero FALLS and becomes grounded inside the field. We drop to MoveState — NOT
+	# JumpState, whose enter() applies a fresh upward launch impulse (-380) that would
+	# re-loft a high-altitude entrant over the barrier un-purged (review HIGH). MoveState
+	# applies gravity when airborne (a pure fall, no impulse). Synchronous (plain bool, no
+	# await). The flag defaults false, so flight outside a zone is unaffected — DD-008
+	# preserved. (We exit here, not in enter(), to avoid mutating the machine
+	# mid-activation; the drop fires on the first physics frame.)
 	if player.is_flight_suppressed():
-		transition_to("JumpState")
+		transition_to("MoveState")
 		return
 
 	var input := Vector2(

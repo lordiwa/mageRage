@@ -297,6 +297,13 @@ func test_active_flight_drops_out_when_suppressed_mid_flight() -> void:
 		"a suppressed active flight requests a transition out (cannot sustain flight)")
 	assert_false(_requested_to(st, "FlightState"),
 		"the suppressed flight does not stay in / re-request FlightState")
+	# REGRESSION (review HIGH #2): the drop must target a FALLING state, NOT JumpState
+	# whose enter() applies a fresh upward launch impulse (-380) that would re-loft a
+	# high-altitude entrant over the barrier. It must request MoveState (pure gravity).
+	assert_true(_requested_to(st, "MoveState"),
+		"the suppressed flight drops to MoveState (a pure fall), not a re-jump")
+	assert_false(_requested_to(st, "JumpState"),
+		"the drop must NOT route through JumpState's upward launch impulse")
 
 
 func test_active_flight_continues_when_not_suppressed() -> void:
