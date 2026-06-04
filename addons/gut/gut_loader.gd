@@ -32,7 +32,14 @@ static var were_addons_disabled : bool = true
 @warning_ignore("unsafe_property_access")
 @warning_ignore("untyped_declaration")
 static func _static_init() -> void:
-	were_addons_disabled = ProjectSettings.get(str(WARNING_PATH, 'exclude_addons'))
+	# TASK-024: ProjectSettings.get() returns null when the setting is not
+	# registered (it is not, in a headless `-s` CLI run), and assigning that null
+	# to the typed `bool were_addons_disabled` spewed a "Trying to assign value of
+	# type 'Nil' to a variable of type 'bool'" SCRIPT ERROR on every suite run.
+	# Coalesce the read to the static default (true) so the assignment is always a
+	# real bool. Behaviour is unchanged: the captured value is still restored below.
+	var _excluded = ProjectSettings.get(str(WARNING_PATH, 'exclude_addons'))
+	were_addons_disabled = _excluded if _excluded != null else were_addons_disabled
 	ProjectSettings.set(str(WARNING_PATH, 'exclude_addons'), true)
 
 	var WarningsManager = load('res://addons/gut/warnings_manager.gd')

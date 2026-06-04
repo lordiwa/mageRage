@@ -39,7 +39,7 @@ func test_damaged_signal_carries_amount_and_hit_dir() -> void:
 	watch_signals(player)
 	var dir := Vector2(1, 0)
 	player.take_player_damage(25.0, dir)
-	assert_signal_emitted_with_parameters(player, "damaged", [25.0, dir],
+	_assert_damaged_with(25.0, dir,
 		"the damaged signal carries the amount and the hit direction")
 
 
@@ -77,8 +77,23 @@ func test_one_arg_call_still_opens_iframes() -> void:
 func test_one_arg_call_emits_damaged_with_zero_dir() -> void:
 	watch_signals(player)
 	player.take_player_damage(15.0)
-	assert_signal_emitted_with_parameters(player, "damaged", [15.0, Vector2.ZERO],
+	_assert_damaged_with(15.0, Vector2.ZERO,
 		"a one-arg hit emits damaged with a ZERO hit direction (vignette-only)")
+
+
+# Assert the player emitted `damaged(amount, hit_dir)` with these exact values.
+# Replaces assert_signal_emitted_with_parameters, whose param-array deep-compare
+# tripped a GUT 9.4.0 bug (signal_watcher.gd:159 "Invalid operands 'String' and
+# 'int'" / diff_tool size-of-Nil) that spewed SCRIPT ERRORs into the run
+# (TASK-024). Same coverage — the signal fired AND both params match — without
+# routing the values through GUT's broken differ.
+func _assert_damaged_with(amount: float, hit_dir: Vector2, ctx: String) -> void:
+	assert_signal_emitted(player, "damaged", ctx)
+	var params: Array = get_signal_parameters(player, "damaged")
+	assert_not_null(params, "damaged carried parameters: " + ctx)
+	if params != null:
+		assert_eq(params[0], amount, "damaged amount is %s: %s" % [amount, ctx])
+		assert_eq(params[1], hit_dir, "damaged hit_dir is %s: %s" % [hit_dir, ctx])
 
 
 # --- subtle player hit-stop: gentler than an enemy super-effective hit -------

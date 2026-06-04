@@ -45,6 +45,23 @@ func _make_state(script_path: String, charger: Charger, node_name: String) -> No
 	return state
 
 
+# Assert the state requested a transition to `to_name`. Replaces
+# assert_signal_emitted_with_parameters: that helper deep-diffs the WHOLE param
+# array, and EstadoBase.transition_requested carries `from: EstadoBase` (a typed
+# Object) which GUT's diff_tool/signal_watcher can't compare — it spewed
+# "Invalid operands 'String' and 'int'" / "size in base 'Nil'" SCRIPT ERRORs into
+# the run (TASK-024). We keep the SAME coverage by checking the signal fired, that
+# `from` is the emitting state, and that the scalar `to_name` matches — just
+# without handing the typed Object to the differ.
+func _assert_transition_to(state: Node, to_name: String, ctx: String) -> void:
+	assert_signal_emitted(state, "transition_requested", ctx)
+	var params: Array = get_signal_parameters(state, "transition_requested")
+	assert_not_null(params, "transition_requested carried parameters: " + ctx)
+	if params != null:
+		assert_eq(params[0], state, "transition `from` is the emitting state: " + ctx)
+		assert_eq(params[1], to_name, "transition target is %s: %s" % [to_name, ctx])
+
+
 # --- PATROL ------------------------------------------------------------------
 
 func test_patrol_stays_when_player_far() -> void:
@@ -65,8 +82,7 @@ func test_patrol_chases_when_player_in_aggro() -> void:
 		"res://scripts/enemies/states/charger_patrol_state.gd", charger, "ChargerPatrolState")
 	watch_signals(patrol)
 	patrol.physics_update(0.016)
-	assert_signal_emitted_with_parameters(patrol, "transition_requested",
-		[patrol, "ChargerChaseState"],
+	_assert_transition_to(patrol, "ChargerChaseState",
 		"a player in aggro range transitions Patrol -> Chase")
 
 
@@ -79,8 +95,7 @@ func test_chase_returns_to_patrol_when_player_leaves() -> void:
 		"res://scripts/enemies/states/charger_chase_state.gd", charger, "ChargerChaseState")
 	watch_signals(chase)
 	chase.physics_update(0.016)
-	assert_signal_emitted_with_parameters(chase, "transition_requested",
-		[chase, "ChargerPatrolState"],
+	_assert_transition_to(chase, "ChargerPatrolState",
 		"the player leaving aggro range drops Chase -> Patrol")
 
 
@@ -91,8 +106,7 @@ func test_chase_winds_up_when_player_in_attack_range() -> void:
 		"res://scripts/enemies/states/charger_chase_state.gd", charger, "ChargerChaseState")
 	watch_signals(chase)
 	chase.physics_update(0.016)
-	assert_signal_emitted_with_parameters(chase, "transition_requested",
-		[chase, "ChargerWindUpState"],
+	_assert_transition_to(chase, "ChargerWindUpState",
 		"a player in attack range commits the Charger to the wind-up telegraph")
 
 
@@ -111,8 +125,7 @@ func test_windup_holds_then_charges_after_telegraph() -> void:
 		"the Charger does NOT lunge partway through the wind-up (fair telegraph)")
 	# Advance well past the full wind-up.
 	windup.physics_update(5.0)
-	assert_signal_emitted_with_parameters(windup, "transition_requested",
-		[windup, "ChargerChargeState"],
+	_assert_transition_to(windup, "ChargerChargeState",
 		"once the wind-up telegraph elapses the Charger transitions to Charge")
 
 
@@ -143,8 +156,7 @@ func test_charge_recovers_after_lunge_duration() -> void:
 		"the Charger is still lunging partway through the fixed charge duration")
 	# Past the full lunge duration -> Recovery.
 	charge.physics_update(5.0)
-	assert_signal_emitted_with_parameters(charge, "transition_requested",
-		[charge, "ChargerRecoveryState"],
+	_assert_transition_to(charge, "ChargerRecoveryState",
 		"after the fixed lunge duration the Charger enters Recovery (exposed)")
 
 
@@ -163,6 +175,5 @@ func test_recovery_returns_to_chase_after_stagger() -> void:
 		"during recovery the Charger cannot act (exposed/staggered window)")
 	# Past the stagger window -> back to Chase.
 	recovery.physics_update(5.0)
-	assert_signal_emitted_with_parameters(recovery, "transition_requested",
-		[recovery, "ChargerChaseState"],
+	_assert_transition_to(recovery, "ChargerChaseState",
 		"after the stagger window the Charger recovers back to Chase")

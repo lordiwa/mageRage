@@ -12,9 +12,14 @@ var fake_magic: Node
 
 
 ## A drop-in MagicManager double named "MagicManager" so the Player's
-## @onready `_magic` lookup finds it on _ready. Records the last cast direction.
+## @onready `_magic` lookup finds it on _ready. Extends the real MagicManager so
+## the Player's typed `@onready var _magic: MagicManager` assignment is valid (a
+## plain Node fake tripped a "Trying to assign value of type '' to a variable of
+## type 'magic_manager.gd'" engine error at player.gd:52). The inherited _ready is
+## harmless here (empty `spells` -> null loadout); we only override the cast hooks
+## to record direction. Records the last cast direction.
 class FakeMagicManager:
-	extends Node
+	extends MagicManager
 	var last_primary_dir := Vector2.ZERO
 	var last_secondary_dir := Vector2.ZERO
 	var last_origin: Node2D = null
