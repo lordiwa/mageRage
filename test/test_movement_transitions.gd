@@ -21,12 +21,32 @@ func before_each() -> void:
 
 func after_each() -> void:
 	_release_all()
+	# Drop any InputGate edge overrides so they never leak into another test/the game.
+	InputGate.clear_test_overrides()
 
 
 func _release_all() -> void:
 	for a in ALL_ACTIONS:
 		if InputMap.has_action(a):
 			Input.action_release(a)
+	InputGate.clear_test_overrides()
+
+
+# A HELD action (e.g. glide): Input.is_action_pressed() reflects the held state
+# reliably across frames, so a plain press is deterministic here.
+func _hold(action: String) -> void:
+	Input.action_press(action)
+
+
+# TASK-024 CI determinism: an EDGE-triggered action (jump/dash) is gated in the FSM
+# via InputGate.just_pressed(), which in game delegates to
+# Input.is_action_just_pressed(). That engine edge is NOT reproducible from GUT once
+# an upstream test awaits a physics frame (the physics-frame counter advances past
+# the programmatic press stamp, so the read is false for the rest of the run) -> the
+# flight/dash transition silently never fires ("Signals emitted: []"), green locally
+# but RED on the slower CI runner. We force the edge deterministically instead.
+func _press_edge(action: String) -> void:
+	InputGate.set_test_override(action, true)
 
 
 # Builds a state of `state_script`, wires the fake player, parents both so
@@ -114,7 +134,7 @@ func test_jump_to_glide_when_descending_and_glide_held() -> void:
 
 	var st := _make_state(JumpState, fake)
 	# Do NOT call enter() (it would reset velocity.y to the jump impulse).
-	Input.action_press("glide")
+	_hold("glide")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -130,7 +150,7 @@ func test_jump_no_glide_without_ice_ability() -> void:
 	fake.velocity = Vector2(0, 50)
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("glide")
+	_hold("glide")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -166,7 +186,7 @@ func test_jump_to_flight_on_second_jump_when_electricity_unlocked() -> void:
 	fake.jump_count = 1            # the first (ground) jump already fired
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("jump")
+	_press_edge("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -184,7 +204,7 @@ func test_jump_no_flight_on_second_jump_without_electricity() -> void:
 	fake.jump_count = 1
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("jump")
+	_press_edge("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -202,7 +222,7 @@ func test_jump_first_air_jump_press_does_not_fly() -> void:
 	fake.jump_count = 0            # no ground jump registered
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("jump")
+	_press_edge("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -238,8 +258,8 @@ func test_glide_to_flight_requires_electricity() -> void:
 	fake.jump_count = 1
 
 	var st := _make_state(GlideState, fake)
-	Input.action_press("glide")   # stay in glide (don't fall to JumpState)
-	Input.action_press("jump")
+	_hold("glide")   # stay in glide (don't fall to JumpState)
+	_press_edge("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -256,8 +276,8 @@ func test_glide_to_flight_on_second_jump_with_electricity() -> void:
 	fake.jump_count = 1
 
 	var st := _make_state(GlideState, fake)
-	Input.action_press("glide")
-	Input.action_press("jump")
+	_hold("glide")
+	_press_edge("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -273,7 +293,7 @@ func test_glide_to_move_on_landing() -> void:
 	fake.velocity = Vector2(0, 10)
 
 	var st := _make_state(GlideState, fake)
-	Input.action_press("glide")
+	_hold("glide")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -357,7 +377,7 @@ func test_jump_air_dash_bursts_in_facing_direction() -> void:
 
 	var st := _make_state(JumpState, fake)
 	st.enter()
-	Input.action_press("dash")
+	_press_edge("dash")
 	st.physics_update(0.016)
 
 	assert_eq(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
@@ -376,7 +396,7 @@ func test_jump_air_dash_is_one_shot_per_airtime() -> void:
 	st.enter()
 
 	# First dash consumes the single air dash.
-	Input.action_press("dash")
+	_press_edge("dash")
 	st.physics_update(0.016)
 	Input.action_release("dash")
 
@@ -386,7 +406,7 @@ func test_jump_air_dash_is_one_shot_per_airtime() -> void:
 
 	# A second dash press must NOT produce another burst.
 	fake.velocity = Vector2(0, 20)
-	Input.action_press("dash")
+	_press_edge("dash")
 	st.physics_update(0.016)
 
 	assert_ne(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,

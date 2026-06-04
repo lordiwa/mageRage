@@ -43,7 +43,7 @@ func physics_update(delta: float) -> void:
 		return
 
 	if player.abilities.has("fire") and not _dash_used \
-			and Input.is_action_just_pressed("dash"):
+			and InputGate.just_pressed("dash"):
 		_dash_used = true
 		_dash_timer = DASH_TIME
 		player.velocity.x = player.facing * DASH_SPEED
@@ -65,7 +65,7 @@ func physics_update(delta: float) -> void:
 	# leap already registered jump_count >= 1) promotes to flight, gated on
 	# electricity. Without electricity the double-jump does nothing.
 	if player.abilities.has("electricity") and player.jump_count >= 1 \
-			and Input.is_action_just_pressed("jump"):
+			and InputGate.just_pressed("jump"):
 		transition_to("FlightState")
 		return
 

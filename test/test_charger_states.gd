@@ -24,6 +24,16 @@ func _make_charger() -> Charger:
 	sprite.name = "Sprite"
 	charger.add_child(sprite)
 	add_child_autofree(charger)
+	# TASK-024 CI determinism: these tests instance the STATE nodes standalone and
+	# drive physics_update(delta) by hand. The live Charger is also in the tree, so
+	# its own _physics_process / built-in CharacterBody2D internal processing ticks
+	# autonomously between add_child and the assertion — and on a slower CI runner a
+	# different number of those autonomous frames elapse. Pin the live node so ONLY
+	# the manual physics_update calls advance state: the distance/transition checks
+	# then read a stable charger position regardless of runner cadence.
+	charger.set_physics_process(false)
+	charger.set_physics_process_internal(false)
+	charger.set_process(false)
 	return charger
 
 

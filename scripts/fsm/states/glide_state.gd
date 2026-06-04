@@ -27,7 +27,7 @@ func physics_update(delta: float) -> void:
 	# DD-008 double-jump -> flight (electricity-gated). A second jump press while
 	# gliding promotes to flight; without electricity it does nothing.
 	if player.abilities.has("electricity") and player.jump_count >= 1 \
-			and Input.is_action_just_pressed("jump"):
+			and InputGate.just_pressed("jump"):
 		transition_to("FlightState")
 		return
 	if not Input.is_action_pressed("glide"):
