@@ -23,6 +23,17 @@ const MUZZLE_OFFSET := 10.0        # muzzle distance from the body along the aim
 const AIM_STICK_THRESHOLD := 0.2   # min right-stick magnitude to count as PAD aim
 const _AIM_FACING_EPS := 0.05      # |aim.x| must exceed this to flip facing
 
+## DD-012 soft aim-assist (aim magnetism) tunables — PROVISIONAL, to be tuned in
+## playtest. @export so a designer can dial them in the inspector without code.
+## The cast aim (NOT movement / raw aim) is biased toward the nearest enemy that
+## sits within AIM_ASSIST_CONE_DEG of the manual aim and within AIM_ASSIST_RANGE:
+## full snap inside AIM_ASSIST_INNER_CONE_DEG, partial pull out to the outer cone,
+## no assist beyond it (deliberate aim elsewhere is respected). Set the outer cone
+## to 0 to disable the assist entirely.
+@export var aim_assist_cone_deg := 20.0         # outer cone half-angle (deg)
+@export var aim_assist_inner_cone_deg := 8.0    # inner full-snap cone (deg)
+@export var aim_assist_range := 400.0           # max assist distance (px)
+
 ## Which device last drove aiming. NONE = before any aim input (keyboard-only
 ## casting falls back to facing); PAD = right stick; MOUSE = cursor position.
 enum AimDevice {NONE, PAD, MOUSE}
@@ -177,14 +188,16 @@ func _process(delta: float) -> void:
 	tick_iframes(delta)
 	_process_blink(delta)
 
-	# Twin-stick aiming: resolve the aim vector ONCE per frame, before casting,
-	# so the reticle and the spell share the same direction. Then keep facing /
-	# muzzle / reticle in sync with it.
+	# Twin-stick aiming: resolve the RAW aim vector ONCE per frame, before
+	# casting. Facing reads the raw manual aim (DD-012: the assist must not fight
+	# the player's intent). The reticle/muzzle/cast use the ASSISTED aim so the
+	# reticle shows where the shot will actually go (DD-012 legibility).
 	_aim = aim_direction()
 	apply_aim_to_facing()
+	var assisted := cast_aim()
 	if _muzzle != null:
-		_muzzle.position = _aim * MUZZLE_OFFSET
-	_update_reticle()
+		_muzzle.position = assisted * MUZZLE_OFFSET
+	_update_reticle(assisted)
 
 	_process_magic(delta)
 
@@ -233,6 +246,39 @@ func aim_direction() -> Vector2:
 func is_aiming() -> bool:
 	return _aim_device != AimDevice.NONE
 
+## DD-012 soft aim-assist: the aim ACTUALLY used for casting (and the reticle).
+## Biases the raw manual `_aim` toward the nearest enemy within the assist cone +
+## range via the pure AimAssist.assist(); enemies come from the "enemies" group.
+## Leaves `_aim` (movement / facing) untouched. With no enemies, a disabled cone
+## (cone <= 0), or an enemy outside the cone, this returns the raw `_aim` so
+## deliberate aim elsewhere is respected. Safe with no SceneTree (returns `_aim`).
+func cast_aim() -> Vector2:
+	if aim_assist_cone_deg <= 0.0:
+		return _aim
+	return AimAssist.assist(
+		_aim,
+		aim_origin(),
+		_gather_enemy_positions(),
+		aim_assist_cone_deg,
+		aim_assist_inner_cone_deg,
+		aim_assist_range,
+	)
+
+## Collect live enemy world positions from the "enemies" group for the assist.
+## Skips non-Node2D and queued-for-deletion nodes. Empty when there is no tree.
+func _gather_enemy_positions() -> Array[Vector2]:
+	var positions: Array[Vector2] = []
+	var tree := get_tree()
+	if tree == null:
+		return positions
+	for n in tree.get_nodes_in_group("enemies"):
+		if not (n is Node2D):
+			continue
+		if (n as Node).is_queued_for_deletion():
+			continue
+		positions.append((n as Node2D).global_position)
+	return positions
+
 ## Drive facing from the aim while a device is active and the aim has a clear
 ## horizontal component. Pure-vertical aim leaves facing untouched; when not
 ## aiming the FSM owns facing (movement direction).
@@ -245,16 +291,22 @@ func apply_aim_to_facing() -> void:
 func reticle_local_position(aim: Vector2) -> Vector2:
 	return aim * AIM_RADIUS
 
-## Position the reticle for this frame. MOUSE aim snaps it to the cursor (world
-## space); PAD/NONE orbit it around the player at AIM_RADIUS. Null-guarded so a
-## minimal Player without a Reticle child is fine.
-func _update_reticle() -> void:
+## Position the reticle for this frame using the ASSISTED aim, so the crosshair
+## shows where the shot will actually go (DD-012 legibility). MOUSE aim snaps the
+## reticle to the cursor in world space but rotated onto the assisted direction
+## (the muzzle->reticle ray follows the assist); PAD/NONE orbit it around the
+## player at AIM_RADIUS along the assisted aim. Null-guarded so a minimal Player
+## without a Reticle child is fine.
+func _update_reticle(aim: Vector2) -> void:
 	if _reticle == null:
 		return
 	if _aim_device == AimDevice.MOUSE:
-		_reticle.global_position = get_global_mouse_position()
+		# Keep the reticle's DISTANCE at the cursor but point it along the assisted
+		# aim, so a magnetized shot and the crosshair stay co-linear.
+		var reach := (get_global_mouse_position() - aim_origin()).length()
+		_reticle.global_position = aim_origin() + aim * reach
 	else:
-		_reticle.position = reticle_local_position(_aim)
+		_reticle.position = reticle_local_position(aim)
 
 ## DD-009: blink the sprite while invulnerable (readable i-frame feedback, no
 ## control stun). Sprite stays visible when not invulnerable.
@@ -285,10 +337,13 @@ func _process_magic(delta: float) -> void:
 	elif Input.is_action_just_pressed("element_3"):
 		_magic.select(2)
 	var origin: Node2D = _muzzle if _muzzle != null else self
+	# DD-012: cast along the ASSISTED aim (magnetized toward a roughly-aimed-at
+	# enemy), not the raw manual aim. The reticle already reflects this direction.
+	var aim := cast_aim()
 	if Input.is_action_just_pressed("cast_primary"):
-		_magic.cast_primary(origin, _aim)
+		_magic.cast_primary(origin, aim)
 	if Input.is_action_just_pressed("cast_secondary"):
-		_magic.cast_secondary(origin, _aim)
+		_magic.cast_secondary(origin, aim)
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:
@@ -351,4 +406,5 @@ func cast_primary_for_test() -> void:
 	if mgr == null or not mgr.has_method("cast_primary"):
 		return
 	var origin: Node2D = _muzzle if _muzzle != null else self
-	mgr.cast_primary(origin, _aim)
+	# Mirror gameplay: cast along the DD-012 assisted aim.
+	mgr.cast_primary(origin, cast_aim())
