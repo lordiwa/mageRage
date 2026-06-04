@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T19:30:57.907Z",
+  "generated_at": "2026-06-04T20:21:54.314Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -166,7 +166,7 @@
     {
       "key": "TASK-028",
       "title": "M1 (c): Anti-magic flight-suppression zone — disables FlightState until purged with the right element",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     },
     {
