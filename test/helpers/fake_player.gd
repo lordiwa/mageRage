@@ -15,10 +15,21 @@ var gravity := Vector2(0, 980)
 ## When true, the next JumpState.enter() skips the launch impulse + dash reset
 ## (used when JumpState is entered from a flight toggle, not a real jump).
 var suppress_jump_impulse := false
+## DD-008: tracks how many jumps have fired since leaving the ground. The first
+## jump (Move -> Jump) sets this to 1; a second jump press in the air (with
+## electricity) promotes to flight. Reset to 0 on landing.
+var jump_count := 0
 var _jump_buffered := false
 
 func is_on_floor() -> bool:
 	return on_floor
+
+## DD-008 double-jump support: count fired jumps and reset on landing.
+func register_jump() -> void:
+	jump_count += 1
+
+func reset_jumps() -> void:
+	jump_count = 0
 
 func get_gravity() -> Vector2:
 	return gravity

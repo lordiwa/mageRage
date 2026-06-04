@@ -4,13 +4,14 @@
 ## without a rendered scene. These encode the TASK-005 acceptance criteria:
 ##   - Move + jump-from-floor -> Jump
 ##   - air + glide-held       -> Glide ; release glide -> back to Jump
-##   - flight unlocked + fly  -> Flight ; NO electricity + fly -> NOT Flight
+##   - DD-008: SECOND jump in air (electricity) -> Flight (double-jump);
+##     NO electricity + second jump -> NOT Flight (no dedicated `fly` action)
 ##   - land on floor          -> Move
 extends GutTest
 
 const ALL_ACTIONS := [
 	"move_left", "move_right", "move_up", "move_down",
-	"jump", "dash", "glide", "fly",
+	"jump", "dash", "glide",
 ]
 
 
@@ -151,17 +152,21 @@ func test_jump_to_move_on_landing() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-# --- Ability gating: Flight requires electricity --------------------------
+# --- DD-008 double-jump: second jump in air -> Flight (electricity-gated) ---
 
-func test_jump_to_flight_when_electricity_unlocked_and_fly_pressed() -> void:
+func test_jump_to_flight_on_second_jump_when_electricity_unlocked() -> void:
+	# DD-008: there is no dedicated `fly` action. A SECOND jump press while
+	# airborne (the first jump already registered) enters FlightState, gated on
+	# electricity.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"fire": true, "electricity": true}
 	fake.on_floor = false
 	fake.velocity = Vector2(0, -100)
+	fake.jump_count = 1            # the first (ground) jump already fired
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("fly")
+	Input.action_press("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -169,15 +174,35 @@ func test_jump_to_flight_when_electricity_unlocked_and_fly_pressed() -> void:
 		st, "transition_requested", [st, "FlightState"])
 
 
-func test_jump_no_flight_without_electricity_even_if_fly_pressed() -> void:
+func test_jump_no_flight_on_second_jump_without_electricity() -> void:
+	# A double-jump without electricity does nothing: no second jump, no flight.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"fire": true, "ice": true}   # NO electricity
 	fake.on_floor = false
 	fake.velocity = Vector2(0, -100)
+	fake.jump_count = 1
 
 	var st := _make_state(JumpState, fake)
-	Input.action_press("fly")
+	Input.action_press("jump")
+	watch_signals(st)
+	st.physics_update(0.016)
+
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+func test_jump_first_air_jump_press_does_not_fly() -> void:
+	# Guard the gate: a jump press in the air when no jump has registered yet
+	# (jump_count 0) must NOT enter flight — only the genuine SECOND jump does.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"fire": true, "electricity": true}
+	fake.on_floor = false
+	fake.velocity = Vector2(0, -100)
+	fake.jump_count = 0            # no ground jump registered
+
+	var st := _make_state(JumpState, fake)
+	Input.action_press("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
@@ -203,20 +228,41 @@ func test_glide_back_to_jump_when_glide_released() -> void:
 
 
 func test_glide_to_flight_requires_electricity() -> void:
+	# DD-008: a second jump in air promotes to flight, gated on electricity.
+	# Without electricity, the jump press while gliding does nothing.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"fire": true, "ice": true}   # NO electricity
 	fake.on_floor = false
 	fake.velocity = Vector2(0, 30)
+	fake.jump_count = 1
 
 	var st := _make_state(GlideState, fake)
 	Input.action_press("glide")   # stay in glide (don't fall to JumpState)
-	Input.action_press("fly")
+	Input.action_press("jump")
 	watch_signals(st)
 	st.physics_update(0.016)
 
-	# fly is gated out; the only allowed transition with glide held is none.
+	# jump->flight is gated out; the only allowed transition with glide held is none.
 	assert_signal_not_emitted(st, "transition_requested")
+
+
+func test_glide_to_flight_on_second_jump_with_electricity() -> void:
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"fire": true, "ice": true, "electricity": true}
+	fake.on_floor = false
+	fake.velocity = Vector2(0, 30)
+	fake.jump_count = 1
+
+	var st := _make_state(GlideState, fake)
+	Input.action_press("glide")
+	Input.action_press("jump")
+	watch_signals(st)
+	st.physics_update(0.016)
+
+	assert_signal_emitted_with_parameters(
+		st, "transition_requested", [st, "FlightState"])
 
 
 func test_glide_to_move_on_landing() -> void:
@@ -235,23 +281,7 @@ func test_glide_to_move_on_landing() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-# --- FlightState: toggle out ----------------------------------------------
-
-func test_flight_back_to_jump_when_fly_pressed_again() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
-	fake.abilities = {"electricity": true}
-	fake.on_floor = false
-
-	var st := _make_state(FlightState, fake)
-	st.enter()
-	Input.action_press("fly")
-	watch_signals(st)
-	st.physics_update(0.016)
-
-	assert_signal_emitted_with_parameters(
-		st, "transition_requested", [st, "JumpState"])
-
+# --- FlightState: exit on landing (DD-008: no toggle-out) ------------------
 
 func test_flight_to_move_when_on_floor() -> void:
 	# Landing while flying should drop to MoveState, not re-launch via Jump.
@@ -269,24 +299,7 @@ func test_flight_to_move_when_on_floor() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-func test_flight_exit_to_jump_sets_suppress_impulse() -> void:
-	# Toggling flight off mid-air must NOT grant a free upward leap: FlightState
-	# tells the player to suppress the next JumpState launch impulse.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
-	fake.abilities = {"electricity": true}
-	fake.on_floor = false
-
-	var st := _make_state(FlightState, fake)
-	st.enter()
-	Input.action_press("fly")
-	st.physics_update(0.016)
-
-	assert_true(fake.suppress_jump_impulse,
-		"flight toggle-off must flag the jump impulse to be suppressed")
-
-
-# --- JumpState: launch impulse vs. suppressed (flight) entry ---------------
+# --- JumpState: launch impulse ---------------------------------------------
 
 func test_jump_enter_applies_launch_impulse() -> void:
 	var fake := FakePlayer.new()
@@ -300,19 +313,36 @@ func test_jump_enter_applies_launch_impulse() -> void:
 		"a real jump entry should apply the launch impulse")
 
 
-func test_jump_enter_from_flight_skips_impulse_and_dash_reset() -> void:
+# --- DD-008: jump bookkeeping (register on launch, reset on landing) --------
+
+func test_jump_enter_registers_a_jump() -> void:
+	# The first leap registers as jump #1 so a subsequent air press is the
+	# genuine double-jump.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
-	fake.velocity = Vector2(0, 120)        # falling out of flight
-	fake.suppress_jump_impulse = true
+	fake.jump_count = 0
 
 	var st := _make_state(JumpState, fake)
 	st.enter()
 
-	assert_eq(fake.velocity.y, 120.0,
-		"flight-toggle entry must NOT re-apply the upward launch impulse")
-	assert_false(fake.suppress_jump_impulse,
-		"the suppress flag is one-shot and cleared on use")
+	assert_eq(fake.jump_count, 1,
+		"entering JumpState (a real leap) registers a jump")
+
+
+func test_move_resets_jump_count_on_floor() -> void:
+	# Landing resets the jump count so the next airtime starts fresh.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"fire": true}
+	fake.on_floor = true
+	fake.jump_count = 2
+
+	var st := _make_state(MoveState, fake)
+	st.enter()
+	st.physics_update(0.016)
+
+	assert_eq(fake.jump_count, 0,
+		"being grounded resets the double-jump counter")
 
 
 # --- JumpState: air dash (AC5) --------------------------------------------

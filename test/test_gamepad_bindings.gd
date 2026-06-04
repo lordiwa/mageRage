@@ -5,16 +5,20 @@
 ## section, loaded by the engine), via InputMap.action_get_events(action), rather
 ## than parsing the file — so it catches a missing/renamed binding automatically.
 ##
-## Per docs/DECISIONES-DISENO.md DD-007 the gamepad is the primary control scheme;
+## Per docs/DECISIONES-DISENO.md DD-008 the gamepad is the primary control scheme;
 ## this does NOT touch movement/FSM/combat behavior, only that the bindings exist.
+## DD-008 dropped `fly`/`element_cycle`/`cast` and added `cast_primary`/`cast_secondary`.
 extends GutTest
 
-## Every gameplay action that must be controller-drivable.
+## Every gameplay action that must be controller-drivable (DD-008 scheme).
 const GAMEPAD_ACTIONS := [
 	"move_left", "move_right", "move_up", "move_down",
-	"jump", "dash", "glide", "fly", "cast",
-	"element_1", "element_2", "element_3", "element_cycle",
+	"jump", "dash", "glide", "cast_primary", "cast_secondary",
+	"element_1", "element_2", "element_3",
 ]
+
+## Actions removed by DD-008 that must NOT linger in the InputMap.
+const REMOVED_ACTIONS := ["fly", "element_cycle", "cast"]
 
 
 func _has_joypad_event(action: String) -> bool:
@@ -48,3 +52,11 @@ func test_keyboard_events_are_preserved() -> void:
 				break
 		assert_true(has_key,
 			"action '%s' must keep its keyboard/mouse event (additive support)" % action)
+
+
+# --- DD-008 removed the old actions --------------------------------------
+
+func test_superseded_actions_are_removed() -> void:
+	for action in REMOVED_ACTIONS:
+		assert_false(InputMap.has_action(action),
+			"DD-008 removed action '%s'; it must not remain in the InputMap" % action)
