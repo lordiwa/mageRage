@@ -1,6 +1,7 @@
-[gd_scene load_steps=14 format=3 uid="uid://b8mageragepl0r"]
+[gd_scene load_steps=16 format=3 uid="uid://b8mageragepl0r"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/reticle.gd" id="15_reticle"]
 [ext_resource type="Script" path="res://scripts/combat/health.gd" id="14_health"]
 [ext_resource type="Script" path="res://scripts/fsm/state_machine.gd" id="2_sm"]
 [ext_resource type="Script" path="res://scripts/fsm/states/move_state.gd" id="3_move"]
@@ -14,6 +15,7 @@
 [ext_resource type="Resource" uid="uid://b8magerage00ic" path="res://resources/spells/ice_shard.tres" id="10_ice"]
 [ext_resource type="Resource" uid="uid://b8magerage00el" path="res://resources/spells/lightning.tres" id="11_elec"]
 [ext_resource type="Script" path="res://scripts/juice/screen_shake.gd" id="13_shake"]
+[ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="16_flash"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
@@ -68,6 +70,11 @@ player = NodePath("../..")
 [node name="Muzzle" type="Marker2D" parent="."]
 position = Vector2(10, 0)
 
+[node name="Reticle" type="Node2D" parent="."]
+z_index = 10
+position = Vector2(120, 0)
+script = ExtResource("15_reticle")
+
 [node name="Mana" type="Node" parent="."]
 script = ExtResource("7_mana")
 max_mana = 100.0
@@ -77,6 +84,7 @@ regen_per_second = 12.0
 script = ExtResource("8_magic")
 spells = Array[ExtResource("12_spelldata")]([ExtResource("9_fire"), ExtResource("10_ice"), ExtResource("11_elec")])
 mana = NodePath("../Mana")
+muzzle_flash_scene = ExtResource("16_flash")
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("14_health")

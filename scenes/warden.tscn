@@ -1,8 +1,9 @@
-[gd_scene load_steps=9 format=3 uid="uid://b8mageragewrdn"]
+[gd_scene load_steps=10 format=3 uid="uid://b8mageragewrdn"]
 
 [ext_resource type="Script" path="res://scripts/enemies/warden.gd" id="1_warden"]
 [ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
 [ext_resource type="PackedScene" uid="uid://b8mageragenepj" path="res://scenes/enemy_projectile.tscn" id="3_ep"]
+[ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="8_sp"]
 [ext_resource type="Script" path="res://scripts/fsm/state_machine.gd" id="4_sm"]
 [ext_resource type="Script" path="res://scripts/enemies/states/warden_patrol_state.gd" id="5_patrol"]
 [ext_resource type="Script" path="res://scripts/enemies/states/warden_chase_state.gd" id="6_chase"]
@@ -15,6 +16,7 @@ size = Vector2(72, 96)
 script = ExtResource("1_warden")
 max_health = 300.0
 enemy_projectile_scene = ExtResource("3_ep")
+death_effect_scene = ExtResource("8_sp")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Rect_warden")

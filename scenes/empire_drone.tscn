@@ -13,10 +13,11 @@
 [sub_resource type="RectangleShape2D" id="Rect_drone"]
 size = Vector2(28, 36)
 
-[node name="EmpireDrone" type="CharacterBody2D"]
+[node name="EmpireDrone" type="CharacterBody2D" groups=["enemies"]]
 script = ExtResource("1_drone")
 damage_number_scene = ExtResource("3_dn")
 impact_spark_scene = ExtResource("4_sp")
+death_effect_scene = ExtResource("4_sp")
 enemy_projectile_scene = ExtResource("5_ep")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

@@ -10,6 +10,12 @@ extends CanvasLayer
 @export var label_path: NodePath
 @export var player_path: NodePath
 
+## TASK-015: the DebugHUD is now a TOGGLEABLE dev overlay (the real player status
+## moved to PlayerHUD). Starts hidden by default so the game HUD reads cleanly;
+## press `toggle_debug_hud` (F1) to flip it on/off in a playtest.
+@export var start_visible: bool = false
+@export var toggle_action: StringName = &"toggle_debug_hud"
+
 var _label: Label
 var _player: Node
 var _state_name := "—"
@@ -17,6 +23,7 @@ var _state_name := "—"
 const _ELEMENT_NAMES := ["FIRE", "ICE", "ELECTRICITY", "ANTIMATTER"]
 
 func _ready() -> void:
+	visible = start_visible
 	_label = get_node_or_null(label_path) as Label
 	_player = get_node_or_null(player_path)
 	var sm := get_node_or_null(state_machine_path) as StateMachine
@@ -32,8 +39,12 @@ func _ready() -> void:
 	_refresh()
 
 func _process(_delta: float) -> void:
+	# Toggle the dev overlay on/off (F1). Guarded so headless/minimal setups
+	# without the action mapped don't error.
+	if InputMap.has_action(toggle_action) and Input.is_action_just_pressed(toggle_action):
+		visible = not visible
 	# Mana/element change continuously; poll rather than wire every source signal.
-	if _player != null:
+	if visible and _player != null:
 		_refresh()
 
 func _on_state_changed(state_name: String) -> void:

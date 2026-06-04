@@ -47,6 +47,15 @@ class_name Warden extends CharacterBody2D
 ## PLACEHOLDER scenes (optional so unit tests / bare bosses run without them).
 @export var enemy_projectile_scene: PackedScene
 
+## TASK-017 death burst scene (element-tinted CPUParticles2D — reuses impact_spark).
+## Optional so unit tests / bare bosses run without it; null-guarded at the death path.
+@export var death_effect_scene: PackedScene
+
+## TASK-017: where the death burst is parented. Defaults to the current scene; a test
+## can inject a scoped, auto-freed container. The BOSS itself is NOT freed on death —
+## the arena victory state owns its lifetime (DD-010) — so only the burst is spawned.
+var death_burst_parent: Node
+
 ## The hero to chase/shoot. Resolved from the "player" group on _ready; settable in
 ## tests. Loosely typed so a fake target works headless.
 var target: Node2D
@@ -73,6 +82,10 @@ const ARMOR_TINT := {
 }
 const TELEGRAPH_COLOR := Color(1.0, 0.95, 0.6, 1.0)
 const SLOW_TINT := Color(0.45, 0.7, 1.0, 1.0)
+
+## TASK-017: how far the sprite shrinks during the death dissolve (parity with the
+## drone's DISSOLVE_END_SCALE; the boss stays a touch larger as it fades).
+const DISSOLVE_END_SCALE := 0.6
 
 ## Emitted when a phase threshold is crossed (new phase id). Drives the juice beat
 ## + HUD; lets a coordinator/test react with loose coupling.
@@ -303,7 +316,11 @@ func attack_directions(aim: Vector2) -> Array:
 		_:
 			return WardenPhases.fan_directions(aim, 1, 0.0)   # single heavy shot
 
+## TASK-017: once defeated, leave the sprite alone so the per-frame tint tick can't
+## overwrite the death dissolve tween's alpha fade (and shrink).
 func _update_tint() -> void:
+	if _won:
+		return
 	if _sprite == null:
 		return
 	if _telegraphing:
@@ -314,14 +331,59 @@ func _update_tint() -> void:
 		_sprite.color = _armor_color
 
 ## DD-010 victory: at 0 HP the boss is defeated exactly once — freeze movement and
-## emit `defeated` so the arena enters its victory state (freeze + label).
+## emit `defeated` so the arena enters its victory state (freeze + label). TASK-017
+## layers the LOUDER shared death beat (element-tinted dissolve + burst) ON TOP of
+## the existing flow WITHOUT freeing the boss — the victory state keeps it on screen.
+## The `_won` latch makes the whole path single-trigger (overkill / re-emitted died).
 func _on_died() -> void:
 	if _won:
 		return
 	_won = true
 	velocity = Vector2.ZERO
 	_big_juice_beat()
+	_play_death_effect()
 	defeated.emit()
+
+
+## TASK-017 boss death beat (LOUDEST per the juice budget): element-tinted burst at
+## the boss + a dissolve of the sprite. Does NOT queue_free — the arena victory state
+## owns the boss's lifetime (read warden.gd / arena flow), so we only play visuals.
+func _play_death_effect() -> void:
+	var tuning := DeathEffect.tuning_for(max_health)
+	_spawn_death_burst(armor_type())
+	_play_dissolve(float(tuning.dissolve_time))
+
+
+## Element-tinted death burst (reuses impact_spark.burst), tinted by the CURRENT phase
+## armor so the kill reads in that phase's color. Parented to the current scene (or an
+## injected container). Null-guarded so a bare boss in a unit test simply no-ops.
+func _spawn_death_burst(element: int) -> void:
+	if death_effect_scene == null:
+		return
+	var parent: Node = death_burst_parent
+	if parent == null:
+		var tree := get_tree()
+		if tree == null or tree.current_scene == null:
+			return
+		parent = tree.current_scene
+	var burst := death_effect_scene.instantiate()
+	parent.add_child(burst)
+	if burst is Node2D:
+		(burst as Node2D).global_position = global_position
+	if burst.has_method("burst"):
+		burst.burst(element)
+
+
+## Dissolve the boss sprite (fade alpha + shrink) — visual only; the boss node stays.
+func _play_dissolve(seconds: float) -> void:
+	if _sprite == null:
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	var faded := _sprite.color
+	faded.a = 0.0
+	tween.tween_property(_sprite, "color", faded, seconds)
+	tween.tween_property(_sprite, "scale", Vector2.ONE * DISSOLVE_END_SCALE, seconds)
 
 func _refresh_label() -> void:
 	if _label == null:

@@ -15,7 +15,9 @@ const HOVER_SPEED := 40.0
 var _dir := 1.0   # +1 right, -1 left
 
 func physics_update(_delta: float) -> void:
-	var drone := player as EmpireDrone
+	# TASK-020: duck-typed (Variant) so this state drives BOTH the EmpireDrone and
+	# the ShieldDrone (same floating-drone interface), not just EmpireDrone.
+	var drone = player
 	if drone == null:
 		return
 	# Chase as soon as the player is in aggro range.
@@ -23,7 +25,7 @@ func physics_update(_delta: float) -> void:
 		transition_to("DroneChaseState")
 		return
 	# Hover: flip direction at the patrol bounds around spawn.
-	var offset := drone.global_position.x - drone.spawn_position.x
+	var offset: float = drone.global_position.x - drone.spawn_position.x
 	if offset > HOVER_RANGE:
 		_dir = -1.0
 	elif offset < -HOVER_RANGE:

@@ -27,7 +27,8 @@ func enter() -> void:
 
 func physics_update(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
-	if dir != 0.0:
+	# Twin-stick: aim owns facing while a device is aiming.
+	if dir != 0.0 and not player.is_aiming():
 		player.facing = signf(dir)
 
 	# One explosive air dash (Fire). During the dash we override horizontal

@@ -7,7 +7,25 @@
 ## (run / leap / dash / glide / flight) is immediately usable.
 class_name Player extends CharacterBody2D
 
+## TASK-016 player-damage feedback. Emitted ONLY when an enemy hit actually LANDS
+## (after the i-frame/amount gates pass and HP is subtracted) so the PlayerHUD can
+## flash the red edge vignette + a hit-direction indicator. `hit_dir` is the
+## projectile's TRAVEL direction (unit, or ZERO when unknown -> vignette only); the
+## HUD points its arrow back toward the source along -hit_dir. Decoupled exactly
+## like the HUD poll pattern: the player emits, the HUD listens.
+signal damaged(amount: float, hit_dir: Vector2)
+
 const JUMP_BUFFER := 0.10      # grace window before landing for a buffered jump
+
+## Twin-stick aiming tuning.
+const AIM_RADIUS := 120.0          # reticle orbit radius (px) for stick/PAD aim
+const MUZZLE_OFFSET := 10.0        # muzzle distance from the body along the aim
+const AIM_STICK_THRESHOLD := 0.2   # min right-stick magnitude to count as PAD aim
+const _AIM_FACING_EPS := 0.05      # |aim.x| must exceed this to flip facing
+
+## Which device last drove aiming. NONE = before any aim input (keyboard-only
+## casting falls back to facing); PAD = right stick; MOUSE = cursor position.
+enum AimDevice {NONE, PAD, MOUSE}
 
 ## Unlocked elements. Each gates a movement verb in the FSM:
 ## fire -> leap+dash, ice -> glide, electricity -> flight.
@@ -15,6 +33,11 @@ const JUMP_BUFFER := 0.10      # grace window before landing for a buffered jump
 
 ## -1 = facing left, +1 = facing right. Used by air dash for its burst direction.
 var facing := 1.0
+
+## Current unit aim vector (the cast direction + reticle direction). Defaults to
+## RIGHT; while _aim_device == NONE the per-frame update derives it from facing.
+var _aim := Vector2.RIGHT
+var _aim_device: AimDevice = AimDevice.NONE
 
 ## DD-008 double-jump: number of jumps fired since leaving the ground. The first
 ## leap (Move -> Jump) registers as 1; a SECOND jump press in the air (with
@@ -30,6 +53,10 @@ var _jump_buffer := 0.0
 @onready var _mana: Mana = get_node_or_null("Mana")
 @onready var _muzzle: Node2D = get_node_or_null("Muzzle")
 
+## Twin-stick reticle ("mira"). World-space child that shows the aim direction;
+## optional so the headless/minimal-Player tests (no Reticle node) still run.
+@onready var _reticle: Node2D = get_node_or_null("Reticle")
+
 ## DD-009 player damage: a Health child takes enemy-projectile damage, gated by
 ## brief i-frames (no control stun); death respawns at the recorded start.
 ## Optional so movement-only fakes without a Health child still run.
@@ -44,23 +71,58 @@ var _blink_accum := 0.0
 ## i-frame blink tuning (placeholder visual feedback; no control stun per DD-009).
 const _BLINK_PERIOD := 0.12
 
+## TASK-016 subtle player hit-stop. Fed to HitStop.duration_for; deliberately
+## gentle (a fraction of a neutral hit) so getting hit has weight WITHOUT being
+## punishing. It stays strictly below an enemy super-effective freeze
+## (duration_for(1.5)) — the loudest juice is reserved for the rarest beats.
+## With BASE_DURATION 0.06: 0.5 -> ~0.03s vs the super-effective ~0.09s.
+const PLAYER_HITSTOP_EFFECTIVENESS := 0.5
+
+## TASK-016 light on-hit camera trauma. Small by design (the ScreenShake budget is
+## reserved for the loudest beats); a player hit only nudges the frame.
+const _HIT_TRAUMA := 0.18
+
 ## Record the current position as the respawn point. Called on _ready (so a death
 ## returns the hero to where the level placed it) and re-callable from tests.
 func record_spawn() -> void:
 	_spawn_position = global_position
 
 ## Enemy projectile damage entry point. Blocked entirely while i-frames are
-## active (no damage, no stun). On a landed hit: subtract HP, open i-frames; if
-## that hit was lethal, respawn at the recorded start with full health.
-func take_player_damage(amount: float) -> void:
+## active (no damage, no stun). On a landed hit: subtract HP, open i-frames, fire
+## the screen-space feedback (red vignette + hit-direction indicator via the
+## `damaged` signal, a subtle hit-stop and a light camera nudge); if that hit was
+## lethal, respawn at the recorded start with full health.
+##
+## TASK-016: `hit_dir` is the OPTIONAL projectile travel direction (default ZERO so
+## every existing one-arg caller/test keeps working); the HUD points its arrow back
+## along -hit_dir. Feedback fires only on a hit that LANDS — never on a blocked
+## (i-frame) or non-hit (amount<=0) call.
+func take_player_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	if amount <= 0.0 or _health == null:
 		return
 	if _iframes.is_active():
 		return
 	_health.take_damage(amount)
 	_iframes.trigger()
+	_emit_hit_feedback(amount, hit_dir)
 	if _health.is_dead():
 		respawn()
+
+## TASK-016: fire the screen-space damage feedback for a LANDED hit. Emits
+## `damaged` (the HUD draws the red vignette + hit-direction arrow), triggers the
+## subtle player hit-stop, and adds a light, budget-respecting camera trauma. All
+## decoupled: signal out to the HUD, autoload for hit-stop, group for the shake —
+## no control stun (DD-009).
+func _emit_hit_feedback(amount: float, hit_dir: Vector2) -> void:
+	damaged.emit(amount, hit_dir)
+	# Subtle hit-stop via the HitStop autoload (gentler than enemy super-effective).
+	var hit_stop := get_node_or_null("/root/HitStop")
+	if hit_stop != null and hit_stop.has_method("freeze"):
+		hit_stop.freeze(PLAYER_HITSTOP_EFFECTIVENESS)
+	# Light camera nudge (reserved budget): poke any ScreenShake in the group.
+	for shake in get_tree().get_nodes_in_group("screen_shake"):
+		if shake.has_method("add_trauma"):
+			shake.add_trauma(_HIT_TRAUMA)
 
 ## Tick the i-frame window. Called from _process; exposed for unit tests.
 func tick_iframes(delta: float) -> void:
@@ -108,7 +170,85 @@ func _process(delta: float) -> void:
 
 	tick_iframes(delta)
 	_process_blink(delta)
+
+	# Twin-stick aiming: resolve the aim vector ONCE per frame, before casting,
+	# so the reticle and the spell share the same direction. Then keep facing /
+	# muzzle / reticle in sync with it.
+	_aim = aim_direction()
+	apply_aim_to_facing()
+	if _muzzle != null:
+		_muzzle.position = _aim * MUZZLE_OFFSET
+	_update_reticle()
+
 	_process_magic(delta)
+
+## Last-used device wins for aiming: a mouse motion flags MOUSE as the active
+## device; the actual cursor vector is sampled in aim_direction() each frame so
+## it stays correct under the smoothed Camera2D.
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		# Last-used device wins: a mouse move switches aiming to the cursor. The
+		# actual cursor vector is sampled per-frame in aim_direction().
+		_aim_device = AimDevice.MOUSE
+
+# --- Twin-stick aiming -------------------------------------------------------
+
+## Pure helper: the unit direction from `origin` to `target`. When the two
+## coincide (degenerate / zero vector) fall back to the current facing direction
+## so the result is always a deterministic unit vector.
+func aim_from_point(origin: Vector2, target: Vector2) -> Vector2:
+	var delta := target - origin
+	if delta.length() <= 0.0001:
+		return Vector2(facing, 0.0).normalized()
+	return delta.normalized()
+
+## The origin spells fire from (and the reticle/mouse aim measures from): the
+## muzzle if present, else the body.
+func aim_origin() -> Vector2:
+	return _muzzle.global_position if _muzzle != null else global_position
+
+## Resolve the current aim direction (last-used device wins):
+##   1. Right stick beyond the deadzone -> PAD, normalized stick vector.
+##   2. Else if the mouse is the active device -> vector to the cursor.
+##   3. Else keep the last aim (persist); or, before any device (NONE), follow
+##      facing so keyboard-only casting behaves like before.
+func aim_direction() -> Vector2:
+	var stick := Input.get_vector("aim_left", "aim_right", "aim_up", "aim_down")
+	if stick.length() > AIM_STICK_THRESHOLD:
+		_aim_device = AimDevice.PAD
+		return stick.normalized()
+	if _aim_device == AimDevice.MOUSE:
+		return aim_from_point(aim_origin(), get_global_mouse_position())
+	if _aim_device == AimDevice.NONE:
+		return Vector2(facing, 0.0).normalized()
+	return _aim   # persist the last aim when there is no new input
+
+## True once any aim device (pad or mouse) has been used.
+func is_aiming() -> bool:
+	return _aim_device != AimDevice.NONE
+
+## Drive facing from the aim while a device is active and the aim has a clear
+## horizontal component. Pure-vertical aim leaves facing untouched; when not
+## aiming the FSM owns facing (movement direction).
+func apply_aim_to_facing() -> void:
+	if is_aiming() and absf(_aim.x) > _AIM_FACING_EPS:
+		facing = signf(_aim.x)
+
+## Pure helper: where the orbiting reticle sits in the player's local space for a
+## given aim — on the orbit circle at AIM_RADIUS along the aim.
+func reticle_local_position(aim: Vector2) -> Vector2:
+	return aim * AIM_RADIUS
+
+## Position the reticle for this frame. MOUSE aim snaps it to the cursor (world
+## space); PAD/NONE orbit it around the player at AIM_RADIUS. Null-guarded so a
+## minimal Player without a Reticle child is fine.
+func _update_reticle() -> void:
+	if _reticle == null:
+		return
+	if _aim_device == AimDevice.MOUSE:
+		_reticle.global_position = get_global_mouse_position()
+	else:
+		_reticle.position = reticle_local_position(_aim)
 
 ## DD-009: blink the sprite while invulnerable (readable i-frame feedback, no
 ## control stun). Sprite stays visible when not invulnerable.
@@ -140,9 +280,9 @@ func _process_magic(delta: float) -> void:
 		_magic.select(2)
 	var origin: Node2D = _muzzle if _muzzle != null else self
 	if Input.is_action_just_pressed("cast_primary"):
-		_magic.cast_primary(origin, Vector2(facing, 0.0))
+		_magic.cast_primary(origin, _aim)
 	if Input.is_action_just_pressed("cast_secondary"):
-		_magic.cast_secondary(origin, Vector2(facing, 0.0))
+		_magic.cast_secondary(origin, _aim)
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:
@@ -179,3 +319,21 @@ func consume_jump_buffer() -> bool:
 		_jump_buffer = 0.0
 		return true
 	return false
+
+# --- Test seams (headless aiming tests; not used by gameplay) -----------------
+
+## Force the current aim vector + active device. Lets headless tests exercise the
+## facing/reticle/cast wiring without synthesizing gamepad/mouse input.
+func set_aim_for_test(aim: Vector2, device: AimDevice) -> void:
+	_aim = aim
+	_aim_device = device
+
+## Fire a primary cast immediately using the current aim (mirrors the cast path
+## in _process_magic, minus the input poll). For wiring tests. Resolves the
+## manager by node name (untyped) so a duck-typed MagicManager double works.
+func cast_primary_for_test() -> void:
+	var mgr: Node = get_node_or_null("MagicManager")
+	if mgr == null or not mgr.has_method("cast_primary"):
+		return
+	var origin: Node2D = _muzzle if _muzzle != null else self
+	mgr.cast_primary(origin, _aim)

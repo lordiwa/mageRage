@@ -15,7 +15,8 @@ func physics_update(delta: float) -> void:
 
 	var dir := Input.get_axis("move_left", "move_right")
 	player.velocity.x = dir * SPEED
-	if dir != 0.0:
+	# Twin-stick: aim owns facing while a device is aiming.
+	if dir != 0.0 and not player.is_aiming():
 		player.facing = signf(dir)
 	player.move_and_slide()
 

@@ -17,7 +17,8 @@ func physics_update(_delta: float) -> void:
 		Input.get_axis("move_up", "move_down")
 	).limit_length(1.0)
 	player.velocity = input * FLY_SPEED
-	if input.x != 0.0:
+	# Twin-stick: aim owns facing while a device is aiming.
+	if input.x != 0.0 and not player.is_aiming():
 		player.facing = signf(input.x)
 	player.move_and_slide()
 

@@ -16,6 +16,15 @@ class_name EmpireDrone extends CharacterBody2D
 @export var damage_number_scene: PackedScene
 @export var impact_spark_scene: PackedScene
 
+## TASK-017 death burst scene (element-tinted CPUParticles2D — reuses impact_spark).
+## Optional so bare drones / unit tests run without it; null-guarded at the death
+## path. Falls back to impact_spark_scene if left unassigned.
+@export var death_effect_scene: PackedScene
+
+## TASK-017: where the death burst is parented. Defaults to the current scene (so the
+## burst outlives the freed drone); a test can inject a scoped, auto-freed container.
+var death_burst_parent: Node
+
 ## DD-009 AI tuning (provisional). The FSM logic itself lives in DroneAi (pure,
 ## unit-tested) — these are just the thresholds fed to it.
 @export var aggro_range: float = 280.0   # Patrol -> Chase distance
@@ -45,6 +54,14 @@ const TELEGRAPH_COLOR := Color(1.0, 0.95, 0.6, 1.0)
 ## DD-004 Ice tint while slowed (bluish overlay).
 const SLOW_TINT := Color(0.45, 0.7, 1.0, 1.0)
 var _telegraphing := false
+
+## TASK-017: latched once the death effect has started, so an overkill / chain hit
+## or a re-emitted Health.died can never replay the dissolve or double-free.
+var _dying := false
+
+## TASK-017 death-beat tuning (small for a drone; reserved budget for the boss). The
+## dissolve fades alpha + shrinks the sprite, then the drone frees so the burst shows.
+const DISSOLVE_END_SCALE := 0.2
 
 ## TASK-010: emitted on every landed hit so a coordinator (or test) can react with
 ## loose coupling. `dir` is the projectile's travel direction at contact.
@@ -267,7 +284,11 @@ func fire_at_player() -> void:
 		proj.setup(dir, projectile_damage)
 
 ## Sprite tint priority: telegraph flash > Ice slow tint > armor color.
+## TASK-017: while dying, leave the sprite alone so the per-frame tint tick can't
+## overwrite the dissolve tween's alpha fade (and shrink).
 func _update_tint() -> void:
+	if _dying:
+		return
 	if _sprite == null:
 		return
 	if _telegraphing:
@@ -280,8 +301,67 @@ func _update_tint() -> void:
 func _on_health_changed(_current: float, _maximum: float) -> void:
 	pass   # label refresh is driven from apply_elemental_hit so it can show dmg
 
+## TASK-017: True once the death effect has begun (dissolve running / queued free).
+func is_dying() -> bool:
+	return _dying
+
+
+## TASK-017 death: play an element-tinted dissolve + particle burst, THEN free (so
+## the burst is visible). Single-trigger — guarded by `_dying` so an overkill / chain
+## hit or a re-emitted Health.died can't replay the effect or double-free the drone.
 func _on_died() -> void:
-	queue_free()
+	if _dying:
+		return
+	_dying = true
+	var tuning := DeathEffect.tuning_for(_health.max_health if _health != null else 0.0)
+	_spawn_death_burst(armor_type)
+	_shake_camera_amount(tuning.shake)
+	_do_hit_stop(tuning.hit_stop)
+	_play_dissolve(float(tuning.dissolve_time))
+
+
+## Element-tinted death burst (reuses impact_spark.burst). Tinted by the drone's
+## ARMOR element so the kill reads in the element's color language. Parented to the
+## current scene (or an injected container) so it outlives the freed drone.
+func _spawn_death_burst(element: int) -> void:
+	var scene: PackedScene = death_effect_scene if death_effect_scene != null else impact_spark_scene
+	if scene == null:
+		return
+	var parent: Node = death_burst_parent
+	if parent == null:
+		var tree := get_tree()
+		if tree == null or tree.current_scene == null:
+			return
+		parent = tree.current_scene
+	var burst := scene.instantiate()
+	parent.add_child(burst)
+	if burst is Node2D:
+		(burst as Node2D).global_position = global_position
+	if burst.has_method("burst"):
+		burst.burst(element)
+
+
+## Dissolve the sprite (fade alpha + shrink) over `seconds`, then free the drone so
+## the burst stays visible. Falls back to an immediate free if there's no sprite.
+func _play_dissolve(seconds: float) -> void:
+	if _sprite == null:
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	var faded := _sprite.color
+	faded.a = 0.0
+	tween.tween_property(_sprite, "color", faded, seconds)
+	tween.tween_property(_sprite, "scale", Vector2.ONE * DISSOLVE_END_SCALE, seconds)
+	tween.chain().tween_callback(queue_free)
+
+
+## Add raw trauma to the screen shake (death uses an absolute amount, not a per-hit
+## effectiveness scale like _shake_camera).
+func _shake_camera_amount(amount: float) -> void:
+	var shake := _find_screen_shake()
+	if shake != null and shake.has_method("add_trauma"):
+		shake.add_trauma(amount)
 
 func _refresh_label(last_dmg: float, slow := false) -> void:
 	if _label == null:
