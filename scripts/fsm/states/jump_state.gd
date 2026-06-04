@@ -64,7 +64,11 @@ func physics_update(delta: float) -> void:
 	# DD-008 double-jump -> flight. A SECOND jump press in the air (the first
 	# leap already registered jump_count >= 1) promotes to flight, gated on
 	# electricity. Without electricity the double-jump does nothing.
+	# TASK-028 (DD-011): an Empire anti-magic field also gates it out — while the hero
+	# stands in an un-purged zone flight is suppressed; cleared on exit/purge so this
+	# is behavior-preserving everywhere else.
 	if player.abilities.has("electricity") and player.jump_count >= 1 \
+			and not player.is_flight_suppressed() \
 			and InputGate.just_pressed("jump"):
 		transition_to("FlightState")
 		return

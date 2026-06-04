@@ -25,8 +25,10 @@ func physics_update(delta: float) -> void:
 		transition_to("MoveState")
 		return
 	# DD-008 double-jump -> flight (electricity-gated). A second jump press while
-	# gliding promotes to flight; without electricity it does nothing.
+	# gliding promotes to flight; without electricity it does nothing. TASK-028
+	# (DD-011): also gated out while inside an un-purged anti-magic field.
 	if player.abilities.has("electricity") and player.jump_count >= 1 \
+			and not player.is_flight_suppressed() \
 			and InputGate.just_pressed("jump"):
 		transition_to("FlightState")
 		return

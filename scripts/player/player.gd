@@ -46,6 +46,12 @@ var jump_count := 0
 
 var _jump_buffer := 0.0
 
+## TASK-028 anti-magic zone (DD-011): true while the hero stands inside an un-purged
+## Empire dampening field. The flight FSM transitions (Jump/Glide double-jump) read
+## this and gate FlightState OUT while it holds. Set by AntiMagicZone on body
+## enter/exit and cleared on purge; defaults false so flight works everywhere else.
+var _flight_suppressed := false
+
 ## Combat (TASK-006): the MagicManager holds Fire/Ice/Electricity SpellData and
 ## casts via the Mana child; Muzzle is the projectile spawn origin. All optional
 ## so the movement-only tests/fakes that don't add these nodes still work.
@@ -306,6 +312,15 @@ func register_jump() -> void:
 
 func reset_jumps() -> void:
 	jump_count = 0
+
+## TASK-028 (DD-011): the AntiMagicZone calls this on body enter (true) / exit (false)
+## and on purge (false). The flight FSM transitions read is_flight_suppressed() so an
+## un-purged dampening field disables flight without touching DD-008 anywhere else.
+func set_flight_suppressed(value: bool) -> void:
+	_flight_suppressed = value
+
+func is_flight_suppressed() -> bool:
+	return _flight_suppressed
 
 ## Peek: is a jump currently buffered? Does NOT clear the buffer, so a state can
 ## check the floor/coyote condition before committing to fire.

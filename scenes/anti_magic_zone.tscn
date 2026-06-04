@@ -1,0 +1,59 @@
+[gd_scene load_steps=5 format=3 uid="uid://b8mageragezone"]
+
+[ext_resource type="Script" path="res://scripts/levels/anti_magic_zone.gd" id="1_zone"]
+
+[sub_resource type="RectangleShape2D" id="Rect_field"]
+size = Vector2(360, 400)
+
+[sub_resource type="RectangleShape2D" id="Rect_barrier"]
+size = Vector2(48, 188)
+
+[sub_resource type="RectangleShape2D" id="Rect_emitter"]
+size = Vector2(56, 120)
+
+[node name="AntiMagicZone" type="Node2D"]
+script = ExtResource("1_zone")
+
+[node name="Field" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="Col" type="CollisionShape2D" parent="Field"]
+shape = SubResource("Rect_field")
+
+[node name="FieldVis" type="ColorRect" parent="."]
+offset_left = -180.0
+offset_top = -200.0
+offset_right = 180.0
+offset_bottom = 200.0
+color = Color(0.95, 0.88, 0.2, 0.18)
+
+[node name="Barrier" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="Col" type="CollisionShape2D" parent="Barrier"]
+position = Vector2(40, 74)
+shape = SubResource("Rect_barrier")
+
+[node name="BarrierVis" type="ColorRect" parent="Barrier"]
+offset_left = 16.0
+offset_top = -20.0
+offset_right = 64.0
+offset_bottom = 168.0
+color = Color(0.32, 0.3, 0.12, 1)
+
+[node name="Emitter" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="Col" type="CollisionShape2D" parent="Emitter"]
+position = Vector2(-120, 120)
+shape = SubResource("Rect_emitter")
+
+[node name="EmitterVis" type="ColorRect" parent="Emitter"]
+offset_left = -148.0
+offset_top = 60.0
+offset_right = -92.0
+offset_bottom = 180.0
+color = Color(0.95, 0.88, 0.2, 0.9)
