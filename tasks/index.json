@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T03:18:10.866Z",
+  "generated_at": "2026-06-04T03:31:25.560Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -52,7 +52,7 @@
     {
       "key": "TASK-009",
       "title": "Cleanup: remove dead suppress_jump_impulse field/branch (post-DD-008)",
-      "status": "todo",
+      "status": "done",
       "priority": "low"
     },
     {
@@ -66,6 +66,12 @@
       "title": "Basic drone AI: patrol/chase/telegraphed attack, real Ice slow, player damage (DD-009)",
       "status": "done",
       "priority": "high"
+    },
+    {
+      "key": "TASK-012",
+      "title": "Combat polish: dead-code cleanup + post-respawn i-frames + i-frame projectile pass-through",
+      "status": "done",
+      "priority": "medium"
     }
   ]
 }

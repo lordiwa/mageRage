@@ -1,0 +1,33 @@
+{
+  "key": "TASK-012",
+  "title": "Combat polish: dead-code cleanup + post-respawn i-frames + i-frame projectile pass-through",
+  "description": "Small consolidation/fairness pass before adding the next big feature. Three items: (1) DEAD-CODE CLEANUP (subsumes TASK-009): remove the now-unused suppress_jump_impulse field from scripts/player/player.gd and test/helpers/fake_player.gd, delete the unreachable skip-impulse branch in scripts/fsm/states/jump_state.gd (keep the normal impulse + register_jump path), and drop any obsolete test reference; no remaining references anywhere. (2) POST-RESPAWN I-FRAMES (DD-001 fairness): scripts/player/player.gd respawn() should grant brief spawn-protection by triggering the Invulnerability window so the player can't be instantly re-hit by an in-flight enemy projectile; update the existing test that asserts is_invulnerable() is false after respawn to assert it is TRUE (spawn protection), and keep the rest of the respawn assertions (full HP, position reset). (3) I-FRAME PROJECTILE PASS-THROUGH: scripts/combat/enemy_projectile.gd should NOT consume itself (no damage, no queue_free) when it overlaps a player that is currently invulnerable — it passes through so i-frames truly mean untouchable; add a test asserting an invulnerable player neither takes damage nor consumes the projectile, and a vulnerable player does both. Keep all other behavior and tests intact. Follow the project-context Bash gotcha (NEVER prefix Godot/GUT commands with 'cd ... &&'; absolute --path; run --import if class cache needs it). Verify headless load clean + full GUT suite exits 0.",
+  "acceptance_criteria": [
+    "suppress_jump_impulse is fully removed (player.gd, fake_player.gd, jump_state.gd branch) with no remaining references; the normal jump impulse + register_jump path is preserved.",
+    "respawn() grants brief i-frame spawn protection (is_invulnerable() true immediately after respawn), with full HP and position reset still correct; the affected test is updated accordingly.",
+    "An enemy projectile overlapping an invulnerable player deals no damage AND is not consumed (passes through); against a vulnerable player it damages and frees as before; both cases are unit-tested.",
+    "Full GUT suite passes headless (exit 0) with no regression; project loads with zero parse errors."
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": [
+    "cleanup",
+    "fairness",
+    "combat",
+    "godot"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T03:31:02.696Z",
+      "body": "Polish done (commit b4f8bf6). Orchestrator verified 121/121 GUT exit 0, clean load, zero suppress_jump_impulse refs in code. Reviewer (fresh) ACCEPT: JumpState.enter() still unconditionally applies impulse + register_jump (double-jump intact); respawn() opens 0.8s spawn-protection i-frames with HP/position reset preserved; enemy projectile routes live signal path through the same should_land_hit/resolve_hit gate (invuln=pass-through no-damage-no-free, vuln=damage+free), lifetime cleanup still frees lingering shots (no immortal projectile). Tests non-vacuous. Only LOW cosmetics. Done."
+    }
+  ],
+  "created_at": "2026-06-04T03:22:21.123Z",
+  "updated_at": "2026-06-04T03:31:15.254Z",
+  "jira_key": null
+}
