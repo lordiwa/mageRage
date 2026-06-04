@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T19:00:47.847Z",
+  "generated_at": "2026-06-04T19:30:57.907Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -160,7 +160,7 @@
     {
       "key": "TASK-027",
       "title": "M1 (b): Elemental-on-environment gate — sealed route opened by applying the correct element",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     },
     {
