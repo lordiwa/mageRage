@@ -226,3 +226,35 @@ respetando el RPS (DD-006). HP alta (~300), umbrales a 66% y 33%:
   respawn en la arena (DD-009).
 - La arena queda como escena principal del demo; `test_level.tscn` sigue disponible como
   sandbox de movimiento/combate.
+
+---
+
+## DD-011 — Reconciliación: vuelo inicial vs. gate metroidvania (modelo de gate del slice)  ·  **ACEPTADA**
+
+**Tensión:** El GDD §2–3 ata la evolución de movilidad (salto → planeo → vuelo) a absorber
+elementos, con el **vuelo como la última mejora a desbloquear**. Pero el build actual
+(DD-008) ya entrega **vuelo desde el inicio** (doble salto → `FlightState`). Si el jugador
+ya vuela, **no se puede gatear una ruta detrás de "desbloquear volar"** — el verbo macro
+del GDD ya está en manos del jugador.
+
+**Decisión:** En el vertical slice (Milestone **M1**) el héroe **arranca con el vuelo ya
+disponible** (estado post-fuga; el "despertar del vuelo" del GDD se trata como ya ocurrido
+en la ficción del slice). La progresión que **abre rutas** es la **maestría elemental
+aplicada al entorno**, no re-adquirir movilidad. El gate del slice es **HÍBRIDO**, con dos
+mecanismos complementarios:
+
+- **Gate elemental sobre el entorno:** una ruta intransitable hasta **absorber/equipar un
+  elemento y aplicarlo al entorno** — congelar un géiser/refrigerante con **Hielo** para
+  formar plataforma, quemar una obstrucción con **Fuego**, o energizar un ascensor/puente
+  muerto con **Electricidad**. Mantiene intacto "absorber elemento → abre ruta" (GDD §2
+  macro). Codificación visual por color según **DD-003**.
+- **Zona anti-magia que anula el vuelo:** un sector con **campo amortiguador tecno-mágico**
+  del Imperio donde el `FlightState` queda **deshabilitado**; el jugador debe **purgar /
+  restaurar** el campo con el elemento correcto para recuperar el vuelo y cruzar.
+  Reintroduce un gate de movilidad **coherente con el lore** (la prisión está diseñada para
+  contener al arma) sin contradecir que el vuelo ya existe.
+
+**Coherencia con canon:** el Imperio es una cuarentena tecno-mágica (pilar "el carcelero
+era el protector"); que la prisión tenga **campos anti-vuelo** y **rutas selladas por
+energía elemental** es consistente. **Provisional** en números y ubicación exacta (a afinar
+en playtest/greybox); el **modelo de gate** queda **ACEPTADO** como base de M1.
