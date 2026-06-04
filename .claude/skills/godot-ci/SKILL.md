@@ -14,7 +14,7 @@ description: >-
 # Godot 4.6 CI on GitHub Actions — Mage Rage Team Training Skill
 
 > Engine: **Godot 4.6.3 stable**, renderer **GL Compatibility**, pure GDScript (no Mono).
-> Test runner: **GUT 9.6.0** (the Godot 4.6 line) at `res://addons/gut/`.
+> Test runner: **GUT 9.4.0** (vendored at `res://addons/gut/`, the version this repo ships; it runs green on Godot 4.6). GUT 9.6.0 is the newest on the 4.6 line — consider bumping under its own ticket, but CI runs whatever GUT is committed.
 > Linter: **gdlint** from `gdtoolkit==4.*` in TOLERANT mode.
 > Repo: `github.com/lordiwa/mageRage`, default branch `master`.
 > All facts version-pinned and verified against primary sources 2026-06-04 (see Provenance).
@@ -163,8 +163,9 @@ Likely failure modes and pre-empts:
   remaining style offenders to `disable`.
 - **gdlint reddens on a real bug** (unused var/arg, unnecessary pass) → fix the code; do not
   disable the check. This is the linter doing its job.
-- **GUT version drift** → pin GUT 9.6.0 for Godot 4.6; older GUT (e.g. 9.5) has a reported
-  null-pointer on 4.6.
+- **GUT version drift** → this repo vendors GUT 9.4.0, which runs green on Godot 4.6. CI uses
+  whatever GUT is committed (not a pinned download). If bumping, 9.6.0 is the current 4.6-line
+  release; do it under its own ticket and re-run the suite.
 
 ## Provenance
 
