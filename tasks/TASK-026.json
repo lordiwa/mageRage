@@ -9,7 +9,7 @@
     "Named/markered placeholder locations exist for the elemental-environment gate (TASK-027) and the anti-magic flight zone (TASK-028), plus a detectable boss-room trigger/marker for TASK-029.",
     "GUT tests (tests-first) cover: the scene instances headless without error, the player spawn node resolves, and the boss-room trigger/marker is present and reachable (e.g. a path/region assertion). Full suite stays green exit 0, run multiple times (flake-aware), gdlint clean."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -23,6 +23,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-04T18:49:14.155Z",
-  "updated_at": "2026-06-04T18:49:51.775Z",
+  "updated_at": "2026-06-04T19:00:47.847Z",
   "jira_key": null
 }
