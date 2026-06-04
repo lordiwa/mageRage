@@ -1,0 +1,27 @@
+{
+  "key": "TASK-027",
+  "title": "M1 (b): Elemental-on-environment gate — sealed route opened by applying the correct element",
+  "description": "Second M1 build step (depends on TASK-026 skeleton). Build a REUSABLE elemental gate mechanic per DD-011: a sealed route the player cannot pass until they apply the CORRECT element to an environment object — e.g. freeze a geyser/coolant with Ice into a platform, burn an obstruction with Fire, or energize a dead lift/bridge with Electricity. Wrong element does nothing; correct element opens the route (persistently). Reuse the existing element/projectile/MagicManager systems and the DD-006 element identities; visual color-coding per DD-003. Place ONE concrete instance in sector_01 at the TASK-026 placeholder. Keep it a small reusable scene+script (e.g. scripts/levels/elemental_gate.gd) so M1+ can drop more in. Telegraph which element is required (color/icon).",
+  "acceptance_criteria": [
+    "A reusable elemental-gate component (scene + script) exists and is placed once in sector_01 blocking a route that is otherwise required to progress.",
+    "The gate is configurable for which element opens it (Fire/Ice/Electricity) and which environment interaction it represents (freeze/burn/energize), color-coded per DD-003.",
+    "Applying the WRONG element leaves the route sealed; applying the CORRECT element opens it and the player can pass; the opened state persists.",
+    "GUT tests (tests-first) prove: closed by default; wrong element keeps it closed; correct element opens it; open state lets traversal/passage succeed. Full suite green exit 0 (run multiple times, flake-aware), gdlint clean, no new stderr noise."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "metroidvania-gate",
+    "milestone-m1",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T18:49:17.353Z",
+  "updated_at": "2026-06-04T18:49:17.353Z",
+  "jira_key": null
+}

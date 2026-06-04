@@ -1,0 +1,28 @@
+{
+  "key": "TASK-026",
+  "title": "M1 (a): Connected sector level skeleton — traversable greybox spine, spawn, reach-boss flow",
+  "description": "First M1 'Fuga del Sector' build step. Replace the loose arenas with ONE connected, traversable level scene (greybox is fine — TileMapLayer + Terrains per godot-game-dev skill; no art investment). This is the spatial spine that will later hold the two gates (TASK-027/028) and the boss room (TASK-029). Hero starts with flight already available (DD-008/DD-011). Use the game-design + godot-game-dev skills. Keep it deterministic and testable. Set this level as the project main_scene (arena.tscn / test_level.tscn remain as sandboxes). Sprinkle a couple of existing enemies (drone/charger) along the path for the combat criterion, but the gates and boss come in later tickets — leave clearly marked placeholder spots / regions for them. Build it so reaching the boss room is detectable (an Area2D 'boss room' trigger or a named marker) for the victory flow wired in TASK-029.",
+  "acceptance_criteria": [
+    "A single connected level scene exists (e.g. levels/sector_01.tscn), loads headless clean (no SCRIPT ERROR / Parse Error), and is set as the project main_scene.",
+    "The level is a connected traversable space (not separate arena rooms): the player can path from the spawn point to a designated boss-room region. Greybox geometry is acceptable.",
+    "The hero spawns with flight already available (respects DD-008/DD-011) — no movement ability is gated in this ticket.",
+    "Named/markered placeholder locations exist for the elemental-environment gate (TASK-027) and the anti-magic flight zone (TASK-028), plus a detectable boss-room trigger/marker for TASK-029.",
+    "GUT tests (tests-first) cover: the scene instances headless without error, the player spawn node resolves, and the boss-room trigger/marker is present and reachable (e.g. a path/region assertion). Full suite stays green exit 0, run multiple times (flake-aware), gdlint clean."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "level",
+    "milestone-m1",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T18:49:14.155Z",
+  "updated_at": "2026-06-04T18:49:51.775Z",
+  "jira_key": null
+}

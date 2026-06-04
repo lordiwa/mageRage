@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T18:27:18.940Z",
+  "generated_at": "2026-06-04T18:49:51.775Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -150,6 +150,30 @@
       "title": "Test hygiene: isolate await-physics_frame tests + standardize InputGate pattern for input-edge tests",
       "status": "todo",
       "priority": "low"
+    },
+    {
+      "key": "TASK-026",
+      "title": "M1 (a): Connected sector level skeleton — traversable greybox spine, spawn, reach-boss flow",
+      "status": "in_progress",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-027",
+      "title": "M1 (b): Elemental-on-environment gate — sealed route opened by applying the correct element",
+      "status": "todo",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-028",
+      "title": "M1 (c): Anti-magic flight-suppression zone — disables FlightState until purged with the right element",
+      "status": "todo",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-029",
+      "title": "M1 (d): Warden as sector boss + sector victory in the connected level",
+      "status": "todo",
+      "priority": "high"
     }
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "key": "TASK-028",
+  "title": "M1 (c): Anti-magic flight-suppression zone — disables FlightState until purged with the right element",
+  "description": "Third M1 build step (depends on TASK-026 skeleton). Build a REUSABLE anti-magic zone per DD-011: an Area2D field (Empire dampening field) where the hero's FlightState is DISABLED while inside, gating a vertical/aerial route the player would otherwise just fly over. The player restores flight by PURGING the field with the correct element (e.g. shooting a power-node/emitter with Electricity, or freezing/burning a control). Purging persistently lifts the suppression for that zone. Must integrate cleanly with the node-based movement FSM (EstadoBase -> FlightState) without breaking double-jump-fly elsewhere (DD-008). Lore-coherent (the prison is built to contain the weapon). Place ONE instance in sector_01 at the TASK-026 placeholder. Telegraph the zone clearly (visual field + the purge target). CRITICAL TEST HYGIENE: this touches the movement FSM and Input-edge flight transition — follow the InputGate pattern from scripts/fsm/input_gate.gd for any input-edge-gated test, and heed memory gut-flake-await-input (run the suite multiple times; never trust a single local green).",
+  "acceptance_criteria": [
+    "A reusable anti-magic-zone component (scene + script) exists and is placed once in sector_01, gating a route that requires flight to pass.",
+    "While inside the un-purged zone, the player CANNOT enter/sustain FlightState (flight is suppressed); outside the zone flight works normally (DD-008 double-jump-fly unaffected elsewhere).",
+    "Purging the field with the correct element persistently lifts the suppression for that zone, and the player can then fly through.",
+    "GUT tests (tests-first) prove: inside-unpurged = flight suppressed; outside = flight allowed; after purge = flight restored inside the zone — using the InputGate seam for the flight input edge. Full suite green exit 0 run MULTIPLE times (flake-aware per memory gut-flake-await-input), gdlint clean, no new stderr noise."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "metroidvania-gate",
+    "fsm",
+    "milestone-m1",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T18:49:38.252Z",
+  "updated_at": "2026-06-04T18:49:38.252Z",
+  "jira_key": null
+}

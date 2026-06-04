@@ -1,0 +1,29 @@
+{
+  "key": "TASK-029",
+  "title": "M1 (d): Warden as sector boss + sector victory in the connected level",
+  "description": "Fourth M1 build step (depends on TASK-026 skeleton; ideally after 027/028 so the full path gates the boss). Wire the existing Warden mini-boss (DD-010, from arena.tscn) into sector_01 as the END-OF-SECTOR boss: the player reaches the boss room (the TASK-026 trigger), the Warden encounter starts, and defeating it (0 HP) fires the SECTOR victory state (not just an arena-local victory) — closing the M1 loop start->gates->boss->victory in ONE build. Reuse the Warden's 3-phase rotating-armor logic, boss HP HUD, telegraphs, and victory juice as-is; this ticket is integration + the sector-level victory wiring, not new boss mechanics. Player death -> respawn at sector spawn (DD-009).",
+  "acceptance_criteria": [
+    "Reaching the boss room in sector_01 starts the Warden encounter (reusing the DD-010 Warden, its phases, armor rotation, and boss HP HUD).",
+    "Defeating the Warden (0 HP) triggers a SECTOR victory state reachable in a single playthrough of sector_01 (start -> traversal/gates -> boss -> victory).",
+    "Player death during the run respawns at the sector spawn point (DD-009), not at the arena.",
+    "GUT tests (tests-first) prove: reaching the boss trigger starts the encounter; Warden defeat sets the sector victory state. Full suite green exit 0 (run multiple times, flake-aware), gdlint clean, no new stderr noise.",
+    "After this ticket, all 7 M1 success criteria in PROJECT.md are satisfiable end-to-end in the single sector_01 build."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "boss",
+    "integration",
+    "milestone-m1",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T18:49:39.966Z",
+  "updated_at": "2026-06-04T18:49:39.966Z",
+  "jira_key": null
+}
