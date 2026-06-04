@@ -13,3 +13,5 @@ mana_cost = 10.0
 projectile = ExtResource("2_proj")
 applies_slow = false
 max_targets = 3
+shot_type = 2
+chain_radius = 200.0

@@ -9,17 +9,22 @@ extends GutTest
 
 
 # A scene-free stand-in for the hero's damage handler. Records damage taken and
-# exposes the i-frame gate the projectile checks.
+# exposes the i-frame gate the projectile checks. TASK-016: also captures the
+# hit direction the projectile threads through take_player_damage.
 class FakeHero:
 	extends Node
 	var invulnerable := false
 	var damage_taken := 0.0
+	var last_hit_dir := Vector2.ZERO
+	var hit_count := 0
 
 	func is_invulnerable() -> bool:
 		return invulnerable
 
-	func take_player_damage(amount: float) -> void:
+	func take_player_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 		damage_taken += amount
+		last_hit_dir = hit_dir
+		hit_count += 1
 
 
 func _make_projectile() -> EnemyProjectile:
@@ -77,3 +82,22 @@ func test_invulnerable_hero_takes_no_damage_and_projectile_passes_through() -> v
 		"an invulnerable hero takes no damage")
 	assert_false(proj.is_queued_for_deletion(),
 		"the projectile passes through (not consumed) during i-frames")
+
+
+# --- TASK-016: hit direction is threaded into take_player_damage -------------
+
+func test_resolve_hit_threads_travel_direction_into_damage() -> void:
+	var proj := _make_projectile()
+	# setup() normalizes the aim into _velocity; the travel direction is RIGHT.
+	proj.setup(Vector2.RIGHT, 12.0)
+	var hero := FakeHero.new()
+	add_child_autofree(hero)
+	hero.invulnerable = false
+
+	proj.resolve_hit(hero)
+
+	assert_eq(hero.hit_count, 1, "the hero is hit exactly once")
+	assert_almost_eq(hero.last_hit_dir.x, 1.0, 0.0001,
+		"the projectile threads its travel direction (RIGHT) into the hit")
+	assert_almost_eq(hero.last_hit_dir.y, 0.0, 0.0001,
+		"the threaded direction is the normalized travel vector")

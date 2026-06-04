@@ -15,6 +15,10 @@ var mana: Mana
 var fire: SpellData
 var ice: SpellData
 var lightning: SpellData
+## A real Node2D cast origin. cast_primary/cast_secondary type their origin as
+## Node2D, so passing the GutTest (a Node) is a PARSE error that silently skips the
+## whole file — use this instead.
+var origin: Node2D
 
 
 func before_each() -> void:
@@ -44,6 +48,9 @@ func before_each() -> void:
 	mgr.spells = [fire, ice, lightning]
 	mgr.mana = mana
 	add_child_autofree(mgr)   # _ready equips slot 0
+
+	origin = Node2D.new()
+	add_child_autofree(origin)   # a real Node2D origin for cast_primary/secondary
 
 
 func test_loadout_defaults_to_first_two_distinct_spells() -> void:
@@ -123,3 +130,76 @@ func test_try_cast_secondary_fails_when_mana_too_low() -> void:
 	var spell := mgr.try_cast_secondary()
 	assert_null(spell, "cast_secondary must fail (return null) when mana < cost")
 	assert_eq(mana.current_mana, 5.0, "a failed cast must not spend mana")
+
+
+# --- TASK-015 can_afford predicate (pure, drives the no-mana feedback) --------
+
+func test_can_afford_true_when_mana_meets_cost() -> void:
+	mana.current_mana = 20.0   # >= fire cost 15
+	assert_true(mgr.can_afford(fire), "can_afford is true when mana >= the spell cost")
+
+
+func test_can_afford_true_at_exact_cost() -> void:
+	mana.current_mana = 15.0   # == fire cost 15
+	assert_true(mgr.can_afford(fire), "can_afford is true at exactly the spell cost")
+
+
+func test_can_afford_false_when_mana_below_cost() -> void:
+	mana.current_mana = 5.0    # < fire cost 15
+	assert_false(mgr.can_afford(fire), "can_afford is false when mana < the spell cost")
+
+
+func test_can_afford_false_on_null_spell() -> void:
+	mana.current_mana = 100.0
+	assert_false(mgr.can_afford(null), "can_afford is false for a missing (null) spell")
+
+
+func test_can_afford_false_on_null_mana() -> void:
+	mgr.mana = null
+	assert_false(mgr.can_afford(fire), "can_afford is false when there is no Mana component")
+
+
+# --- TASK-015 cast_failed signal: insufficient mana ONLY ---------------------
+# The HUD listens to cast_failed to flash the mana bar. It must fire ONLY when a
+# real spell was attempted but rejected for insufficient mana — never on a
+# successful cast, never when the slot is empty (no spell to fail).
+
+func test_cast_failed_emitted_on_primary_insufficient_mana() -> void:
+	mana.current_mana = 5.0   # < fire (primary) cost 15
+	watch_signals(mgr)
+	var ok := mgr.cast_primary(origin, Vector2.RIGHT)
+	assert_false(ok, "the cast is rejected (no projectile) when mana is too low")
+	assert_signal_emitted(mgr, "cast_failed",
+		"a primary cast rejected for low mana emits cast_failed")
+
+
+func test_cast_failed_emitted_on_secondary_insufficient_mana() -> void:
+	mana.current_mana = 5.0   # < ice (secondary) cost 12
+	watch_signals(mgr)
+	var ok := mgr.cast_secondary(origin, Vector2.RIGHT)
+	assert_false(ok, "the secondary cast is rejected when mana is too low")
+	assert_signal_emitted(mgr, "cast_failed",
+		"a secondary cast rejected for low mana emits cast_failed")
+
+
+func test_cast_failed_not_emitted_on_successful_cast() -> void:
+	# Plenty of mana: try_cast succeeds (spends mana). cast_failed must stay quiet
+	# even though no projectile spawns here (fire.tres has no projectile in-test).
+	mana.current_mana = 100.0
+	watch_signals(mgr)
+	mgr.cast_primary(origin, Vector2.RIGHT)
+	assert_signal_not_emitted(mgr, "cast_failed",
+		"an affordable cast must NOT emit cast_failed (it paid; the slot fired)")
+	assert_eq(mana.current_mana, 85.0,
+		"an affordable cast still spends mana (no regression to the spend path)")
+
+
+func test_cast_failed_not_emitted_when_slot_empty() -> void:
+	# An empty primary slot is a missing spell, not a mana failure — stay silent.
+	mgr.primary = null
+	mana.current_mana = 100.0
+	watch_signals(mgr)
+	var ok := mgr.cast_primary(origin, Vector2.RIGHT)
+	assert_false(ok, "an empty slot cast spawns nothing")
+	assert_signal_not_emitted(mgr, "cast_failed",
+		"an empty slot is not a low-mana failure; cast_failed must not fire")

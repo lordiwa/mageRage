@@ -14,8 +14,22 @@ class_name MagicManager extends Node
 
 signal loadout_changed(primary: SpellData, secondary: SpellData)
 
+## TASK-015 no-mana feedback: emitted ONLY when a cast was attempted with a real
+## spell in the slot but rejected because mana < cost. NOT emitted on a successful
+## cast, and NOT emitted for an empty slot (a missing spell is not a mana failure).
+## The PlayerHUD listens to this to flash/pulse the mana bar.
+signal cast_failed(slot: int)
+
+## Slot ids carried by cast_failed so the HUD can react per-slot if it wants.
+enum {SLOT_PRIMARY, SLOT_SECONDARY}
+
 @export var spells: Array[SpellData] = []
 @export var mana: Mana
+
+## TASK-014 outgoing-cast feedback: a brief element-tinted flash spawned at the
+## muzzle on every REAL cast (reuses the impact_spark one-shot). Optional so
+## movement-only fakes/tests without it still cast cleanly.
+@export var muzzle_flash_scene: PackedScene
 
 ## DD-008 two-element loadout. primary fires on cast_primary, secondary on
 ## cast_secondary.
@@ -51,6 +65,12 @@ func primary_element() -> int:
 func secondary_element() -> int:
 	return secondary.element if secondary != null else -1
 
+## Pure predicate: can the player pay for `spell` right now? True only when both
+## a Mana component and a spell exist and current mana >= the spell's cost. Used
+## to distinguish a low-mana rejection (-> cast_failed) from an empty slot.
+func can_afford(spell: SpellData) -> bool:
+	return mana != null and spell != null and mana.current_mana >= spell.mana_cost
+
 ## Validate and pay for casting `spell`. Returns the SpellData on success (mana
 ## spent) or null when there is no spell or mana < cost (mana untouched).
 func _try_cast(spell: SpellData) -> SpellData:
@@ -73,17 +93,52 @@ func try_cast_secondary() -> SpellData:
 func _spawn(spell: SpellData, origin: Node2D, direction: Vector2) -> bool:
 	if spell == null or spell.projectile == null:
 		return false
+	var parent := _spawn_parent(origin)
+	if parent == null:
+		return false
 	var p := spell.projectile.instantiate()
 	p.global_position = origin.global_position
 	if p.has_method("setup"):
 		p.setup(spell, direction)
-	origin.get_tree().current_scene.add_child(p)
+	parent.add_child(p)
+	# TASK-014: only flashes on a real cast (this path runs after mana is spent),
+	# so a failed/zero-mana cast — which returns before _spawn — never flashes.
+	_spawn_muzzle_flash(spell, origin, parent)
 	return true
 
+## Where spawned spells/flashes are parented: the current scene, falling back to
+## the tree root when there is no current scene (headless tests / pre-scene cast).
+func _spawn_parent(origin: Node2D) -> Node:
+	var tree := origin.get_tree()
+	if tree == null:
+		return null
+	return tree.current_scene if tree.current_scene != null else tree.root
+
+## Spawn the element-tinted muzzle flash at the cast origin. Null-safe: a missing
+## scene (movement-only setups) is a silent no-op.
+func _spawn_muzzle_flash(spell: SpellData, origin: Node2D, parent: Node) -> void:
+	if muzzle_flash_scene == null or parent == null:
+		return
+	var flash := muzzle_flash_scene.instantiate()
+	parent.add_child(flash)
+	if flash is Node2D:
+		flash.global_position = origin.global_position
+	if flash.has_method("burst"):
+		flash.burst(spell.element)
+
 ## Full runtime PRIMARY cast: spends mana and spawns the primary projectile.
+## TASK-015: a slot that HAS a spell the player can't afford emits cast_failed so
+## the HUD can flash the mana bar (an empty slot stays silent).
 func cast_primary(origin: Node2D, direction: Vector2) -> bool:
+	if primary != null and not can_afford(primary):
+		cast_failed.emit(SLOT_PRIMARY)
+		return false
 	return _spawn(try_cast_primary(), origin, direction)
 
-## Full runtime SECONDARY cast: spends mana and spawns the secondary projectile.
+## Full runtime SECONDARY cast: spends mana and spawns the secondary projectile
+## (see cast_primary for the cast_failed feedback hook).
 func cast_secondary(origin: Node2D, direction: Vector2) -> bool:
+	if secondary != null and not can_afford(secondary):
+		cast_failed.emit(SLOT_SECONDARY)
+		return false
 	return _spawn(try_cast_secondary(), origin, direction)

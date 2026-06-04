@@ -5,6 +5,14 @@ class_name SpellData extends Resource
 
 enum Element { FIRE, ICE, ELECTRICITY, ANTIMATTER }
 
+## TASK-022 / DD-004 per-element shot behavior, defined in the .tres data so each
+## element FIRES differently, not just looks different:
+##   SINGLE = stop on the first hit (Fire burst).
+##   PIERCE = pass straight through up to max_targets enemies (Ice control).
+##   CHAIN  = bounce/arc to the nearest not-yet-hit enemy in chain_radius
+##            (Electricity multi-target). Default SINGLE keeps old data working.
+enum ShotType { SINGLE, PIERCE, CHAIN }
+
 @export var display_name: String = ""
 @export var element: Element = Element.FIRE
 @export var damage: float = 10.0
@@ -17,3 +25,10 @@ enum Element { FIRE, ICE, ELECTRICITY, ANTIMATTER }
 @export var applies_slow: bool = false
 ## DD-004 Electricity = chain/multi-target: how many drones one cast may hit.
 @export var max_targets: int = 1
+
+## TASK-022 per-element shot type (see ShotType). Default SINGLE so SpellData
+## built without it (older callers/tests) behaves exactly as before.
+@export var shot_type: ShotType = ShotType.SINGLE
+
+## TASK-022 CHAIN reach: max distance the bolt may arc to the next unhit enemy.
+@export var chain_radius: float = 160.0

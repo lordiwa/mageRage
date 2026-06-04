@@ -71,5 +71,8 @@ func should_land_hit(hero: Node) -> bool:
 func resolve_hit(hero: Node) -> void:
 	if not should_land_hit(hero):
 		return
-	hero.take_player_damage(damage)
+	# TASK-016: thread the projectile's TRAVEL direction so the HUD can point its
+	# hit-direction indicator back toward the source (-hit_dir). Defaults safely to
+	# ZERO before setup() runs (vignette-only on the HUD side).
+	hero.take_player_damage(damage, _velocity.normalized())
 	queue_free()
