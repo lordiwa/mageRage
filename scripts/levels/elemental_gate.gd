@@ -61,10 +61,8 @@ const _DEFAULT_INTERACTION := {
 ## True once opened; latched so the open state PERSISTS (criterion 3).
 var _open := false
 
-@onready var _blocker: StaticBody2D = get_node_or_null("Blocker")
 @onready var _blocker_shape: CollisionShape2D = get_node_or_null("Blocker/Col")
 @onready var _vis: ColorRect = get_node_or_null("Vis")
-@onready var _hitbox: Area2D = get_node_or_null("Hitbox")
 
 
 func _ready() -> void:
@@ -73,16 +71,10 @@ func _ready() -> void:
 	# default FREEZE is corrected to its fiction so dropping a gate "just works").
 	if interaction == Interaction.FREEZE and required_element != SpellData.Element.ICE:
 		interaction = _DEFAULT_INTERACTION.get(required_element, Interaction.FREEZE)
-	# Hittable surface on the Enemies layer (3) so the existing player projectile
-	# (masks 3 only) detects it; it detects nothing itself (it is struck, not seeking).
-	if _hitbox != null:
-		_hitbox.collision_layer = 0
-		_hitbox.collision_mask = 0
-		_hitbox.set_collision_layer_value(3, true)
-	# Blocking wall on the Environment layer (1) so the hero's move_and_slide stops.
-	if _blocker != null:
-		_blocker.collision_layer = 0
-		_blocker.set_collision_layer_value(1, true)
+	# Collision layers are authored ONCE in elemental_gate.tscn (single source of
+	# truth): the Blocker is on Environment (layer 1) so the hero's move_and_slide
+	# stops; the Hitbox is on Enemies (layer 3) so the existing player projectile
+	# (masks 3 only) strikes it. We do not re-assign them here (LOW review fix).
 	_apply_visual()
 
 

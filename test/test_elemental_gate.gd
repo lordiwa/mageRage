@@ -130,6 +130,62 @@ func test_hittable_area_is_on_enemies_layer_so_player_magic_reaches_it() -> void
 		"the Hitbox is on the Enemies layer (3) so the player projectile detects it")
 
 
+## World-space vertical span [top_y, bottom_y] of the gate's Blocker collision shape.
+func _blocker_world_span(gate: ElementalGate) -> Array:
+	var shape_node := gate.get_node_or_null("Blocker/Col") as CollisionShape2D
+	assert_not_null(shape_node, "the gate has a Blocker collision shape")
+	var rect := shape_node.shape as RectangleShape2D
+	assert_not_null(rect, "the Blocker uses a RectangleShape2D")
+	var center_y := shape_node.global_position.y
+	var half := rect.size.y * 0.5
+	return [center_y - half, center_y + half]
+
+
+func test_sealed_blocker_spans_the_full_corridor_height() -> void:
+	# REGRESSION GUARD (review HIGH): a flight-capable hero must NOT be able to fly
+	# over/under the sealed gate. The sector corridor runs from the ceiling bottom
+	# (world y = -288) to the floor top (world y = 328) — ~616px. Placed at the
+	# sector's gate origin (world y = 228), the Blocker must cover that corridor
+	# leaving only a tiny residual gap (< 60px; the player capsule is ~40px tall) so
+	# flight cannot slip past while the gate is sealed.
+	const CEIL_BOTTOM := -288.0
+	const FLOOR_TOP := 328.0
+	const MAX_GAP := 60.0
+	var gate := _make_gate(SpellData.Element.ICE)
+	gate.global_position = Vector2(1300, 228)  # match the sector_01 placement
+	await get_tree().process_frame
+	var span: Array = _blocker_world_span(gate)
+	var top_y: float = span[0]
+	var bottom_y: float = span[1]
+	# The clear gaps above the blocker and below it must each be smaller than the
+	# player's height so a flying hero cannot thread either gap.
+	var gap_above: float = top_y - CEIL_BOTTOM
+	var gap_below: float = FLOOR_TOP - bottom_y
+	assert_lt(gap_above, MAX_GAP,
+		"the sealed gate leaves < %dpx clear above it (flight can't fly over)" % int(MAX_GAP))
+	assert_lt(gap_below, MAX_GAP,
+		"the sealed gate leaves < %dpx clear below it (flight can't slip under)" % int(MAX_GAP))
+
+
+func test_hitbox_stays_strikable_at_player_height() -> void:
+	# The taller blocker must not move the Hitbox out of the projectile's path: the
+	# Hitbox still straddles player height (around the gate origin) so an ice shot
+	# fired at the hero's level strikes it.
+	var gate := _make_gate(SpellData.Element.ICE)
+	gate.global_position = Vector2(1300, 228)
+	await get_tree().process_frame
+	var hit := gate.get_node_or_null("Hitbox/Col") as CollisionShape2D
+	assert_not_null(hit, "the Hitbox has a collision shape")
+	var rect := hit.shape as RectangleShape2D
+	assert_not_null(rect, "the Hitbox uses a RectangleShape2D")
+	var center_y := hit.global_position.y
+	var half := rect.size.y * 0.5
+	# Player spawns/flies around world y ~288 (spawn) up through the corridor; the
+	# Hitbox must overlap that band, i.e. extend below the gate origin toward the floor.
+	assert_gt(center_y + half, 300.0,
+		"the Hitbox reaches down to ~player height so a level shot can strike it")
+
+
 func test_interaction_label_describes_freeze_burn_energize() -> void:
 	# Criterion 2: configurable for which interaction it represents. The default
 	# interaction tracks the required element's fiction (Ice->freeze etc.).

@@ -152,6 +152,34 @@ func test_elemental_gate_instance_resolves_and_blocks_a_required_route() -> void
 	assert_false(eg.is_blocking(), "the opened placed gate no longer blocks the route")
 
 
+func test_placed_gate_blocker_spans_the_corridor_so_flight_cannot_bypass_it() -> void:
+	# TASK-027 review HIGH: the hero has flight from spawn (DD-011 gates no movement
+	# verb), so the sealed gate must block the FULL corridor height — a ~200px pillar
+	# left a flyable gap and let the player skip the gate. Assert the placed Blocker
+	# covers the corridor (ceiling bottom y=-288 -> floor top y=328) leaving only a
+	# tiny residual gap (< 60px) above and below, so flight cannot thread past it.
+	const CEIL_BOTTOM := -288.0
+	const FLOOR_TOP := 328.0
+	const MAX_GAP := 60.0
+	var level := SECTOR.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	var gate := (level as Sector01).elemental_gate() as ElementalGate
+	assert_not_null(gate, "the elemental gate resolves")
+	var shape_node := gate.get_node_or_null("Blocker/Col") as CollisionShape2D
+	assert_not_null(shape_node, "the placed gate has a Blocker collision shape")
+	var rect := shape_node.shape as RectangleShape2D
+	assert_not_null(rect, "the Blocker uses a RectangleShape2D")
+	var center_y := shape_node.global_position.y
+	var half := rect.size.y * 0.5
+	var gap_above: float = (center_y - half) - CEIL_BOTTOM
+	var gap_below: float = FLOOR_TOP - (center_y + half)
+	assert_lt(gap_above, MAX_GAP,
+		"sealed gate leaves < 60px clear above (a flying hero can't fly over it)")
+	assert_lt(gap_below, MAX_GAP,
+		"sealed gate leaves < 60px clear below (a flying hero can't slip under it)")
+
+
 func test_sector_seeds_a_couple_of_enemies_along_the_path() -> void:
 	# A light combat presence on the path (criterion: enemies sprinkled along the
 	# route). Gates/boss are later tickets; a couple of existing enemies is enough.
