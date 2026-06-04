@@ -63,8 +63,8 @@ func test_death_triggers_respawn_full_hp_and_position() -> void:
 		"respawn restores full HP")
 	assert_eq(player.global_position, Vector2(64, 256),
 		"respawn resets position to the recorded spawn")
-	assert_false(player.is_invulnerable(),
-		"a fresh respawn is not stuck in i-frames")
+	assert_true(player.is_invulnerable(),
+		"TASK-012: a fresh respawn opens spawn-protection i-frames")
 
 
 func test_respawn_clears_dead_state_and_can_take_damage_again() -> void:

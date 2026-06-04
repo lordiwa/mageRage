@@ -12,9 +12,6 @@ var facing := 1.0
 var abilities: Dictionary = {}
 var on_floor := false
 var gravity := Vector2(0, 980)
-## When true, the next JumpState.enter() skips the launch impulse + dash reset
-## (used when JumpState is entered from a flight toggle, not a real jump).
-var suppress_jump_impulse := false
 ## DD-008: tracks how many jumps have fired since leaving the ground. The first
 ## jump (Move -> Jump) sets this to 1; a second jump press in the air (with
 ## electricity) promotes to flight. Reset to 0 on landing.

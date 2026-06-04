@@ -16,10 +16,6 @@ const JUMP_BUFFER := 0.10      # grace window before landing for a buffered jump
 ## -1 = facing left, +1 = facing right. Used by air dash for its burst direction.
 var facing := 1.0
 
-## One-shot: when true, the next JumpState entry skips the launch impulse + dash
-## reset. Retained from earlier flight-toggle handling; harmless under DD-008.
-var suppress_jump_impulse := false
-
 ## DD-008 double-jump: number of jumps fired since leaving the ground. The first
 ## leap (Move -> Jump) registers as 1; a SECOND jump press in the air (with
 ## electricity) promotes to FlightState. Reset to 0 on landing.
@@ -74,14 +70,17 @@ func tick_iframes(delta: float) -> void:
 func is_invulnerable() -> bool:
 	return _iframes.is_active()
 
-## DD-009 respawn: full health, back to the recorded spawn, i-frames cleared
-## (deterministic, no hard penalty — demo).
+## DD-009 respawn: full health, back to the recorded spawn (deterministic, no
+## hard penalty — demo). TASK-012: open brief spawn-protection i-frames so an
+## in-flight enemy projectile can't instantly re-hit the freshly respawned hero
+## (fair/deterministic, DD-001).
 func respawn() -> void:
 	global_position = _spawn_position
 	velocity = Vector2.ZERO
 	if _health != null:
 		_health.revive()
 	_iframes = Invulnerability.new()
+	_iframes.trigger()
 	if _sprite != null:
 		_sprite.visible = true
 

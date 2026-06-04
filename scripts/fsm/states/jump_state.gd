@@ -19,17 +19,11 @@ var _dash_timer := 0.0
 
 func enter() -> void:
 	_dash_timer = 0.0
-	# When entering from a flight toggle (not a real jump), skip the launch
-	# impulse and keep the air dash spent, so toggling flight off is not a free
-	# upward leap that also re-grants the dash. The flag is one-shot.
-	if player.suppress_jump_impulse:
-		player.suppress_jump_impulse = false
-	else:
-		player.velocity.y = JUMP_VELOCITY  # the leap impulse
-		_dash_used = false
-		# DD-008: register this leap so a subsequent air jump press is the
-		# genuine SECOND jump (-> flight). reset_jumps() runs on landing.
-		player.register_jump()
+	player.velocity.y = JUMP_VELOCITY  # the leap impulse
+	_dash_used = false
+	# DD-008: register this leap so a subsequent air jump press is the genuine
+	# SECOND jump (-> flight). reset_jumps() runs on landing.
+	player.register_jump()
 
 func physics_update(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")

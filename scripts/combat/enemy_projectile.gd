@@ -55,5 +55,21 @@ func _try_hit(target: Node) -> void:
 		hero = target.get_parent()
 		if hero == null or not hero.has_method("take_player_damage"):
 			return
+	resolve_hit(hero)
+
+## Pure-ish hit decision (TASK-012, DD-001): a hit lands only when the hero is NOT
+## currently invulnerable. While i-frames are open the shot passes through, so
+## i-frames truly mean untouchable. A hero without the gate (older fakes) is
+## treated as always hittable.
+func should_land_hit(hero: Node) -> bool:
+	if hero.has_method("is_invulnerable"):
+		return not hero.is_invulnerable()
+	return true
+
+## Apply the hit if it should land: damage the hero AND consume the projectile.
+## If the hero is invulnerable, pass through — no damage, no queue_free().
+func resolve_hit(hero: Node) -> void:
+	if not should_land_hit(hero):
+		return
 	hero.take_player_damage(damage)
 	queue_free()
