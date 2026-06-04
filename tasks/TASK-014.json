@@ -1,0 +1,29 @@
+{
+  "key": "TASK-014",
+  "title": "Combat readability: per-element projectile visuals (color + shape) + muzzle flash on cast",
+  "description": "Make the element a shot carries READABLE at a glance (game-design doctrine: 'Readable VFX over noise', element color language must stay legible). Today every player projectile is one yellow ColorRect (scenes/projectile.tscn) regardless of element. Deliverables: (1) Per-element projectile visual differentiation driven by SpellData.element — distinct color AND silhouette/shape per element (Fire = warm bolt/teardrop, Ice = cold shard/angular, Electricity = arc/jagged), using the established color language (Fire warm red/orange, Ice cold cyan/blue, Electricity arc yellow, Antimatter violet). Prefer data-driven: extend projectile.gd setup() to style the visual from spell.element (a small style table or per-element tint+shape), or per-element projectile scenes referenced from SpellData. Keep placeholder art (ColorRect / Polygon2D / _draw), no external assets. (2) Optional light trail/glow per element if cheap (Line2D or fading ghost), kept subtle. (3) Muzzle flash on cast: a brief element-tinted flash/burst spawned at the Muzzle when a spell fires (reuse impact_spark or a small one-shot), so casting has outgoing feedback. Reuse scripts/juice/* patterns and the existing element color helpers. Tests-first (GUT pure logic where possible): a pure element->style mapping (color + shape id) returns the right style for each element and a safe default; projectile.setup applies the style for the spell's element. Follow the project Bash gotcha (never 'cd &&'; absolute --path; run --import for new class_names). Verify headless load clean + full GUT suite exits 0, no regression.",
+  "acceptance_criteria": [
+    "Player projectiles are visually distinct per SpellData.element in BOTH color and shape/silhouette, using the project's element color language; differentiation is data-driven from spell.element (not hardcoded per call site).",
+    "Casting a spell spawns a brief element-tinted muzzle flash at the Muzzle so the player gets outgoing-cast feedback.",
+    "A pure, unit-tested element->style mapping exists (color + shape id + safe default) and projectile.setup() applies it; GUT covers each element and the default.",
+    "Placeholder visuals only (ColorRect/Polygon2D/_draw/particles); no external art assets.",
+    "Full GUT suite passes headless exit 0 with no regression; project loads clean headless."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "combat", "readability", "vfx", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T04:30:00.000Z",
+      "body": "Built tests-first by developer; reviewer (fresh context) APPROVE, no HIGH/MEDIUM. Pure ProjectileStyle.for_element maps element->{color,shape} (single source of truth matching impact_spark ELEMENT_TINT) with safe default; projectile.tscn Sprite is now a Polygon2D styled at runtime (Fire teardrop / Ice shard / Electricity jagged / Antimatter star); muzzle flash (impact_spark) spawns only on a successful cast after mana spent, null-safe. GUT 198/198 exit 0 (+19 tests, baseline 179), clean headless load, no regression. LOW/NIT only: color-language values duplicated vs impact_spark (pinned by test, not cross-referenced), failed-cast-no-flash is structural so its test is near-tautological, anonymous shape enum, 'Sprite' node name now a Polygon2D. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T04:30:00.000Z",
+  "jira_key": null
+}

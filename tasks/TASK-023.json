@@ -1,0 +1,28 @@
+{
+  "key": "TASK-023",
+  "title": "Polish: edge-gradient damage vignette + edge-anchored hit indicator (TASK-016 follow-up)",
+  "description": "Polish the TASK-016 player-damage feedback so it reads as an EDGE effect and never tints the center playfield (game-feel: feedback must not bury readability). Reviewer findings from TASK-016: (1) MEDIUM — the damage 'vignette' is a solid full-screen red ColorRect (peak alpha up to 0.55) that tints the WHOLE viewport, not just the edges. Replace with a true edge vignette: a radial GradientTexture2D (transparent center -> red edge) on a TextureRect, or a small canvas_item shader using UV distance-from-center, so the center stays clearly visible; the flash still animates via modulate alpha (0 -> peak -> 0). Consider lowering VIGNETTE_MAX_PEAK. (2) LOW — the HitIndicator is a fixed bar near screen-center that only rotates; relocate/anchor it toward the actual screen edge in the source direction (-hit_dir) so it reads as 'the hit came from over there'. (3) LOW — _flash_vignette/_flash_indicator call create_tween() per hit without killing the prior tween; cache + kill() the previous tween before starting a new one so rapid hits don't fight. Keep the existing pure helpers (vignette_alpha/intensity_for/indicator_angle/should_show_indicator) and their tests; this is visual/scene polish. Placeholder-friendly (gradient/shader, no external art required). Tests-first where logic changes (e.g. an edge-position mapping helper if added). Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new resources). Verify headless clean + GUT exit 0 (no parse errors / no ignored scripts), no regression.",
+  "acceptance_criteria": [
+    "The damage vignette is an EDGE effect (radial gradient or shader: transparent center -> red edge) that leaves the center playfield clearly visible; it still flashes (0 -> peak -> 0) and never blocks input.",
+    "The hit-direction indicator is anchored toward the screen edge in the source direction (-hit_dir), not centered, so it reads as where the hit came from.",
+    "Flash tweens are cached and killed before re-creating so rapid successive hits don't spawn fighting tweens.",
+    "Existing TASK-016 pure helpers + tests remain green; any new placement logic is unit-tested; full GUT passes headless exit 0 with no parse errors / no ignored scripts and no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "low",
+  "labels": ["godot", "ui", "juice", "game-feel", "polish", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": ["TASK-016"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T09:00:00.000Z",
+      "body": "Built tests-first (8 new); reviewer (fresh) APPROVE, no HIGH/MEDIUM. Vignette is now a true EDGE effect: resources/damage_vignette_gradient.tres (radial GradientTexture2D, inner ~55% transparent -> red edge), Vignette node retyped ColorRect->TextureRect in both level scenes (mouse_filter ignore, alpha animates 0->peak->0; player_hud guards the .color set so the TextureRect uses modulate WHITE + alpha only). Hit indicator now edge-anchored via pure indicator_edge_position(hit_dir, viewport, margin) (casts -hit_dir source ray from center to inset edge rect, ZERO-safe) + still oriented by indicator_angle. Flash tweens cached + killed before re-create (no fighting on rapid hits). Reviewer sampled the texture: center alpha 0, edge red — center playfield stays visible. GUT 394/394 exit 0, no parse errors / no ignored scripts, clean headless load. LOW: no integration test instancing the TextureRect flash path (math+signal covered). Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T06:30:00.000Z",
+  "updated_at": "2026-06-04T09:00:00.000Z",
+  "jira_key": null
+}

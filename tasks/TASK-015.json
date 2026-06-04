@@ -1,0 +1,29 @@
+{
+  "key": "TASK-015",
+  "title": "Player game HUD: HP + mana bars, loadout / selected-element display, no-mana feedback",
+  "description": "Replace the debug-text status with a real, readable player HUD (game-design: feedback must be legible without burying the RPS read; element color language). Today scripts/ui/debug_hud.gd shows HP/mana/elements as one multiline Label. Deliverables: (1) A PlayerHUD CanvasLayer with: an HP bar (current/max, smooth or stepped), a MANA bar (current/max), and a LOADOUT indicator showing the SELECTED elements clearly — primary slot prominent + secondary slot smaller, each tinted with the element color language (Fire red, Ice blue, Electricity yellow, Antimatter violet) and labeled. This directly answers 'espacio donde se muestra el elemento seleccionado'. (2) No-/low-mana feedback: when the player tries to cast without enough mana (MagicManager rejects the cast), flash/pulse the mana bar (and/or pulse the reticle) so the failure is communicated; also a low-mana visual threshold tint. (3) Keep the existing DebugHUD as a separate, toggleable debug overlay (do not delete; it stays for dev). Reuse the player's decoupled poll accessors (player_hp/max_player_hp/current_mana/max_mana/primary_spell/secondary_spell) and MagicManager signals; the HUD polls/listens, the player exposes (keep coupling loose, matching boss_hud.gd). Add a signal or return-based hook so a rejected cast can be detected for the no-mana flash (e.g. MagicManager emits cast_failed or cast_primary returns false -> player emits). Tests-first (GUT pure logic): bar-fill ratio math (hp/max, mana/max, clamps, zero-max safe), element->HUD color/label mapping, low-mana threshold predicate, and the cast-failed signal fires when mana insufficient. Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression.",
+  "acceptance_criteria": [
+    "A PlayerHUD (separate from DebugHUD) shows an HP bar, a mana bar, and a loadout indicator with the SELECTED primary (prominent) + secondary (smaller) elements, each in the element color language with a label.",
+    "Attempting to cast with insufficient mana produces clear feedback (mana bar flash/pulse and/or reticle pulse); a low-mana state is visually distinct.",
+    "The HUD is decoupled (polls accessors / listens to signals); a cast-failed (insufficient mana) hook exists and drives the feedback; DebugHUD remains as a toggleable dev overlay.",
+    "GUT covers bar-fill ratios (clamps + zero-max safe), element->color/label mapping, low-mana predicate, and the cast-failed signal on insufficient mana.",
+    "Placeholder visuals only; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "ui", "hud", "readability", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T05:00:00.000Z",
+      "body": "Built tests-first; reviewer (fresh) APPROVE, no HIGH/MEDIUM. New PlayerHUD (CanvasLayer) shows HP bar + mana bar (low-mana tint + flash on cast_failed) + loadout indicator (prominent primary / smaller secondary, tinted via ProjectileStyle single source of truth, labeled). MagicManager gained signal cast_failed(slot) + pure can_afford(spell); cast_primary/secondary emit cast_failed only when the slot has an unaffordable spell (silent on empty slot / success), TASK-014 muzzle-flash gating preserved. DebugHUD kept but now toggleable (start_visible=false, F1 / toggle_debug_hud). PlayerHUD wired into arena.tscn + test_level.tscn; BossHUD untouched. GUT 202/202 exit 0 (baseline 198), clean headless load. LOW/NIT only. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T05:00:00.000Z",
+  "jira_key": null
+}

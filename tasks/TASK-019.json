@@ -1,0 +1,29 @@
+{
+  "key": "TASK-019",
+  "title": "New enemy: Linked Swarm (Enjambre vinculado) — Electricity-chain showcase group",
+  "description": "Add a group encounter that makes the ELECTRICITY identity legible and attacks single-element dominance (game-design DD-004 anti-dominance + 'Electricity chain-arcs between linked automata' fiction; GATE A pillar 1 neutral/serves; GATE B micro: rewards element-role reading; GATE D: rewards Electricity chain, punishes spamming it elsewhere). Deliverables: (1) A small Swarmling enemy = lightweight floating drone (low HP), reusing Health/ElementMatchup/SlowEffect/apply_elemental_hit and the drone FSM/AI. (2) A SwarmGroup that spawns/links N swarmlings (e.g. 3) that move as a loose cluster, visually connected by arcs (Line2D between members). (3) ELECTRICITY CHAIN: when an Electricity hit lands on one linked swarmling, it chains/arcs to nearby linked members (use the existing SpellData chain support — Lightning's max_targets / projectile chaining — and the link relationship to pick chain targets), so Electricity clears the group efficiently while Fire/Ice hit one at a time. Keep the chain bounded (max_targets, no infinite loops, each target hit once). When a member dies the links update. (4) Telegraphed attacks reuse EnemyProjectile (DD-001). Placeholder visuals (small ColorRects + Line2D arcs, electricity-tinted). Tests-first (GUT pure logic): chain target selection from a link graph (bounded by max_targets, no repeats, nearest-first or link-adjacency), link/graph update on member death (no dangling links), and that a non-Electricity hit affects only the struck member. Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression. FEATURE-VETTING: SHIP (serves micro loop + DD-004 anti-dominance, Electricity fiction, severe tone).",
+  "acceptance_criteria": [
+    "A Swarmling (low-HP floating drone) and a SwarmGroup of N linked members exist, reusing Health/ElementMatchup/SlowEffect/AI; members move as a cluster and are visually linked (Line2D arcs).",
+    "An Electricity hit on a linked member chains/arcs to adjacent members (bounded by max_targets, each hit once) so Electricity clears groups efficiently; Fire/Ice affect only the struck member.",
+    "The link graph updates when a member dies (no dangling links / no chain to dead members).",
+    "GUT covers bounded chain-target selection from the link graph (no repeats), graph update on death, and single-target behavior for non-Electricity hits.",
+    "Placeholder visuals only; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "ai", "enemy", "combat", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": ["TASK-014", "TASK-022"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T08:10:00.000Z",
+      "body": "Built tests-first (29 new tests); reviewer (fresh) APPROVE, no HIGH/MEDIUM. Swarmling (low-HP 20 floating drone, layer 3 + 'enemies' group, FIRE armor so Electricity is the 1.5x weak point) + SwarmGroup (Node2D coordinator spawning N on a ring, electricity-tinted Line2D arcs per living link, drops dead members from the graph via Health.died/tree_exited + refreshes arcs, idempotent). Pure SwarmLinks (undirected adjacency: build_ring/chain, remove drops back-refs -> no dangling, chain_order bounded+repeat-free BFS). Electricity CHAIN clears the cluster via the existing proximity mechanic (ProjectileStyle/ProjectileChain over the 'enemies' group) — proven by an integration test driving the REAL Projectile._try_hit hopping to multiple distinct members each once; Fire SINGLE hits only the struck member. Reuses Health/ElementMatchup/SlowEffect + TASK-017 single-trigger death. GUT 358/358 exit 0, stable 2 runs, no parse errors / no ignored scripts. LOW only: arcs use local pos (visually desync on knockback — placeholder-acceptable), test orphan from packed FakeBurst. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T08:10:00.000Z",
+  "jira_key": null
+}

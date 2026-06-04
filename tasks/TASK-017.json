@@ -1,0 +1,29 @@
+{
+  "key": "TASK-017",
+  "title": "Enemy death feedback: element-tinted dissolve / burst when an enemy dies",
+  "description": "Today enemies just queue_free on death with no payoff (game-feel: kills should land). Deliverables: (1) A death effect for the EmpireDrone (and reusable by Warden / future enemies): on Health.died, play a short dissolve/fade + a particle burst (reuse scripts/juice/impact_spark.gd or a dedicated death CPUParticles2D) tinted by the enemy's armor element color, optionally a final hit-stop/shake scaled to importance (small for a drone, larger for a boss). The drone should remove itself only after the effect (defer queue_free) so the burst is visible. (2) Keep it cheap and placeholder (particles + tween on the ColorRect). (3) Wire to the existing Health 'died' signal; do not change matchup/damage logic. Reserve the loudest death juice for the boss; routine drone deaths are modest (doctrine: budget juice). Tests-first (GUT pure logic): a pure death-effect tuning selector (burst amount / shake / hit-stop scaled by an 'importance' or max_hp input), and that the death path triggers exactly once at <=0 HP (no double-free). Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression.",
+  "acceptance_criteria": [
+    "When an enemy's Health reaches 0 it plays an element-tinted dissolve/fade + particle burst before being removed (deferred free so the effect is visible), wired to the Health 'died' signal.",
+    "The death effect is reusable across enemy types and scales with importance (modest for a drone, louder for a boss) per the juice budget.",
+    "Death triggers exactly once at <=0 HP (no double-free / repeated effect); damage/matchup logic is unchanged.",
+    "GUT covers the death-effect tuning selector (scaled by importance/max_hp) and single-trigger-at-zero behavior.",
+    "Placeholder visuals only; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": ["godot", "juice", "game-feel", "combat", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T07:00:00.000Z",
+      "body": "Built tests-first; reviewer (fresh) APPROVE with one MEDIUM, looped back to dev and fixed. On Health.died both drone and warden play an element-tinted burst (impact_spark, tinted by current armor) + DeathEffect-scaled shake/hit-stop + a dissolve tween (fade alpha + shrink); drone defers queue_free to the tween callback, warden does NOT free (arena victory owns the boss, BossHUD polls it live). Single-trigger triple-guarded (Health._dead + projectile _hit dedup + _dying/_won latch) — verified under overkill, CHAIN/PIERCE multi-hit, and re-emitted died. Pure DeathEffect.tuning_for(importance) scales modest(drone)->loud(boss), clamped. MEDIUM fix: _update_tint() was overwriting the dissolve alpha every physics frame; now early-returns on _dying/_won so the FADE actually renders — proven by new frame-stepping tests asserting sprite alpha drops <1.0 for both. GUT 288/288 exit 0, no parse errors / no ignored scripts, clean headless load. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T07:00:00.000Z",
+  "jira_key": null
+}

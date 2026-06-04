@@ -1,16 +1,16 @@
 {
-  "generated_at": "2026-06-04T03:47:49.331Z",
+  "generated_at": "2026-06-04T17:23:38.314Z",
   "tasks": [
     {
       "key": "TASK-001",
       "title": "Set up project CI",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     },
     {
       "key": "TASK-002",
       "title": "Define initial milestone",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     },
     {
@@ -78,6 +78,72 @@
       "title": "Mini-boss 'The Warden': phase-based mechanical boss in an arena (DD-010)",
       "status": "done",
       "priority": "high"
+    },
+    {
+      "key": "TASK-014",
+      "title": "Combat readability: per-element projectile visuals (color + shape) + muzzle flash on cast",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-015",
+      "title": "Player game HUD: HP + mana bars, loadout / selected-element display, no-mana feedback",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-016",
+      "title": "Player-damage feedback: screen vignette + hit-direction indicator + brief player hit-stop",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-017",
+      "title": "Enemy death feedback: element-tinted dissolve / burst when an enemy dies",
+      "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-018",
+      "title": "New enemy: Charger (Centinela de carga) — telegraphed melee ground guardian",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-019",
+      "title": "New enemy: Linked Swarm (Enjambre vinculado) — Electricity-chain showcase group",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-020",
+      "title": "New enemy: Shield Drone (Drone con escudo direccional) — read-the-window guardian",
+      "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-021",
+      "title": "New encounter room (Sala de encuentro): element-swap waves with the new enemies",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-022",
+      "title": "Per-element shot types (behavior + strong visuals): Fire single / Ice pierce / Electricity chain",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-023",
+      "title": "Polish: edge-gradient damage vignette + edge-anchored hit indicator (TASK-016 follow-up)",
+      "status": "done",
+      "priority": "low"
+    },
+    {
+      "key": "TASK-024",
+      "title": "Cleanup: silence pre-existing stderr noise in the GUT run (non-failing)",
+      "status": "todo",
+      "priority": "low"
     }
   ]
 }

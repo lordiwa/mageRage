@@ -1,0 +1,22 @@
+{
+  "key": "TASK-024",
+  "title": "Cleanup: silence pre-existing stderr noise in the GUT run (non-failing)",
+  "description": "Across the Vertical-Slice-2 milestone, multiple reviewers flagged recurring stderr SCRIPT ERROR noise that does NOT fail any test (suite stays green, exit 0) but makes the headless run look unclean and could mask a real future error. Capture and silence these: (1) GUT 9.4.0 `signal_watcher.gd:159` / `diff_tool.gd:89` errors triggered by `assert_signal_emitted_with_parameters(...)` passing a typed Object param (transition_requested(from: EstadoBase, ...)) — appears in test/test_charger_states.gd and test/test_player_damage_feedback.gd. Fix: assert with `assert_signal_emitted(...)` plus a separate equality check on just the non-Object param (e.g. the target string), or pin/patch GUT. (2) `test/test_reticle.gd` logs 'Trying to assign value of type \\'\\' to a variable of type magic_manager.gd' from player.gd:52 — the typed `@onready var _magic: MagicManager` can't bind a duck-typed FakeMagicManager named 'MagicManager'. Fix: make the fake extend MagicManager, or loosen the test injection. (3) A `SCRIPT ERROR: Trying to assign value of type 'Nil' to a variable of type 'bool'` from the drone FSM/target-resolution path (surfaces when live enemy scenes tick, e.g. instancing levels/encounter.tscn or in player-instantiating tests) — track down the bool assignment reading a Nil (likely a drone/charger state or player onready) and guard it. None of these fail tests today; this ticket is hygiene so 'loads clean' is literally true. Tests-first not strictly required (no behavior change); ensure the full GUT run stays green exit 0 AND emits no SCRIPT ERROR / Parse Error / Ignoring script lines afterward. Follow Bash gotcha (never 'cd &&'; absolute --path).",
+  "acceptance_criteria": [
+    "The GUT typed-signal assert noise (signal_watcher/diff_tool) from test_charger_states.gd and test_player_damage_feedback.gd is eliminated (reworked asserts or pinned/patched GUT) without losing the transition/parameter coverage.",
+    "test_reticle.gd no longer logs the typed-@onready magic_manager assignment error (fake extends MagicManager or injection loosened).",
+    "The drone-FSM 'Nil to bool' stderr error is traced and guarded so live enemy scenes (e.g. encounter.tscn) and player-instantiating tests run without it.",
+    "Full GUT suite stays green exit 0 with NO SCRIPT ERROR / Parse Error / Ignoring script lines in the output; project loads clean headless."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": ["godot", "cleanup", "tech-debt", "tests", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T09:30:00.000Z",
+  "updated_at": "2026-06-04T09:30:00.000Z",
+  "jira_key": null
+}

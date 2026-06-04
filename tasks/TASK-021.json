@@ -1,0 +1,29 @@
+{
+  "key": "TASK-021",
+  "title": "New encounter room (Sala de encuentro): element-swap waves with the new enemies",
+  "description": "Assemble the new enemies into a designed encounter that delivers the minute-to-minute loop and forces mid-fight element swapping (game-design: minute loop reward beat; DD-004 anti-dominance via MIXED-ARMOR encounters; GATE D: tests the full kit). Deliverables: (1) A new level scene (e.g. levels/encounter.tscn) — a closed, readable room (Environment-layer geometry) with cover/platforms that suit BOTH ranged-dodging and the melee Charger's lanes. (2) A simple WAVE/encounter structure: spawn the new enemies (Charger, Linked Swarm, Shield Drone) and existing drones in waves/groups deliberately MIXING armor types so no single element dominates and the player must swap loadout mid-fight (e.g. an Electricity-weak Charger alongside a swarm that Electricity clears, plus a Fire-weak shield drone). Keep it fair and telegraphed (DD-001), with rest beats between waves (doctrine: ramp then rest). (3) Wire the new PlayerHUD (TASK-015) + player-damage feedback (TASK-016) into this scene; include the DebugHUD as a toggle. (4) Make it easy to launch for playtest (a clear main_scene toggle or a documented way to run it without disturbing arena.tscn / test_level.tscn). Tests-first where logic exists (GUT pure): wave/spawn sequencing controller (advance on all-cleared, rest delay, bounded waves) as a pure helper, and the mixed-armor composition guarantee (no wave is dominated by a single element weakness) if encoded as data. Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression. Depends on the three new enemies.",
+  "acceptance_criteria": [
+    "A new encounter level (e.g. levels/encounter.tscn) exists: a closed, readable room with geometry suiting both ranged dodging and the Charger's lanes.",
+    "Enemies spawn in waves that deliberately MIX armor types so the player must swap loadout mid-fight (DD-004); waves are telegraphed/fair with rest beats between them (ramp-then-rest).",
+    "The PlayerHUD + player-damage feedback are wired into the scene; DebugHUD available as a toggle; the room is easy to launch for playtest without disturbing arena.tscn/test_level.tscn.",
+    "GUT covers the wave-sequencing helper (advance-on-clear, rest delay, bounded) and, if data-encoded, the mixed-armor composition guarantee.",
+    "Placeholder visuals only; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "level", "encounter", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": ["TASK-015", "TASK-016", "TASK-018", "TASK-019", "TASK-020"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T09:30:00.000Z",
+      "body": "Built tests-first (20 new); reviewer (fresh) APPROVE, no HIGH. New standalone levels/encounter.tscn (closed room, layer-1 env + platforms/cover for ranged dodging AND Charger lanes, Player + PlayerHUD w/ Vignette+HitIndicator + DebugHUD F1 toggle + WAVE/CLEARED labels). 3 waves spawned via pure WaveController (is_wave_cleared/should_advance ramp-then-rest gating, advance() bounded, is_complete) reading EncounterWaves.WAVES (single source of truth: W1 FIRE+ICE drones, W2 Charger FIRE + ShieldDrone ICE, W3 SwarmGroup FIRE + ELECTRICITY drone). DD-004 mixed-armor guarantee is a REAL data-driven test (every wave >=2 distinct armors, all scene paths exist) sharing WAVES with the live spawner. Alive-count via 'enemies' group excludes is_dying(); SwarmGroup members counted (group node isn't), spawned synchronously so no premature advance / never-clears. main_scene UNCHANGED (arena stays main); arena.tscn + test_level.tscn untouched; encounter runs standalone. GUT 414/414 exit 0, no parse errors / no ignored scripts, clean headless load. MEDIUM (pre-existing, non-failing): a Nil->bool FSM stderr artifact + GUT typed-signal-assert noise + test_reticle typed-onready — captured as cleanup TASK-024. Playtest: Godot_v4.6.3-stable_win64.exe --path <proj> res://levels/encounter.tscn. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T09:30:00.000Z",
+  "jira_key": null
+}

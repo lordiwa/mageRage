@@ -1,0 +1,29 @@
+{
+  "key": "TASK-020",
+  "title": "New enemy: Shield Drone (Drone con escudo direccional) — read-the-window guardian",
+  "description": "Add a defensive enemy that rewards reading telegraphs and timing (game-design GATE A pillar 1: a guardian raising its ward; GATE B micro: sharpens timing/positioning reads; GATE D: tests aiming + timing, preserves RPS). Deliverables: (1) Shield Drone = floating drone variant (reuse EmpireDrone AI/Health/ElementMatchup/SlowEffect/apply_elemental_hit) with a DIRECTIONAL SHIELD: a frontal facing-based block that NEGATES or heavily reduces incoming player projectiles hitting its shielded arc, while its back/flank are vulnerable. (2) The shield DROPS during its own attack wind-up (telegraphed, DD-001) — an open window where the player can punish from the front — and/or the player can hit it from behind/around (rewards aim + flight positioning). Decide one clear, fair rule and make the shield state READABLE (shield visual + color when up vs down). (3) Reuse EnemyProjectile for its attack. Placeholder visuals (ColorRect body + a shield ColorRect/arc that shows facing and up/down state). Tests-first (GUT pure logic): the block predicate (does a hit from incoming direction X get blocked given shield facing + up/down state), the shield up/down state machine vs attack wind-up timing, and that a blocked hit deals 0 (or reduced) while an unshielded-angle hit applies full matchup damage. Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression. FEATURE-VETTING: SHIP (serves pillar 1 + micro timing read, preserves RPS, severe tone).",
+  "acceptance_criteria": [
+    "A Shield Drone exists (reusing the drone AI/Health/matchup/slow) with a directional shield that blocks/negates player projectiles hitting its shielded frontal arc while back/flank are vulnerable.",
+    "The shield opens a fair, telegraphed punish window (drops during its own attack wind-up and/or is bypassable from behind); shield up/down + facing are clearly readable visually.",
+    "A blocked hit deals 0/reduced damage; a hit from an unshielded angle applies full DD-006 matchup damage.",
+    "GUT covers the directional block predicate (incoming dir vs facing + state), the shield up/down vs wind-up state machine, and blocked-vs-unblocked damage outcomes.",
+    "Placeholder visuals only with readable shield state; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": ["godot", "ai", "enemy", "combat", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": ["TASK-014"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T08:40:00.000Z",
+      "body": "Built tests-first (28 new tests); reviewer (fresh) APPROVE, no HIGH/MEDIUM. ShieldDrone (floating, layer 3, 'enemies' group, default armor ICE, HP 70) with a directional frontal shield: pure ShieldLogic.is_blocked(hit_dir, shield_facing, arc_halfwidth, shield_up) — shot travels hit_dir, approaches from -hit_dir, blocked only when shield up AND within the 80deg half-arc (160deg cone); flank/behind/shield-down always take full damage. apply_elemental_hit gates on the shield FIRST: blocked -> exactly 0 dmg, no Health/slow/death (clink flash only); unblocked -> full DD-006 matchup. Shield tracks the player except during the Attack wind-up (begin_telegraph drops it = telegraphed punish window), readable up/down visual. Refactored drone_{patrol,chase,attack}_state.gd from `player as EmpireDrone` to duck-typed so the one FSM drives both drones (verified: every called member resolves on both, all drone tests green, no behavior change). GUT 386/386 exit 0, no parse errors / no ignored scripts. LOW: no state-driven EmpireDrone test locks the shared FSM interface (inspection-verified); a blocked hit still consumes a CHAIN hop / PIERCE count (apply_elemental_hit returns void; defensible 'shield absorbs the bolt'). Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T08:40:00.000Z",
+  "jira_key": null
+}

@@ -1,0 +1,29 @@
+{
+  "key": "TASK-016",
+  "title": "Player-damage feedback: screen vignette + hit-direction indicator + brief player hit-stop",
+  "description": "Give the player real on-screen feedback when hurt (game-feel: the hero sprite is just a blinking ColorRect, so damage must read in screen space; juice reserved but present). Today taking damage only toggles sprite visibility (i-frame blink) + camera shake. Deliverables: (1) A red edge VIGNETTE flash on the PlayerHUD/screen when take_player_damage lands a hit (fades quickly), intensity optionally scaled by damage. (2) A brief HIT-DIRECTION indicator showing roughly where the hit came from (e.g. an arc/arrow on the screen edge toward the incoming projectile's direction), using the hit direction available at damage time (pass hit direction/source into take_player_damage or derive from the projectile). (3) A SMALL player-side hit-stop on taking damage (reuse the HitStop autoload with a short, gentle duration) so getting hit has weight without being punishing — keep it subtle (player hit-stop < enemy super-effective hit-stop) to preserve the severe-but-fair tone. Keep it fair: no control stun (DD-009), no obscuring the play space. Reuse scripts/juice/* + the HitStop autoload + element color language (player damage = red). Tests-first (GUT pure logic): vignette intensity/fade curve math, hit-direction -> screen-edge angle mapping, and player hit-stop duration selection (subtle, clamped). Follow Bash gotcha (never 'cd &&'; absolute --path; --import for new class_names). Verify headless clean + GUT exit 0, no regression. Note: take_player_damage may need a new optional hit-direction/source param — thread it from enemy_projectile resolve_hit; keep the old signature working for existing tests/fakes.",
+  "acceptance_criteria": [
+    "Taking damage triggers a red edge vignette flash (quick fade) and a brief hit-direction indicator pointing toward the incoming hit, plus a subtle player-side hit-stop (no control stun, DD-009 preserved).",
+    "Hit direction/source is threaded into the damage path (e.g. an optional param on take_player_damage from enemy_projectile) without breaking the existing signature/tests.",
+    "Player hit-stop is gentler than enemy super-effective hit-stop (loudest juice reserved for the rarest beats); feedback never obscures the playfield.",
+    "GUT covers vignette intensity/fade math, hit-direction->screen-edge mapping, and the subtle player hit-stop duration selection.",
+    "Placeholder visuals only; full GUT suite passes headless exit 0 with no regression; project loads clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "ui", "juice", "game-feel", "vertical-slice-2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T06:30:00.000Z",
+      "body": "Built tests-first; reviewer (fresh) APPROVE, no HIGH. take_player_damage gained an optional hit_dir (backward-compatible); on a LANDED hit only the player emits signal damaged(amount, hit_dir), fires a subtle HitStop.freeze(0.5)~0.03s (< enemy super-effective ~0.09s), and a light camera nudge — no control stun (DD-009). enemy_projectile threads _velocity.normalized() as hit_dir. PlayerHUD listens and flashes a red vignette + a hit-direction indicator (points to source via (-hit_dir).angle()), pure helpers vignette_alpha/intensity_for/indicator_angle/should_show_indicator unit-tested. GUT 244->268 exit 0, no parse errors / no ignored scripts, clean headless load. MEDIUM (non-blocking, placeholder-allowed): vignette is a solid full-screen red ColorRect (peak 0.55) that tints the whole viewport rather than an edge gradient; LOWs: indicator is centered+rotating not edge-anchored, and flash tweens overlap on rapid hits. Captured as polish ticket TASK-023. Not committed (no git repo)."
+    }
+  ],
+  "created_at": "2026-06-04T04:00:00.000Z",
+  "updated_at": "2026-06-04T06:30:00.000Z",
+  "jira_key": null
+}
