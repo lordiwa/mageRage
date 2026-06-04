@@ -1,15 +1,27 @@
 {
   "schema_version": 2,
   "session_id": "20260603T024324Z-9423aa09",
-  "lifecycle_state": "active",
-  "updated_at": "2026-06-03T02:43:24.850Z",
+  "lifecycle_state": "paused",
+  "updated_at": "2026-06-03T05:30:00.000Z",
   "active_task": null,
-  "workflow_step": "idle",
-  "next_action": null,
-  "handoff_summary": "session started",
-  "open_questions": [],
+  "workflow_step": "between-tickets — playable vertical slice shipped; ready to pick the next ticket",
+  "next_action": "Playtest the Warden in the arena (run the GUI Godot binary on the project). Then pick next: TASK-001 (CI: GitHub Actions running the 164 GUT tests headless on each push) — recommended — or more game content (2nd boss, polished arena, art). TASK-002 (define milestone) also open.",
+  "handoff_summary": "Mage Rage was rebooted from a prior Unity build into a fresh Godot 4.6.3 project, operated via the agentic-framework. The GitHub repo lordiwa/mageRage was reused: master is the Godot reboot; the old Unity code is preserved on branch unity-archive (do not delete). A real playable vertical slice exists, all built tests-first with a developer->reviewer cycle, 164 GUT tests passing headless. Done: TASK-003 (godot-game-dev skill), 004 (game-design skill), 005 (movement demo: node FSM run/jump/dash/glide/double-jump-fly), 006 (elemental combat: SpellData/MagicManager/projectiles + armored drones), 007 (gamepad), 008 (DD-008 controls: double-jump fly + 2-element loadout + dual triggers), 009+012 (polish/cleanup + i-frame fairness), 010 (juice: hit-stop/shake/damage-numbers/flash/knockback/sparks), 011 (drone AI: patrol/chase/telegraphed attack + real Ice slow + player Health/i-frames/respawn), 013 (Warden mini-boss: 3 HP-gated phases with rotating armor Fire->Ice->Electricity, telegraphed patterns, boss HP HUD, victory state; arena.tscn is the main_scene). Engine binary at C:\\Godot\\Godot_v4.6.3-stable_win64_console.exe.",
+  "open_questions": [
+    "Playtest feedback wanted on the Warden: difficulty, telegraph readability, whether the armor-color/phase swap reads clearly.",
+    "Next direction: CI (TASK-001) vs more game content (2nd boss / polished arena / art).",
+    "Optional follow-ups flagged by reviews: dedupe shared juice/matchup body between EmpireDrone and Warden into an EnemyHittable/EnemyJuice component; add a .gitattributes (eol=lf) to silence CRLF warnings."
+  ],
   "blockers": [],
-  "decisions": [],
-  "subagent_results": [],
+  "decisions": [
+    "Repo lordiwa/mageRage reused (not deleted); Unity build archived on branch unity-archive.",
+    "Docs language: design/canon in Spanish (GDD, DECISIONES-DISENO), code/skills/eng-docs in English (DD-005). LORE-BIBLE stays English.",
+    "Design decisions live in docs/DECISIONES-DISENO.md: DD-001 fair/deterministic difficulty (no hidden rubber-banding), DD-002 antimatter ultimate (provisional), DD-003 map gate colors, DD-004 element identities (Fire burst / Ice control / Electricity chain), DD-005 language, DD-006 element-vs-armor RPS (resist own color x0.5, weak to counter x1.5; cycle Electricity>Fire>Ice>Electricity), DD-007 gamepad (superseded by DD-008), DD-008 control scheme (double-jump fly + 2-element loadout + RT primary / LT secondary), DD-009 drone AI + real Ice slow + player damage, DD-010 Warden mini-boss (3 phases).",
+    "Two team-training skills active: .claude/skills/godot-game-dev (the HOW) and .claude/skills/game-design (the WHAT) — auto-loaded when touching Godot/design.",
+    "OPERATIONAL: never run Godot/GUT via 'cd <path> && ...' (hangs on a permission prompt). Use the absolute binary with absolute --path; run --import after adding class_name globals; GUT cmd: ... -s res://addons/gut/gut_cmdln.gd -gdir=res://test -ginclude_subdirs -gexit."
+  ],
+  "subagent_results": [
+    "All feature tickets passed independent reviewer ACCEPT. 164/164 GUT green; arena.tscn and test_level.tscn both load headless clean. Outstanding non-blocking LOWs noted in open_questions."
+  ],
   "pending_human_confirmation": null
 }
