@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-03T16:03:42.752Z",
+  "generated_at": "2026-06-04T02:24:34.274Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -46,8 +46,14 @@
     {
       "key": "TASK-008",
       "title": "Control scheme revision: double-jump fly, 2-element loadout, dual-trigger fire (DD-008)",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
+    },
+    {
+      "key": "TASK-009",
+      "title": "Cleanup: remove dead suppress_jump_impulse field/branch (post-DD-008)",
+      "status": "todo",
+      "priority": "low"
     }
   ]
 }

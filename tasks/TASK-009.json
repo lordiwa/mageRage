@@ -1,0 +1,25 @@
+{
+  "key": "TASK-009",
+  "title": "Cleanup: remove dead suppress_jump_impulse field/branch (post-DD-008)",
+  "description": "After DD-008 removed the flight toggle-out path, the one-shot suppress_jump_impulse flag is dead code: nothing sets it true anymore, so the skip-impulse branch in JumpState.enter() is unreachable and the else-branch always runs. Remove the field from scripts/player/player.gd and test/helpers/fake_player.gd, delete the dead branch in scripts/fsm/states/jump_state.gd (keep the impulse + register_jump path), and drop any now-obsolete test referencing it. Verify GUT stays green headless (no cd; absolute --path).",
+  "acceptance_criteria": [
+    "suppress_jump_impulse is removed from player.gd and fake_player.gd and the unreachable branch in jump_state.gd is deleted, with the normal jump impulse + register_jump path preserved.",
+    "No remaining references to suppress_jump_impulse anywhere in the tree.",
+    "Full GUT suite still passes headless (exit 0) and the project loads with zero parse errors."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": [
+    "cleanup",
+    "tech-debt",
+    "godot"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T02:24:34.274Z",
+  "updated_at": "2026-06-04T02:24:34.274Z",
+  "jira_key": null
+}

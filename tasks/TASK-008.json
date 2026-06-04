@@ -10,7 +10,7 @@
     "All GUT tests updated and green headless (exit 0): FSM tests reflect double-jump-to-fly + electricity gate; gamepad-bindings test covers the new action set (incl. cast_primary/cast_secondary, no fly/element_cycle); new tests cover the loadout stack promotion and that primary/secondary fire the correct element.",
     "The debug HUD shows primary + secondary equipped elements, mana, and the DD-008 gamepad/keyboard hints; movement+combat have no behavioral regressions beyond the intended changes."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -23,8 +23,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T02:24:23.191Z",
+      "body": "DD-008 controls reworked (commits 4a877eb feat + 6c532c7 test). Orchestrator verified 68/68 GUT exit 0 + clean headless load. Reviewer (fresh) ACCEPT: double-jump→fly edge cases correct (jump_count only on real leap, reset on landing, no free/ground flight, electricity-gated, no infinite air-jumps), loadout stack correct (no-op re-press, secondary never dup), dual-cast mana gating sound, InputMap indices exact, keyboard parity intact, no movement/combat regression. Only LOW: suppress_jump_impulse is now dead code (harmless) — tracked as a follow-up cleanup ticket. Done."
+    }
+  ],
   "created_at": "2026-06-03T16:03:42.752Z",
-  "updated_at": "2026-06-03T16:03:42.752Z",
+  "updated_at": "2026-06-04T02:24:25.805Z",
   "jira_key": null
 }
