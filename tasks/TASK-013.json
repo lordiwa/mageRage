@@ -10,7 +10,7 @@
     "Defeating the Warden (0 HP) triggers a victory state (freeze + label); player death respawns in the arena.",
     "GUT tests cover phase-from-HP selection (both thresholds), per-phase pattern selection, fan/spread angle math, boss telegraph/cooldown, victory at <=0 HP, and matchup weakness per phase; full suite passes headless exit 0 with no regression; project loads clean; placeholder visuals only."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -22,8 +22,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T03:47:46.110Z",
+      "body": "Warden mini-boss built tests-first (commits 2eedb5e feat + 2a58eb1 test). Orchestrator verified (after --import): GUT 164/164 exit 0; arena.tscn AND test_level.tscn load headless clean. Reviewer (fresh) ACCEPT: phase_for_hp boundaries exact (66%->P2, 33%->P3, 0%->P3, zero-max safe), matchup resolves against current-phase armor before take_damage (no stale armor), telegraph always re-accumulates from 0 (no free shot at start/phase-swap/slow), slow reduces both move + cadence (multiplier only 0.5/1.0, no div0), victory latched once + boss stops + player respawns in arena, fan symmetric/NaN-safe, enemy projectile layer 5 masks Player only, no regression (only main_scene flipped). LOWs: overkill skips an intermediate phase beat (lands in correct final phase), mid-telegraph phase-change timing nicety, a uid sidecar — all non-blocking, fairness intact. Done."
+    }
+  ],
   "created_at": "2026-06-04T03:33:14.154Z",
-  "updated_at": "2026-06-04T03:33:14.154Z",
+  "updated_at": "2026-06-04T03:47:49.331Z",
   "jira_key": null
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T03:33:14.154Z",
+  "generated_at": "2026-06-04T03:47:49.331Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -76,7 +76,7 @@
     {
       "key": "TASK-013",
       "title": "Mini-boss 'The Warden': phase-based mechanical boss in an arena (DD-010)",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     }
   ]
