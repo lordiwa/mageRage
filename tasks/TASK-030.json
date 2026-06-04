@@ -1,0 +1,26 @@
+{
+  "key": "TASK-030",
+  "title": "Polish: gate boss HP HUD visibility on encounter start (don't show the Warden bar during traversal)",
+  "description": "LOW from the TASK-029 review. In sector_01 the reused BossHUD (scripts/ui/boss_hud.gd) polls and renders the Warden HP bar + 'THE WARDEN' label every frame from level start, so the boss bar is visible during the whole traversal before the player reaches the boss room (the dormant Warden is on-screen behind BossWallLeft). Functionally fine, but cosmetically the bar shows full HP across the sector run. Gate HUD visibility on Sector01.encounter_started (the signal already exists as the hook) so the boss bar/label only appear once the encounter triggers. Also (secondary nit) the VictoryLabel 'SECTOR CLEAR' is driven by the Warden's defeated signal in boss_hud.gd rather than Sector01.sector_victory — both fire from the same 0-HP event so it's correct in practice, but consider coupling the sector-victory UI to the sector_victory state for clarity. Non-urgent polish; M1 is functionally complete.",
+  "acceptance_criteria": [
+    "The Warden boss HP bar + label are hidden during sector_01 traversal and become visible when Sector01.encounter_started fires (or the player reaches the boss room).",
+    "Arena.tscn boss HUD behavior is unchanged (the arena boss is awake from the start, so its HUD should still show as before).",
+    "Full GUT suite stays green exit 0 (run multiple times, flake-aware), gdlint clean, no new stderr noise."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": [
+    "godot",
+    "ui",
+    "polish",
+    "milestone-m1"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T20:43:40.952Z",
+  "updated_at": "2026-06-04T20:43:40.952Z",
+  "jira_key": null
+}

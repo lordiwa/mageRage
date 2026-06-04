@@ -258,3 +258,33 @@ mecanismos complementarios:
 era el protector"); que la prisión tenga **campos anti-vuelo** y **rutas selladas por
 energía elemental** es consistente. **Provisional** en números y ubicación exacta (a afinar
 en playtest/greybox); el **modelo de gate** queda **ACEPTADO** como base de M1.
+
+---
+
+## DD-012 — Asistencia de apuntado suave (aim magnetism)  ·  **ACEPTADA (ajustable)**
+
+**Tensión / origen:** feedback de playtest — apuntar a enemigos con el twin-stick (vector
+`_aim`, `reticle.gd`) se siente trabajoso. El jugador pidió "lock-on al acercarse a un
+enemigo, para que sea más sencillo". Pero DD-001 exige dificultad **justa y determinista,
+sin ayuda oculta** — un lock-on que "tome el control" o teledirija mágicamente choca con
+ese tono.
+
+**Decisión:** **asistencia suave por magnetismo**, NO lock-on duro. El jugador conserva
+control manual total; la asistencia solo **sesga** el apuntado hacia un enemigo que el
+jugador ya está casi apuntando:
+
+- Al computar el aim de casteo, si el enemigo más cercano cae **dentro de un cono angular**
+  (provisional ±~20°) del aim crudo **y** dentro de un **rango** (provisional ~400 px),
+  el aim se **rota hacia ese enemigo** por una cantidad **acotada** (snap completo dentro
+  de un cono interno más chico, ~8°; lerp parcial entre el cono interno y el externo). Fuera
+  del cono externo **no asiste** — apuntar deliberadamente a otro lado se respeta.
+- **Legibilidad (DD-001):** el **reticle refleja** la dirección asistida (el jugador ve a
+  dónde irá el disparo) y el enemigo asistido recibe una marca sutil. La asistencia es una
+  **función pura y determinista** de posiciones + aim: sin RNG, sin rubber-banding, sin
+  acumuladores ocultos. El jugador siempre entiende por qué el disparo fue ahí.
+- **Alcance:** afecta el `_aim` que usan `cast_primary`/`cast_secondary`. Aplica a ambos
+  métodos de input; se siente más en gamepad (el mouse ya es preciso). Sin botón nuevo ni
+  estado de "target fijado" (eso sería el lock-on duro, descartado).
+
+**Provisional** en números (cono, rango, fuerza del snap) — a afinar en playtest. El
+**modelo** (magnetismo suave, legible, determinista) queda **ACEPTADO**.

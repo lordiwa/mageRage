@@ -1,0 +1,28 @@
+{
+  "key": "TASK-031",
+  "title": "Combat feel: soft aim-assist (aim magnetism) toward nearby enemies (DD-012)",
+  "description": "Playtest feedback: aiming at enemies with the twin-stick feels fiddly. Implement SOFT aim-assist (magnetism) per DD-012 — NOT a hard lock-on. The player keeps full manual control; the assist only biases the cast aim toward an enemy the player is already roughly aiming at, and is fair/deterministic/legible per DD-001.\\n\\nMechanic (values PROVISIONAL, tune in playtest): when computing the cast aim direction, if the nearest enemy lies within an angular CONE (~±20deg) of the raw aim AND within RANGE (~400px), rotate the aim toward that enemy by a BOUNDED amount — full snap within an inner cone (~8deg), partial lerp between inner and outer cone, no assist outside the outer cone. Implement the core as a PURE, deterministic function (raw_aim: Vector2, player_pos, enemy_positions) -> assisted_aim: Vector2 (no RNG, no hidden state) so it's unit-testable headless. Wire it into the cast aim used by cast_primary/cast_secondary (scripts/player/player.gd `_aim`, and reflect it in scripts/player/reticle.gd so the reticle shows the assisted direction — DD-001 legibility). Find enemies via the existing 'enemies' group. Subtle target highlight on the assisted enemy is a nice-to-have. No new input/button, no persistent target-lock state.\\n\\nMUST follow repo test hygiene: the pure-function tests are deterministic (no physics/Input). If any test instances live nodes, follow the InputGate seam + flake-aware conventions (run the suite multiple times). See memory gut-flake-await-input.",
+  "acceptance_criteria": [
+    "A pure, deterministic aim-assist function exists (raw aim + player pos + enemy positions -> assisted aim) with no RNG/hidden state, unit-tested headless: assists toward an enemy inside the cone+range, does NOT assist when the enemy is outside the cone or beyond range, and leaves aim unchanged when no enemy qualifies.",
+    "The assist is wired into the player's cast aim (cast_primary/cast_secondary) so shots bias toward a nearby roughly-aimed-at enemy; manual aim outside the cone is respected (no takeover).",
+    "The reticle reflects the assisted direction (DD-001 legibility) so the player sees where the shot will go.",
+    "Cone/range/strength are exposed as tunable constants/@export (provisional values per DD-012), not magic numbers buried in logic.",
+    "Full GUT suite green exit 0 (run multiple times, flake-aware), gdlint clean, no new stderr noise; arena.tscn and sector_01.tscn still load clean."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "combat",
+    "game-feel",
+    "playtest-feedback"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T21:57:36.041Z",
+  "updated_at": "2026-06-04T21:57:36.041Z",
+  "jira_key": null
+}
