@@ -8,15 +8,21 @@
     "The drone-FSM 'Nil to bool' stderr error is traced and guarded so live enemy scenes (e.g. encounter.tscn) and player-instantiating tests run without it.",
     "Full GUT suite stays green exit 0 with NO SCRIPT ERROR / Parse Error / Ignoring script lines in the output; project loads clean headless."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "low",
-  "labels": ["godot", "cleanup", "tech-debt", "tests", "vertical-slice-2"],
+  "labels": [
+    "godot",
+    "cleanup",
+    "tech-debt",
+    "tests",
+    "vertical-slice-2"
+  ],
   "assignee": null,
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-04T09:30:00.000Z",
-  "updated_at": "2026-06-04T09:30:00.000Z",
+  "updated_at": "2026-06-04T17:49:18.197Z",
   "jira_key": null
 }

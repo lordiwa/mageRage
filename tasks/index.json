@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T17:23:38.314Z",
+  "generated_at": "2026-06-04T18:27:18.940Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -142,6 +142,12 @@
     {
       "key": "TASK-024",
       "title": "Cleanup: silence pre-existing stderr noise in the GUT run (non-failing)",
+      "status": "done",
+      "priority": "low"
+    },
+    {
+      "key": "TASK-025",
+      "title": "Test hygiene: isolate await-physics_frame tests + standardize InputGate pattern for input-edge tests",
       "status": "todo",
       "priority": "low"
     }

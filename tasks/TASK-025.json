@@ -1,0 +1,22 @@
+{
+  "key": "TASK-025",
+  "title": "Test hygiene: isolate await-physics_frame tests + standardize InputGate pattern for input-edge tests",
+  "description": "Surfaced during TASK-024. Root cause of the CI-only flake: GUT runs all test scripts in one headless process, and once any test does `await get_tree().physics_frame` (currently test_encounter_level.gd and test_swarm_group.gd do), a later programmatic `Input.action_press()` edge becomes unreadable by `Input.is_action_just_pressed()` for the rest of the run — silently breaking any downstream input-edge-gated assertion. TASK-024 fixed the immediate failure by routing the FSM input-edge reads through a behavior-preserving production seam `scripts/fsm/input_gate.gd` (`InputGate.just_pressed`) with a test-only override, but the underlying footgun remains for any FUTURE input-edge test. This ticket: make the pattern safe-by-default and documented. Options to weigh: (a) isolate/quarantine the awaiting tests so they don't pollute the shared Input state (e.g. run them last, or reset frame/input state after), (b) document InputGate as the STANDARD way to drive input edges in tests (in .claude/skills/godot-game-dev), (c) consider whether player.gd's own jump-buffer `Input.is_action_just_pressed` should also route through InputGate for consistency. Non-urgent: master is green; this is preventing the next regression.",
+  "acceptance_criteria": [
+    "The await-physics_frame Input-edge pollution mechanism is documented in the godot-game-dev skill (or an equivalent team-visible place), so future input-edge tests don't rediscover it the hard way.",
+    "The InputGate test-driving pattern is documented as the standard for input-edge-gated FSM tests, with a short example.",
+    "A decision is recorded on whether the awaiting tests (test_encounter_level.gd / test_swarm_group.gd) should be isolated/ordered to avoid polluting shared Input state, or whether InputGate fully obviates that need.",
+    "Full GUT suite stays green exit 0 with no new SCRIPT ERROR / Parse Error / Ignoring script noise; run it multiple times to confirm no residual flake."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": [],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T18:27:18.940Z",
+  "updated_at": "2026-06-04T18:27:18.940Z",
+  "jira_key": null
+}
