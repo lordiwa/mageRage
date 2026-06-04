@@ -1,0 +1,36 @@
+{
+  "key": "TASK-010",
+  "title": "Hit-feedback / juice: hit-stop, screen shake, damage numbers, flash, knockback, impact sparks",
+  "description": "Add game-feel/juice to the combat impact so hitting a drone feels impactful, per the Game Feel section of .claude/skills/game-design (Swink Game Feel; Nijman 'The Art of Screenshake') and the telegraphing/readability guidance. No art/audio assets — use placeholder visuals (ColorRect / CPUParticles2D / tweens), tinted by element. Build on the existing projectile->drone hit in scripts/combat/projectile.gd + scripts/enemies/empire_drone.gd. Deliverables: (1) HIT-STOP — a brief global freeze (~0.05-0.10s real time) on a damaging hit; implement via a thin helper (e.g. autoload) that sets Engine.time_scale low/0 and restores after an UNSCALED real-time delay, with the duration optionally scaled by effectiveness; keep the scheduling logic in a pure/testable function. (2) SCREEN SHAKE — a trauma-based Camera2D shake component (trauma in [0,1], offset = trauma^2 * max_offset with decay per second, rotation optional); add_trauma() on hit scaled by damage/effectiveness; used sparingly (small max). (3) DAMAGE NUMBERS — a floating Label scene that spawns at the drone, shows the damage dealt, floats up and fades; COLOR-CODED by DD-006 effectiveness: resisted (x0.5) = dim/grey + smaller, neutral (x1.0) = white, weak/super-effective (x1.5) = bright (red/orange) + larger — reinforcing armor readability. Provide a pure effectiveness->style (color/scale) mapping function. (4) ENEMY HIT FLASH — drone modulates to white for a few frames on hit. (5) KNOCKBACK — short positional punch on the drone away from the hit (tween or brief velocity), small. (6) IMPACT SPARKS — a small particle/burst at the contact point tinted by the spell element, freed after playing. Wire all of these from the single hit path so one hit triggers flash+number+shake+hitstop+spark+knockback coherently. Keep matchup/mana/health/movement logic and all existing tests intact. Tests-first (GUT) for the pure logic: screen-shake trauma decay (clamped, reaches 0), effectiveness->color/scale mapping for the three tiers, hit-stop duration/scheduling, knockback direction sign. Follow the project-context Bash gotcha: NEVER prefix Godot/GUT commands with 'cd ... &&'; run the absolute binary with absolute --path (it hangs otherwise). Verify headless load is clean and the full GUT suite exits 0.",
+  "acceptance_criteria": [
+    "A damaging projectile hit triggers, from one code path: hit-stop, a trauma-based screen shake, a floating damage number, an enemy hit-flash, a short knockback, and an element-tinted impact spark — all coherent on a single hit.",
+    "Screen shake is a trauma-based Camera2D component (trauma clamped [0,1], squared falloff, decays to 0 over time); add_trauma scales with damage/effectiveness; max offset is small (sparing).",
+    "Damage numbers float up and fade and are color/size-coded by DD-006 effectiveness (resisted=dim/small, neutral=white, weak/super-effective=bright/large), reinforcing armor readability; a pure effectiveness->style function is unit-tested for all three tiers.",
+    "Hit-stop briefly freezes via a helper using UNSCALED real time to restore Engine.time_scale (does not permanently alter time_scale); its duration/scheduling logic is unit-tested.",
+    "GUT tests (pure logic) cover trauma decay to zero, the effectiveness->color/scale mapping (3 tiers), hit-stop duration, and knockback direction; the full suite passes headless exit 0 with no regression to existing movement/combat tests.",
+    "Project loads headless with zero parse errors; juice uses placeholder visuals only (no new art/audio assets); matchup/mana/health/movement behavior unchanged."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "juice",
+    "game-feel",
+    "combat",
+    "polish"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-04T02:45:55.738Z",
+      "body": "Juice slice built tests-first (commits e8c3895 feat + 6125afe test). Orchestrator verified (after --import to rebuild class cache): GUT 88/88 exit 0, clean headless load. Reviewer (fresh) ACCEPT: the #1 risk — hit-stop re-entrancy/restore — is correct (if _active guard, ignore_time_scale restore timer, FROZEN_SCALE 0.05, no permanent freeze path); trauma shake clamps/decays-to-0 with re-derived (non-drifting) offset; DamageStyle 3 tiers distinct; knockback zero-safe; all six effects fire from one path null-guarded; no combat/movement regression. LOWs: knockback header doc said 'away' vs code 'along' (orchestrator fixed the comment); no integration test for the freeze/restore cycle (optional insurance); spark cleanup timer not unscaled (harmless). Done."
+    }
+  ],
+  "created_at": "2026-06-04T02:26:09.844Z",
+  "updated_at": "2026-06-04T02:45:59.905Z",
+  "jira_key": null
+}

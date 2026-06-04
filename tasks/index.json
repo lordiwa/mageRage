@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T02:24:34.274Z",
+  "generated_at": "2026-06-04T02:45:59.905Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -54,6 +54,12 @@
       "title": "Cleanup: remove dead suppress_jump_impulse field/branch (post-DD-008)",
       "status": "todo",
       "priority": "low"
+    },
+    {
+      "key": "TASK-010",
+      "title": "Hit-feedback / juice: hit-stop, screen shake, damage numbers, flash, knockback, impact sparks",
+      "status": "done",
+      "priority": "high"
     }
   ]
 }

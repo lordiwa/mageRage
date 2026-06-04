@@ -1,6 +1,7 @@
-## TASK-010 hit-feedback: knockback math. A hit shoves the drone AWAY from the
-## projectile's travel direction (a short positional punch) — pairs with the hit
-## flash so a solid hit reads as solid (game-design SKILL Game Feel).
+## TASK-010 hit-feedback: knockback math. A hit shoves the drone ALONG the
+## projectile's travel direction — i.e. away from the shooter, the way the shot
+## was going (a short positional punch) — pairs with the hit flash so a solid hit
+## reads as solid (game-design SKILL Game Feel).
 ##
 ## Pure & static so the direction sign is unit-testable with no scene: the result
 ## points along `hit_dir` (the projectile's travel direction), i.e. the drone is
