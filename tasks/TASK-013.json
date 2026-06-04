@@ -1,0 +1,29 @@
+{
+  "key": "TASK-013",
+  "title": "Mini-boss 'The Warden': phase-based mechanical boss in an arena (DD-010)",
+  "description": "Build the first mechanical mini-boss per DD-010 — the minute-to-minute loop payoff that exercises the whole kit (DD-006 matchup, DD-008 loadout, DD-009 slow, juice). Reuse existing systems: the node-FSM pattern, scripts/enemies/* (drone AI, states), scripts/combat/* (Health, ElementMatchup, EnemyProjectile, SlowEffect), scripts/juice/*, and the player. Deliverables: (1) WARDEN enemy — a large Empire construct (CharacterBody2D, ~300 HP) with a node-based AI FSM and PHASE structure: armor_type rotates by phase at HP thresholds 66% and 33% — Phase 1 (100-66%) armor=Fire (weak to Electricity), Phase 2 (66-33%) armor=Ice (weak to Fire), Phase 3 (33-0%) armor=Electricity (weak to Ice) — forcing the player to read armor and swap loadout (reinforces DD-006/DD-008). Use the existing ElementMatchup for damage. (2) ATTACK PATTERNS per phase, all telegraphed (fairness DD-001): Phase 1 = heavy aimed shots; Phase 2 = 3-projectile fan/spread volley; Phase 3 = faster cadence + a sweep. Reuse/extend EnemyProjectile. Honor the Ice SlowEffect (a slowed Warden moves+attacks slower). (3) PHASE TRANSITIONS: on crossing a threshold, swap armor + pattern, fire a big juice beat (hit-stop + screen shake) and re-telegraph the new armor color clearly. (4) ARENA scene levels/arena.tscn: closed room (Environment-layer walls), the Player, the Warden, and a HUD showing a BOSS HP BAR + current phase (plus the existing player HP/element HUD). Set arena.tscn as the project main_scene; keep test_level.tscn available. (5) VICTORY: Warden at 0 HP triggers a victory state (freeze + label); player death respawns in the arena (DD-009). Keep all existing systems/tests intact. Tests-first (GUT, pure logic): phase selection from current HP (the two thresholds map to the right phase + armor), attack-pattern selection per phase, fan/spread direction math (e.g. 3 angles around aim), boss telegraph/cooldown gating, victory trigger at <=0 HP, and that ElementMatchup gives the intended weakness per phase armor. Follow the project-context Bash gotcha (NEVER 'cd ... &&'; absolute --path; run --import for new class_names). Verify headless load clean + full GUT suite exits 0. Placeholder visuals only.",
+  "acceptance_criteria": [
+    "A Warden enemy (~300 HP) exists with a node-based AI FSM and three phases whose armor_type rotates at 66% and 33% HP (Fire->Ice->Electricity), each weak to a different element per DD-006 so the player must swap loadout; damage uses the existing ElementMatchup.",
+    "Each phase has a distinct, telegraphed attack pattern (Phase1 heavy aimed shot, Phase2 3-projectile fan, Phase3 faster + sweep) reusing/extending EnemyProjectile; the Ice SlowEffect reduces the Warden's move and attack rate.",
+    "Phase transitions swap armor+pattern, fire a juice beat (hit-stop + screen shake), and re-telegraph the new armor color; all attacks telegraph before firing (DD-001 fairness).",
+    "levels/arena.tscn is a closed arena with the Player, the Warden, and a HUD showing a boss HP bar + current phase; it is the project main_scene; test_level.tscn still loads.",
+    "Defeating the Warden (0 HP) triggers a victory state (freeze + label); player death respawns in the arena.",
+    "GUT tests cover phase-from-HP selection (both thresholds), per-phase pattern selection, fan/spread angle math, boss telegraph/cooldown, victory at <=0 HP, and matchup weakness per phase; full suite passes headless exit 0 with no regression; project loads clean; placeholder visuals only."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "boss",
+    "combat",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T03:33:14.154Z",
+  "updated_at": "2026-06-04T03:33:14.154Z",
+  "jira_key": null
+}

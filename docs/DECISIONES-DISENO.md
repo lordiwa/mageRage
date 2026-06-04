@@ -198,3 +198,31 @@ direcciones. Valores provisionales, a afinar en playtest.
 - Al recibir daño: **i-frames** breves (~0.8s) con parpadeo; sin stun que quite control.
 - **Muerte → respawn** en el punto de inicio con vida llena (demo; sin penalización dura).
   Determinista y justo (DD-001). El HUD muestra la **vida del jugador**.
+
+---
+
+## DD-010 — Primer mini-jefe mecánico: "El Carcelero" (Warden)  ·  **PROVISIONAL**
+
+Primer jefe del loop minuto-a-minuto. Una construcción grande del Imperio en una arena
+cerrada. Es la prueba que obliga a usar TODO el kit. Valores a afinar en playtest.
+
+### Estructura por fases (obliga a leer armadura y cambiar de elemento)
+La armadura del jefe **rota por fase**, forzando el intercambio del loadout (DD-008) y
+respetando el RPS (DD-006). HP alta (~300), umbrales a 66% y 33%:
+- **Fase 1 (100–66% HP):** armadura **Fuego** → débil a Electricidad. Patrón: disparos
+  apuntados pesados (como el dron pero más daño/lentos), telegrafiados.
+- **Fase 2 (66–33% HP):** armadura **Hielo** → débil a Fuego. Patrón: **volea en abanico**
+  (3 proyectiles), telegrafiada.
+- **Fase 3 (33–0% HP):** armadura **Electricidad** → débil a Hielo. Patrón: más rápido +
+  un **barrido**; el Hielo además lo ralentiza (DD-009) dándole ventana al jugador.
+- Cada cambio de fase: gran **hit-stop + shake** (juice) y re-telegrafía claramente la
+  nueva armadura (color). Todo telegrafiado (justo, DD-001).
+
+### Arena y victoria
+- Escena `levels/arena.tscn`: sala cerrada (paredes Environment), jugador, el Warden, HUD
+  con **barra de HP del jefe** + fase actual. Reusa FSM de IA, proyectil enemigo, Health,
+  matchup, slow y juice ya existentes.
+- **Derrota del jefe a 0 HP → estado de victoria** (freeze + label). Muerte del jugador →
+  respawn en la arena (DD-009).
+- La arena queda como escena principal del demo; `test_level.tscn` sigue disponible como
+  sandbox de movimiento/combate.

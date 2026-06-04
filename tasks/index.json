@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T03:31:25.560Z",
+  "generated_at": "2026-06-04T03:33:14.154Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -72,6 +72,12 @@
       "title": "Combat polish: dead-code cleanup + post-respawn i-frames + i-frame projectile pass-through",
       "status": "done",
       "priority": "medium"
+    },
+    {
+      "key": "TASK-013",
+      "title": "Mini-boss 'The Warden': phase-based mechanical boss in an arena (DD-010)",
+      "status": "todo",
+      "priority": "high"
     }
   ]
 }
