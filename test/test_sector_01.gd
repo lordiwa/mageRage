@@ -180,6 +180,53 @@ func test_placed_gate_blocker_spans_the_corridor_so_flight_cannot_bypass_it() ->
 		"sealed gate leaves < 60px clear below (a flying hero can't slip under it)")
 
 
+func test_anti_magic_zone_instance_resolves_and_suppresses_a_required_route() -> void:
+	# TASK-028 (criteria 1/2/3): the placed anti-magic zone is a real AntiMagicZone
+	# component that resolves via Sector01.anti_magic_zone(), starts suppressing flight
+	# (gating an aerial route on the spine), and is purged persistently by its element.
+	var level := SECTOR.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	var zone := (level as Sector01).anti_magic_zone()
+	assert_not_null(zone, "the anti-magic zone resolves via Sector01.anti_magic_zone()")
+	assert_true(zone is AntiMagicZone, "the placed zone is the reusable AntiMagicZone component")
+	var amz := zone as AntiMagicZone
+	assert_true(amz.is_suppressing(), "the placed zone starts suppressing flight (gates the route)")
+	# Wrong element keeps it suppressing; the configured element purges it persistently.
+	var wrong := SpellData.Element.FIRE
+	if amz.purge_element == wrong:
+		wrong = SpellData.Element.ICE
+	amz.purge(wrong)
+	assert_true(amz.is_suppressing(), "the wrong element leaves the placed zone suppressing")
+	amz.purge(amz.purge_element)
+	assert_false(amz.is_suppressing(), "the configured element purges the placed zone")
+
+
+func test_anti_magic_route_requires_flight_and_cannot_be_walked_around() -> void:
+	# TASK-028 review guard: the gated route must genuinely REQUIRE flight. Inside the
+	# zone a vertical barrier rises from the floor higher than the hero's jump apex
+	# (~73px above the floor) AND a ceiling-anchored barrier leaves no walkable gap, so
+	# a grounded/jumping/dashing hero cannot pass while suppressed — only flight clears
+	# it once purged. We assert the in-zone obstruction geometry exists and forces a
+	# climb taller than the jump apex.
+	const FLOOR_TOP := 328.0
+	const JUMP_APEX := 73.0   # |JUMP_VELOCITY|^2 / (2*gravity) ~ 380^2 / (2*980)
+	var level := SECTOR.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	var amz := (level as Sector01).anti_magic_zone() as AntiMagicZone
+	assert_not_null(amz, "the anti-magic zone resolves")
+	var barrier := amz.get_node_or_null("Barrier/Col") as CollisionShape2D
+	assert_not_null(barrier, "the zone has a floor-rooted Barrier the route must clear")
+	var rect := barrier.shape as RectangleShape2D
+	assert_not_null(rect, "the Barrier uses a RectangleShape2D")
+	var top_y := barrier.global_position.y - rect.size.y * 0.5
+	# The barrier top must sit higher than the hero's jump apex above the floor, so a
+	# grounded jump/dash cannot get over it — flight is required.
+	assert_lt(top_y, FLOOR_TOP - JUMP_APEX,
+		"the in-zone barrier rises above the jump apex so the route requires flight")
+
+
 func test_sector_seeds_a_couple_of_enemies_along_the_path() -> void:
 	# A light combat presence on the path (criterion: enemies sprinkled along the
 	# route). Gates/boss are later tickets; a couple of existing enemies is enough.

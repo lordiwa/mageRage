@@ -18,8 +18,20 @@ var gravity := Vector2(0, 980)
 var jump_count := 0
 var _jump_buffered := false
 
+## TASK-028 anti-magic zone: while true the hero is inside an un-purged Empire
+## dampening field and the FSM must NOT enter FlightState (DD-008 double-jump is
+## gated out). Defaults false so flight works exactly as before everywhere else.
+var _flight_suppressed := false
+
 func is_on_floor() -> bool:
 	return on_floor
+
+## TASK-028: the anti-magic zone toggles this on body enter/exit; the FSM reads it.
+func set_flight_suppressed(value: bool) -> void:
+	_flight_suppressed = value
+
+func is_flight_suppressed() -> bool:
+	return _flight_suppressed
 
 ## DD-008 double-jump support: count fired jumps and reset on landing.
 func register_jump() -> void:
