@@ -34,11 +34,71 @@ var _jump_buffer := 0.0
 @onready var _mana: Mana = get_node_or_null("Mana")
 @onready var _muzzle: Node2D = get_node_or_null("Muzzle")
 
+## DD-009 player damage: a Health child takes enemy-projectile damage, gated by
+## brief i-frames (no control stun); death respawns at the recorded start.
+## Optional so movement-only fakes without a Health child still run.
+@onready var _health: Health = get_node_or_null("Health")
+@onready var _sprite: ColorRect = get_node_or_null("Sprite")
+var _iframes := Invulnerability.new()
+var _spawn_position := Vector2.ZERO
+var _blink_accum := 0.0
+
+# --- DD-009 player-damage API ------------------------------------------------
+
+## i-frame blink tuning (placeholder visual feedback; no control stun per DD-009).
+const _BLINK_PERIOD := 0.12
+
+## Record the current position as the respawn point. Called on _ready (so a death
+## returns the hero to where the level placed it) and re-callable from tests.
+func record_spawn() -> void:
+	_spawn_position = global_position
+
+## Enemy projectile damage entry point. Blocked entirely while i-frames are
+## active (no damage, no stun). On a landed hit: subtract HP, open i-frames; if
+## that hit was lethal, respawn at the recorded start with full health.
+func take_player_damage(amount: float) -> void:
+	if amount <= 0.0 or _health == null:
+		return
+	if _iframes.is_active():
+		return
+	_health.take_damage(amount)
+	_iframes.trigger()
+	if _health.is_dead():
+		respawn()
+
+## Tick the i-frame window. Called from _process; exposed for unit tests.
+func tick_iframes(delta: float) -> void:
+	_iframes.update(delta)
+
+## True while the player cannot take damage (drives the blink, not movement).
+func is_invulnerable() -> bool:
+	return _iframes.is_active()
+
+## DD-009 respawn: full health, back to the recorded spawn, i-frames cleared
+## (deterministic, no hard penalty — demo).
+func respawn() -> void:
+	global_position = _spawn_position
+	velocity = Vector2.ZERO
+	if _health != null:
+		_health.revive()
+	_iframes = Invulnerability.new()
+	if _sprite != null:
+		_sprite.visible = true
+
+## HUD accessors (decoupled poll, like mana).
+func player_hp() -> float:
+	return _health.current_health if _health != null else 0.0
+
+func max_player_hp() -> float:
+	return _health.max_health if _health != null else 0.0
+
 func _ready() -> void:
 	# GDD 5.C: I am Player; I collide with Environment and Enemies.
 	set_collision_layer_value(2, true)
 	set_collision_mask_value(1, true)
 	set_collision_mask_value(3, true)
+	# DD-009: capture the start position so death respawns the hero here.
+	record_spawn()
 
 func _process(delta: float) -> void:
 	# Record a jump press into the buffer regardless of which state is active,
@@ -47,7 +107,22 @@ func _process(delta: float) -> void:
 		_jump_buffer = JUMP_BUFFER
 	_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 
+	tick_iframes(delta)
+	_process_blink(delta)
 	_process_magic(delta)
+
+## DD-009: blink the sprite while invulnerable (readable i-frame feedback, no
+## control stun). Sprite stays visible when not invulnerable.
+func _process_blink(delta: float) -> void:
+	if _sprite == null:
+		return
+	if is_invulnerable():
+		_blink_accum += delta
+		if _blink_accum >= _BLINK_PERIOD:
+			_blink_accum = 0.0
+			_sprite.visible = not _sprite.visible
+	elif not _sprite.visible:
+		_sprite.visible = true
 
 ## DD-008 loadout swap + dual-trigger cast. Selecting an element promotes it to
 ## the primary slot (demoting the prior primary to secondary). cast_primary fires

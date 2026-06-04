@@ -28,3 +28,10 @@ func take_damage(amount: float) -> void:
 
 func is_dead() -> bool:
 	return _dead or current_health <= 0.0
+
+## Restore to full and clear the dead flag (DD-009 respawn). Emits health_changed
+## so HUDs refresh; does NOT re-emit died.
+func revive() -> void:
+	current_health = max_health
+	_dead = false
+	health_changed.emit(current_health, max_health)

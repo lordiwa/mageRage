@@ -46,6 +46,7 @@ func _refresh() -> void:
 	var primary_txt := "—"
 	var secondary_txt := "—"
 	var mana_txt := "—"
+	var hp_txt := "—"
 	if _player != null:
 		if _player.has_method("primary_spell"):
 			var ps = _player.primary_spell()
@@ -57,6 +58,9 @@ func _refresh() -> void:
 				secondary_txt = _ELEMENT_NAMES[ss.element]
 		if _player.has_method("current_mana"):
 			mana_txt = "%d/%d" % [int(_player.current_mana()), int(_player.max_mana())]
+		# DD-009: player HP readout.
+		if _player.has_method("player_hp"):
+			hp_txt = "%d/%d" % [int(_player.player_hp()), int(_player.max_player_hp())]
 	# DD-008 control hints (gamepad-first, keyboard additive).
-	_label.text = "STATE: %s    PRIMARY: %s    SECONDARY: %s    MANA: %s\n[A/D]/[←/→]/[W/S] move  [Space] jump (double = fly)  [Shift] dash  [Alt] glide (hold)\n[1] Fire  [2] Ice  [3] Electricity (primary = last pressed)  [E]/[LMB] cast primary  [Q]/[RMB] cast secondary\nPAD: L-stick move  A jump (double = fly)  RB dash  LB glide (hold)  X/Y/B element  RT primary  LT secondary" % [
-		_state_name, primary_txt, secondary_txt, mana_txt]
+	_label.text = "STATE: %s    HP: %s    PRIMARY: %s    SECONDARY: %s    MANA: %s\n[A/D]/[←/→]/[W/S] move  [Space] jump (double = fly)  [Shift] dash  [Alt] glide (hold)\n[1] Fire  [2] Ice  [3] Electricity (primary = last pressed)  [E]/[LMB] cast primary  [Q]/[RMB] cast secondary\nPAD: L-stick move  A jump (double = fly)  RB dash  LB glide (hold)  X/Y/B element  RT primary  LT secondary" % [
+		_state_name, hp_txt, primary_txt, secondary_txt, mana_txt]

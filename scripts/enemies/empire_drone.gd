@@ -16,6 +16,36 @@ class_name EmpireDrone extends CharacterBody2D
 @export var damage_number_scene: PackedScene
 @export var impact_spark_scene: PackedScene
 
+## DD-009 AI tuning (provisional). The FSM logic itself lives in DroneAi (pure,
+## unit-tested) — these are just the thresholds fed to it.
+@export var aggro_range: float = 280.0   # Patrol -> Chase distance
+@export var attack_range: float = 240.0  # Chase -> Attack distance
+@export var attack_cooldown: float = 1.5 # seconds between shots
+@export var projectile_damage: float = 12.0
+
+## DD-009 enemy projectile (PLACEHOLDER scene). Optional so bare drones / unit
+## tests run without it; null-guarded at the fire path.
+@export var enemy_projectile_scene: PackedScene
+
+## The hero to chase/shoot. Resolved on _ready from the "player" group; settable
+## in tests. Loosely typed so a fake target works headless.
+var target: Node2D
+
+## Spawn point for the Patrol hover (captured on _ready).
+var spawn_position := Vector2.ZERO
+
+## DD-004 Ice control: while active, halves chase speed + attack rate.
+var _slow := SlowEffect.new()
+
+## Seconds since the last shot; gates the cooldown via DroneAi.cooldown_ready.
+var _time_since_attack := 999.0
+
+## Wind-up color flash while telegraphing (placeholder readable tell).
+const TELEGRAPH_COLOR := Color(1.0, 0.95, 0.6, 1.0)
+## DD-004 Ice tint while slowed (bluish overlay).
+const SLOW_TINT := Color(0.45, 0.7, 1.0, 1.0)
+var _telegraphing := false
+
 ## TASK-010: emitted on every landed hit so a coordinator (or test) can react with
 ## loose coupling. `dir` is the projectile's travel direction at contact.
 signal hit(amount: float, effectiveness: float, dir: Vector2)
@@ -51,12 +81,33 @@ func _ready() -> void:
 	if _health != null:
 		_health.health_changed.connect(_on_health_changed)
 		_health.died.connect(_on_died)
+	# DD-009: FLYING drone — gravity off; the FSM drives all movement.
+	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	spawn_position = global_position
+	_resolve_target()
 	_refresh_label(0.0)
 
+## DD-009: tick the Ice slow + attack cooldown each physics frame. The FSM states
+## (Patrol/Chase/Attack) own movement; this only advances timers and the visuals.
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity += get_gravity() * delta
-	move_and_slide()
+	var was_slowed := _slow.is_active()
+	_slow.update(delta)
+	_time_since_attack += delta
+	_update_tint()
+	# Keep the SLOWED label live: refresh when the slow state flips off.
+	if was_slowed and not _slow.is_active():
+		_refresh_label(0.0, false)
+
+## Find the player (group "player"). Loose so a unit test can set `target` itself.
+func _resolve_target() -> void:
+	if target != null:
+		return
+	var tree := get_tree()
+	if tree == null:
+		return
+	var players := tree.get_nodes_in_group("player")
+	if not players.is_empty():
+		target = players[0]
 
 ## Called by a Projectile on contact. Applies base * DD-006 matchup to Health and
 ## fires the TASK-010 hit-feedback bundle (one hit path -> all juice, coherently):
@@ -70,7 +121,10 @@ func apply_elemental_hit(element: int, base_damage: float, slow: bool,
 	var dmg := base_damage * effectiveness
 	if _health != null:
 		_health.take_damage(dmg)
-	_refresh_label(dmg, slow)
+	# DD-004 Ice = control: an Ice hit starts/refreshes the real SLOW effect.
+	if slow:
+		_slow.apply()
+	_refresh_label(dmg, _slow.is_active())
 	# --- TASK-010 hit feedback ------------------------------------------------
 	_flash()
 	_apply_knockback(hit_dir)
@@ -151,6 +205,77 @@ func _find_screen_shake() -> Node:
 	if nodes.is_empty():
 		return null
 	return nodes[0]
+
+# --- DD-009 AI queries/actions (FSM states call these; logic in DroneAi) ------
+
+## Distance to the current target, or INF if there is none.
+func _distance_to_target() -> float:
+	if target == null:
+		return INF
+	return global_position.distance_to(target.global_position)
+
+## Patrol -> Chase gate.
+func player_in_aggro_range() -> bool:
+	return DroneAi.in_aggro_range(_distance_to_target(), aggro_range)
+
+## Chase -> Attack gate: in attack range AND cooldown ready (slow-adjusted).
+func can_attack() -> bool:
+	if not DroneAi.in_aggro_range(_distance_to_target(), attack_range):
+		return false
+	return DroneAi.cooldown_ready(_time_since_attack, attack_cooldown / speed_multiplier())
+
+## Unit steering vector toward the player (horizontal + a little vertical).
+func steer_toward_player() -> Vector2:
+	if target == null:
+		return Vector2.ZERO
+	return DroneAi.steer_direction(global_position, target.global_position)
+
+## DD-004 Ice control multiplier (0.5 while slowed, 1.0 otherwise). Drone chase
+## speed and attack rate both honor it.
+func speed_multiplier() -> float:
+	return _slow.multiplier()
+
+func is_slowed() -> bool:
+	return _slow.is_active()
+
+## Telegraph flash on/off (placeholder readable wind-up tell).
+func begin_telegraph() -> void:
+	_telegraphing = true
+	_update_tint()
+
+func end_telegraph() -> void:
+	_telegraphing = false
+	_update_tint()
+
+## Mark a shot fired: reset the cooldown timer.
+func mark_attacked() -> void:
+	_time_since_attack = 0.0
+
+## DD-009: spawn one enemy projectile aimed at the player. Null-guarded so a bare
+## drone (unit test) without the scene assigned simply does nothing.
+func fire_at_player() -> void:
+	if enemy_projectile_scene == null or target == null:
+		return
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return
+	var proj := enemy_projectile_scene.instantiate()
+	tree.current_scene.add_child(proj)
+	proj.global_position = global_position
+	var dir := (target.global_position - global_position).normalized()
+	if proj.has_method("setup"):
+		proj.setup(dir, projectile_damage)
+
+## Sprite tint priority: telegraph flash > Ice slow tint > armor color.
+func _update_tint() -> void:
+	if _sprite == null:
+		return
+	if _telegraphing:
+		_sprite.color = TELEGRAPH_COLOR
+	elif _slow.is_active():
+		_sprite.color = SLOW_TINT
+	else:
+		_sprite.color = _armor_color
 
 func _on_health_changed(_current: float, _maximum: float) -> void:
 	pass   # label refresh is driven from apply_elemental_hit so it can show dmg

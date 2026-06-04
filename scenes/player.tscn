@@ -1,6 +1,7 @@
-[gd_scene load_steps=13 format=3 uid="uid://b8mageragepl0r"]
+[gd_scene load_steps=14 format=3 uid="uid://b8mageragepl0r"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/combat/health.gd" id="14_health"]
 [ext_resource type="Script" path="res://scripts/fsm/state_machine.gd" id="2_sm"]
 [ext_resource type="Script" path="res://scripts/fsm/states/move_state.gd" id="3_move"]
 [ext_resource type="Script" path="res://scripts/fsm/states/jump_state.gd" id="4_jump"]
@@ -17,7 +18,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
 
-[node name="Player" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -76,3 +77,7 @@ regen_per_second = 12.0
 script = ExtResource("8_magic")
 spells = Array[ExtResource("12_spelldata")]([ExtResource("9_fire"), ExtResource("10_ice"), ExtResource("11_elec")])
 mana = NodePath("../Mana")
+
+[node name="Health" type="Node" parent="."]
+script = ExtResource("14_health")
+max_health = 100.0
