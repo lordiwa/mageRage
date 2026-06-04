@@ -19,6 +19,14 @@ class_name Warden extends CharacterBody2D
 @export var aggro_range: float = 9999.0    # arena boss: always engaged once seen
 @export var attack_range: float = 9999.0   # whole arena is in range (it's a duel)
 
+## TASK-029 sector integration: when instanced into the connected sector (sector_01)
+## the Warden is placed DORMANT so it cannot chase/fire across the whole level while
+## the hero is still traversing the gates — it only engages once the boss-room trigger
+## activates it. Defaults to FALSE so the standalone arena (arena.tscn) is unchanged: a
+## bare/arena Warden is awake from the start. A dormant Warden reports no aggro and
+## never attacks (the FSM stays in Patrol) until activate() flips this off.
+@export var dormant: bool = false
+
 ## Per-phase attack cadence (seconds between shots). P3 is faster (DD-010: "more
 ## rapid"). Indexed by phase-1 (0,1,2). Slow (DD-009) divides the effective rate.
 @export var cooldown_p1: float = 1.8
@@ -247,6 +255,10 @@ func _distance_to_target() -> float:
 	return global_position.distance_to(target.global_position)
 
 func player_in_aggro_range() -> bool:
+	# TASK-029: a dormant (sector-placed, un-triggered) boss never sees the player, so
+	# the FSM stays in Patrol and it doesn't chase across the level.
+	if dormant:
+		return false
 	return DroneAi.in_aggro_range(_distance_to_target(), aggro_range)
 
 ## Chase -> Attack gate: in range AND cooldown ready (slow-adjusted, per phase). A
@@ -254,6 +266,9 @@ func player_in_aggro_range() -> bool:
 ## multiplier (<1 while slowed) — the DD-009 Ice window.
 func can_attack() -> bool:
 	if _won:
+		return false
+	# TASK-029: a dormant boss never fires (it hasn't been triggered yet).
+	if dormant:
 		return false
 	if not DroneAi.in_aggro_range(_distance_to_target(), attack_range):
 		return false
@@ -273,6 +288,19 @@ func is_slowed() -> bool:
 
 func is_defeated() -> bool:
 	return _won
+
+## TASK-029: true while the boss is placed-but-not-yet-triggered (sector integration).
+func is_dormant() -> bool:
+	return dormant
+
+## TASK-029: wake the boss so the encounter begins (the boss-room trigger calls this).
+## Idempotent and one-way — re-calling is harmless; a defeated boss stays defeated.
+## Resets the attack timer so the fight opens with a fresh telegraph, not a free shot.
+func activate() -> void:
+	if not dormant:
+		return
+	dormant = false
+	_time_since_attack = 0.0
 
 func begin_telegraph() -> void:
 	_telegraphing = true

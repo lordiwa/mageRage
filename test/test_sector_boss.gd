@@ -57,11 +57,11 @@ func test_entering_the_trigger_starts_the_encounter_and_activates_the_warden() -
 	# Criterion 1: the player body entering BossRoomTrigger starts the Warden encounter.
 	var level := await _make_sector()
 	var boss := level.warden() as Warden
-	assert_false(level.encounter_started(), "the encounter has not started yet")
+	assert_false(level.is_encounter_started(), "the encounter has not started yet")
 	# Drive the trigger deterministically with the actual Player body (no physics walk).
 	var player := level.get_node("Player")
 	level.boss_room_trigger().body_entered.emit(player)
-	assert_true(level.encounter_started(),
+	assert_true(level.is_encounter_started(),
 		"a body entering the boss-room trigger starts the Warden encounter")
 	assert_false(boss.is_dormant(),
 		"starting the encounter wakes the Warden (it is no longer dormant)")
@@ -88,7 +88,7 @@ func test_non_player_body_does_not_start_the_encounter() -> void:
 	var stray := StaticBody2D.new()
 	add_child_autofree(stray)
 	level.boss_room_trigger().body_entered.emit(stray)
-	assert_false(level.encounter_started(),
+	assert_false(level.is_encounter_started(),
 		"a non-player body entering the trigger does not start the encounter")
 
 
