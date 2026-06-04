@@ -169,3 +169,32 @@ Reemplaza el layout de DD-007. Gamepad principal, teclado additive.
 | Disparo secundario | LT | Q / clic der |
 
 Índices Godot 4 verificados: A=0, B=1, X=2, Y=3, LB=9, RB=10, gatillos eje 4/5.
+
+---
+
+## DD-009 — IA básica del dron, slow de Hielo real, y daño al jugador  ·  **PROVISIONAL**
+
+Da vida al dron del Imperio (hoy un blanco estático) y cierra el loop micro en ambas
+direcciones. Valores provisionales, a afinar en playtest.
+
+### IA del dron (FSM por nodos, como el movimiento del héroe)
+- **Patrol:** sin objetivo a la vista, va y viene (hover) en un rango corto alrededor
+  de su punto de spawn.
+- **Chase:** si el jugador entra en el **rango de aggro** (~280 px), se mueve hacia él
+  (dron flotante; sin gravedad).
+- **Attack:** en rango de ataque + cooldown listo → **telegrafía** (wind-up ~0.4s, flash
+  de color) y dispara un **proyectil enemigo** hacia el jugador. Cooldown ~1.5s. El
+  telegraph es obligatorio (juego justo, DD-001): el jugador siempre puede reaccionar.
+- Proyectil enemigo: capa propia **EnemyAttack (layer 5)** que enmascara **Player (2)**;
+  más lento que el del jugador (legible/esquivable).
+
+### Slow de Hielo (hace real el flag `applies_slow` de DD-004)
+- Un impacto de **Hielo** aplica **SLOWED**: velocidad de movimiento y cadencia de
+  ataque al **50%** por **~2.5s**, refrescable al re-pegar, con decaimiento. Señal visual
+  clara (tinte azulado + etiqueta). Esto es la identidad de **control** de Hielo.
+
+### Daño al jugador (consecuencia + justicia)
+- El jugador gana **Health** (ej. 100). El proyectil enemigo le quita vida.
+- Al recibir daño: **i-frames** breves (~0.8s) con parpadeo; sin stun que quite control.
+- **Muerte → respawn** en el punto de inicio con vida llena (demo; sin penalización dura).
+  Determinista y justo (DD-001). El HUD muestra la **vida del jugador**.

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T02:45:59.905Z",
+  "generated_at": "2026-06-04T02:53:53.830Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -59,6 +59,12 @@
       "key": "TASK-010",
       "title": "Hit-feedback / juice: hit-stop, screen shake, damage numbers, flash, knockback, impact sparks",
       "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-011",
+      "title": "Basic drone AI: patrol/chase/telegraphed attack, real Ice slow, player damage (DD-009)",
+      "status": "todo",
       "priority": "high"
     }
   ]

@@ -1,0 +1,30 @@
+{
+  "key": "TASK-011",
+  "title": "Basic drone AI: patrol/chase/telegraphed attack, real Ice slow, player damage (DD-009)",
+  "description": "Give the EmpireDrone basic AI and close the combat loop both ways, per docs/DECISIONES-DISENO.md DD-009, the game-design skill (enemy telegraphing, fairness DD-001), and DD-004 (Ice = control/slow). Build on scripts/enemies/empire_drone.gd, scripts/combat/* and the existing juice. Deliverables: (1) DRONE AI FSM (node-based, mirroring the player's FSM pattern from godot-game-dev): Patrol (hover back-and-forth near spawn when no target) -> Chase (move toward player when within aggro range ~280px; flying drone, no gravity) -> Attack (in attack range + cooldown ready: telegraph ~0.4s with a wind-up flash, then fire an enemy projectile at the player; cooldown ~1.5s). Telegraph is mandatory (fairness). (2) ENEMY PROJECTILE on a new EnemyAttack physics layer (5) masking Player (2) only; slower than the player's projectile (readable/dodgeable); applies damage to the player on hit. Name layer 5 in project.godot. (3) REAL ICE SLOW — make DD-004's applies_slow functional: an Ice hit applies SLOWED = 50% move speed AND 50% attack rate for ~2.5s, refreshed on re-hit, decaying, with a clear visual (bluish tint + existing label). Keep the slow logic in a pure/testable component. (4) PLAYER DAMAGE — add a Health to the Player (~100), enemy projectile damages it; on hit, brief i-frames (~0.8s) with a blink and no control-stun; death -> respawn at the start position with full health (simple, deterministic, fair). HUD shows player HP. Keep matchup/mana/movement/loadout/juice intact and all existing tests green. Tests-first (GUT) for the pure logic: aggro in-range detection (distance boolean), attack cooldown gating, telegraph timing, slow effect (speed/rate multiplier while active, timer decay + refresh + recovery to full), drone steering direction toward player (sign), player Health damage + i-frame invulnerability window + death->respawn reset. Follow the project-context Bash gotcha: NEVER prefix Godot/GUT commands with 'cd ... &&'; run the absolute binary with absolute --path (it hangs otherwise), and run --import once if new class_name globals are added. Verify headless load clean + full GUT suite exits 0.",
+  "acceptance_criteria": [
+    "EmpireDrone has a node-based AI FSM: Patrol (hover near spawn) -> Chase (toward player within aggro range) -> Attack (telegraph then fire), returning to Chase/Patrol; movement is a flying drone (no gravity) and steers toward the player when aggroed.",
+    "The drone's attack telegraphs (visible wind-up ~0.4s) before firing an enemy projectile on a new EnemyAttack layer (5) that masks Player only, is slower than the player's projectile, and damages the player; attack respects a cooldown.",
+    "Ice hits apply a real SLOWED effect: ~50% move speed and ~50% attack rate for a duration, refreshed on re-hit and decaying back to full, with a clear visual; the slow logic is a pure unit-tested component (multiplier while active, decay, refresh, recovery).",
+    "The Player has Health (~100) and takes damage from enemy projectiles, with brief i-frame invulnerability (blink, no control loss); on death the player respawns at the start with full health; the HUD shows player HP.",
+    "GUT tests (pure logic) cover: aggro in-range detection, attack cooldown gating, telegraph timing, the slow multiplier/decay/refresh/recovery, steering direction sign, and player Health damage/i-frames/death-respawn; full suite passes headless exit 0 with no regression.",
+    "Project loads headless with zero parse errors; placeholder visuals only; matchup/mana/movement/loadout/juice behavior unchanged except as intended by DD-009."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "ai",
+    "enemy",
+    "combat",
+    "vertical-slice"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-04T02:53:53.830Z",
+  "updated_at": "2026-06-04T02:53:53.830Z",
+  "jira_key": null
+}
