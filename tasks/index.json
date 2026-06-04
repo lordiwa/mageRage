@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T20:21:54.314Z",
+  "generated_at": "2026-06-04T20:42:40.584Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -172,7 +172,7 @@
     {
       "key": "TASK-029",
       "title": "M1 (d): Warden as sector boss + sector victory in the connected level",
-      "status": "todo",
+      "status": "done",
       "priority": "high"
     }
   ]
