@@ -21,6 +21,8 @@ func physics_update(delta: float) -> void:
 		_coyote -= delta
 	else:
 		_coyote = COYOTE_TIME
+		# DD-008: grounded -> reset the double-jump counter for the next airtime.
+		player.reset_jumps()
 
 	var dir := Input.get_axis("move_left", "move_right")
 	player.velocity.x = dir * SPEED

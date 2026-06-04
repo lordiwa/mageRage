@@ -30,7 +30,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 
-## Called by MagicManager.cast(): copy spell data and aim.
+## Called by MagicManager.cast_primary()/cast_secondary(): copy spell data and aim.
 func setup(spell: SpellData, direction: Vector2) -> void:
 	element = spell.element
 	base_damage = spell.damage

@@ -17,9 +17,13 @@ const JUMP_BUFFER := 0.10      # grace window before landing for a buffered jump
 var facing := 1.0
 
 ## One-shot: when true, the next JumpState entry skips the launch impulse + dash
-## reset. Set by FlightState when toggling flight off so leaving flight does not
-## grant a free upward leap (and re-grant the air dash).
+## reset. Retained from earlier flight-toggle handling; harmless under DD-008.
 var suppress_jump_impulse := false
+
+## DD-008 double-jump: number of jumps fired since leaving the ground. The first
+## leap (Move -> Jump) registers as 1; a SECOND jump press in the air (with
+## electricity) promotes to FlightState. Reset to 0 on landing.
+var jump_count := 0
 
 var _jump_buffer := 0.0
 
@@ -45,24 +49,26 @@ func _process(delta: float) -> void:
 
 	_process_magic(delta)
 
-## Element swap + cast. Swapping is moment-to-moment (the GDD micro-loop); cast
-## fires the equipped spell in the facing direction, paying mana via MagicManager.
+## DD-008 loadout swap + dual-trigger cast. Selecting an element promotes it to
+## the primary slot (demoting the prior primary to secondary). cast_primary fires
+## the primary slot, cast_secondary the secondary — both in the facing direction,
+## paying mana via MagicManager.
 func _process_magic(delta: float) -> void:
 	if _magic == null:
 		return
 	if _mana != null:
 		_mana.regenerate(delta)
 	if Input.is_action_just_pressed("element_1"):
-		_magic.equip(0)
+		_magic.select(0)
 	elif Input.is_action_just_pressed("element_2"):
-		_magic.equip(1)
+		_magic.select(1)
 	elif Input.is_action_just_pressed("element_3"):
-		_magic.equip(2)
-	elif Input.is_action_just_pressed("element_cycle"):
-		_magic.cycle()
-	if Input.is_action_just_pressed("cast"):
-		var origin: Node2D = _muzzle if _muzzle != null else self
-		_magic.cast(origin, Vector2(facing, 0.0))
+		_magic.select(2)
+	var origin: Node2D = _muzzle if _muzzle != null else self
+	if Input.is_action_just_pressed("cast_primary"):
+		_magic.cast_primary(origin, Vector2(facing, 0.0))
+	if Input.is_action_just_pressed("cast_secondary"):
+		_magic.cast_secondary(origin, Vector2(facing, 0.0))
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:
@@ -71,8 +77,21 @@ func current_mana() -> float:
 func max_mana() -> float:
 	return _mana.max_mana if _mana != null else 0.0
 
-func equipped_spell() -> SpellData:
-	return _magic.equipped if _magic != null else null
+## DD-008 HUD accessors: the primary/secondary equipped elements.
+func primary_spell() -> SpellData:
+	return _magic.primary if _magic != null else null
+
+func secondary_spell() -> SpellData:
+	return _magic.secondary if _magic != null else null
+
+## DD-008 double-jump bookkeeping. The FSM calls register_jump() when a leap
+## fires and reset_jumps() on landing; JumpState/GlideState read jump_count to
+## decide whether a fresh jump press is the genuine second jump (-> flight).
+func register_jump() -> void:
+	jump_count += 1
+
+func reset_jumps() -> void:
+	jump_count = 0
 
 ## Peek: is a jump currently buffered? Does NOT clear the buffer, so a state can
 ## check the floor/coyote condition before committing to fire.

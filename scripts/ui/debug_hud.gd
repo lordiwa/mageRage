@@ -43,14 +43,20 @@ func _on_state_changed(state_name: String) -> void:
 func _refresh() -> void:
 	if _label == null:
 		return
-	var element_txt := "—"
+	var primary_txt := "—"
+	var secondary_txt := "—"
 	var mana_txt := "—"
 	if _player != null:
-		if _player.has_method("equipped_spell"):
-			var spell = _player.equipped_spell()
-			if spell != null:
-				element_txt = _ELEMENT_NAMES[spell.element]
+		if _player.has_method("primary_spell"):
+			var ps = _player.primary_spell()
+			if ps != null:
+				primary_txt = _ELEMENT_NAMES[ps.element]
+		if _player.has_method("secondary_spell"):
+			var ss = _player.secondary_spell()
+			if ss != null:
+				secondary_txt = _ELEMENT_NAMES[ss.element]
 		if _player.has_method("current_mana"):
 			mana_txt = "%d/%d" % [int(_player.current_mana()), int(_player.max_mana())]
-	_label.text = "STATE: %s    ELEMENT: %s    MANA: %s\n[A/D]/[←/→] move  [Space] jump  [Shift] dash  [Alt] glide (hold)  [F] fly\n[1] Fire  [2] Ice  [3] Electricity  [Q] cycle  [E]/[LMB] cast\nPAD: L-stick move  A jump  B dash  LT glide  Y fly  RT cast  D-pad/RB element" % [
-		_state_name, element_txt, mana_txt]
+	# DD-008 control hints (gamepad-first, keyboard additive).
+	_label.text = "STATE: %s    PRIMARY: %s    SECONDARY: %s    MANA: %s\n[A/D]/[←/→]/[W/S] move  [Space] jump (double = fly)  [Shift] dash  [Alt] glide (hold)\n[1] Fire  [2] Ice  [3] Electricity (primary = last pressed)  [E]/[LMB] cast primary  [Q]/[RMB] cast secondary\nPAD: L-stick move  A jump (double = fly)  RB dash  LB glide (hold)  X/Y/B element  RT primary  LT secondary" % [
+		_state_name, primary_txt, secondary_txt, mana_txt]

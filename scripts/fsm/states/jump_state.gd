@@ -3,7 +3,8 @@
 ## Applies the jump impulse on enter, then air control + gravity. Offers three
 ## exits, each gated on the matching unlocked ability:
 ##   - Ice  => hold glide while descending -> GlideState
-##   - Electricity => press fly -> FlightState (the game-changer)
+##   - Electricity => DD-008 DOUBLE JUMP: a SECOND jump press in the air ->
+##     FlightState (the game-changer). No dedicated `fly` action.
 ##   - touching floor -> MoveState
 ## Also provides a one-shot air dash (Fire's explosive dash) on the "dash" input.
 class_name JumpState extends EstadoBase
@@ -26,6 +27,9 @@ func enter() -> void:
 	else:
 		player.velocity.y = JUMP_VELOCITY  # the leap impulse
 		_dash_used = false
+		# DD-008: register this leap so a subsequent air jump press is the
+		# genuine SECOND jump (-> flight). reset_jumps() runs on landing.
+		player.register_jump()
 
 func physics_update(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
@@ -62,9 +66,11 @@ func physics_update(delta: float) -> void:
 		transition_to("MoveState")
 		return
 
-	# Electricity unlock: free flight. Gated here so without electricity the
-	# fly input is a no-op (ability gating).
-	if player.abilities.has("electricity") and Input.is_action_just_pressed("fly"):
+	# DD-008 double-jump -> flight. A SECOND jump press in the air (the first
+	# leap already registered jump_count >= 1) promotes to flight, gated on
+	# electricity. Without electricity the double-jump does nothing.
+	if player.abilities.has("electricity") and player.jump_count >= 1 \
+			and Input.is_action_just_pressed("jump"):
 		transition_to("FlightState")
 		return
 

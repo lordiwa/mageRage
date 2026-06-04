@@ -2,8 +2,8 @@
 ##
 ## Clamps descent speed so the hero floats across long horizontal chasms while
 ## the glide input is held. Releasing glide drops back to JumpState (normal
-## fall); pressing fly (with Electricity) promotes to FlightState; landing
-## returns to MoveState.
+## fall); DD-008 double-jump (a second jump press, with Electricity) promotes to
+## FlightState; landing returns to MoveState.
 class_name GlideState extends EstadoBase
 
 const SPEED := 240.0
@@ -23,7 +23,10 @@ func physics_update(delta: float) -> void:
 	if player.is_on_floor():
 		transition_to("MoveState")
 		return
-	if player.abilities.has("electricity") and Input.is_action_just_pressed("fly"):
+	# DD-008 double-jump -> flight (electricity-gated). A second jump press while
+	# gliding promotes to flight; without electricity it does nothing.
+	if player.abilities.has("electricity") and player.jump_count >= 1 \
+			and Input.is_action_just_pressed("jump"):
 		transition_to("FlightState")
 		return
 	if not Input.is_action_pressed("glide"):

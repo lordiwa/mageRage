@@ -1,54 +1,76 @@
 ## MagicManager (godot-game-dev SKILL Workflow 2): holds the three SpellData
-## (Fire/Ice/Electricity), equips/cycles between them, and on cast checks+spends
-## mana then spawns the equipped spell's projectile in the aim direction. Only
-## READS SpellData (data-driven magic); never one script per spell.
+## (Fire/Ice/Electricity) and a DD-008 two-slot loadout (PRIMARY + SECONDARY).
+## Only READS SpellData (data-driven magic); never one script per spell.
 ##
-## Split for headless testing: try_cast() does the mana check/spend and returns the
-## SpellData to spawn (or null); cast() wires that to an actual projectile spawn.
+## DD-008 loadout: select(index) promotes that element to PRIMARY and demotes the
+## previous primary to SECONDARY — a stack of the last two distinct elements.
+## Re-selecting the current primary is a no-op. cast_primary fires the primary
+## slot, cast_secondary the secondary; each checks+spends mana per cast.
+##
+## Split for headless testing: try_cast_primary()/try_cast_secondary() do the mana
+## check/spend and return the SpellData to spawn (or null); cast_primary()/
+## cast_secondary() wire that to an actual projectile spawn.
 class_name MagicManager extends Node
 
-signal equipped_changed(spell: SpellData)
+signal loadout_changed(primary: SpellData, secondary: SpellData)
 
 @export var spells: Array[SpellData] = []
 @export var mana: Mana
 
-var equipped: SpellData
-var _index := 0
+## DD-008 two-element loadout. primary fires on cast_primary, secondary on
+## cast_secondary.
+var primary: SpellData
+var secondary: SpellData
 
 func _ready() -> void:
-	equip(0)
+	# Default loadout: the first two distinct spells (primary, secondary).
+	if spells.size() >= 1:
+		primary = spells[0]
+	if spells.size() >= 2:
+		secondary = spells[1]
+	loadout_changed.emit(primary, secondary)
 
-## Equip the spell in slot `index`. Out-of-range indices are ignored.
-func equip(index: int) -> void:
+## Select the element in slot `index`: promote it to PRIMARY and demote the
+## previous primary to SECONDARY (last-two-distinct stack). Re-selecting the
+## current primary is a no-op. Out-of-range indices are ignored.
+func select(index: int) -> void:
 	if index < 0 or index >= spells.size():
 		return
-	_index = index
-	equipped = spells[index]
-	equipped_changed.emit(equipped)
+	var chosen := spells[index]
+	if chosen == primary:
+		return                       # already primary: no-op
+	secondary = primary              # demote old primary
+	primary = chosen                 # promote selection
+	loadout_changed.emit(primary, secondary)
 
-## Advance to the next spell, wrapping around.
-func cycle() -> void:
-	if spells.is_empty():
-		return
-	equip((_index + 1) % spells.size())
+## The element of the primary slot (or -1 if none).
+func primary_element() -> int:
+	return primary.element if primary != null else -1
 
-## The element of the currently equipped spell (or -1 if none).
-func equipped_element() -> int:
-	return equipped.element if equipped != null else -1
+## The element of the secondary slot (or -1 if none).
+func secondary_element() -> int:
+	return secondary.element if secondary != null else -1
 
-## Validate and pay for a cast. Returns the equipped SpellData on success (mana
+## Validate and pay for casting `spell`. Returns the SpellData on success (mana
 ## spent) or null when there is no spell or mana < cost (mana untouched).
-func try_cast() -> SpellData:
-	if equipped == null or mana == null:
+func _try_cast(spell: SpellData) -> SpellData:
+	if spell == null or mana == null:
 		return null
-	if not mana.spend(equipped.mana_cost):
+	if not mana.spend(spell.mana_cost):
 		return null
-	return equipped
+	return spell
 
-## Full runtime cast: spends mana and spawns the projectile from `origin` toward
-## `direction`. Returns true if a projectile was spawned.
-func cast(origin: Node2D, direction: Vector2) -> bool:
-	var spell := try_cast()
+## Validate and pay for a PRIMARY-slot cast (see _try_cast).
+func try_cast_primary() -> SpellData:
+	return _try_cast(primary)
+
+## Validate and pay for a SECONDARY-slot cast (see _try_cast).
+func try_cast_secondary() -> SpellData:
+	return _try_cast(secondary)
+
+## Spawn the projectile for `spell` from `origin` toward `direction`. Returns true
+## if a projectile was spawned.
+func _spawn(spell: SpellData, origin: Node2D, direction: Vector2) -> bool:
 	if spell == null or spell.projectile == null:
 		return false
 	var p := spell.projectile.instantiate()
@@ -57,3 +79,11 @@ func cast(origin: Node2D, direction: Vector2) -> bool:
 		p.setup(spell, direction)
 	origin.get_tree().current_scene.add_child(p)
 	return true
+
+## Full runtime PRIMARY cast: spends mana and spawns the primary projectile.
+func cast_primary(origin: Node2D, direction: Vector2) -> bool:
+	return _spawn(try_cast_primary(), origin, direction)
+
+## Full runtime SECONDARY cast: spends mana and spawns the secondary projectile.
+func cast_secondary(origin: Node2D, direction: Vector2) -> bool:
+	return _spawn(try_cast_secondary(), origin, direction)
