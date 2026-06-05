@@ -10,15 +10,19 @@
     "The state->animation selection is a pure unit-tested function; player.tscn loads headless; GUT crucial(61) + full suites green; gdlint clean.",
     "Glide and death have NO dedicated PixelLab anim — a documented fallback is used and the gap is noted for a possible later PixelLab generation."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": ["art", "hero", "sprites", "pixellab", "animation", "player", "fsm"],
   "assignee": null,
   "depends_on": [],
-  "linked_commits": [],
+  "linked_commits": [
+    "dc87fbb", "c45e385", "089f8ca", "23f7bec", "d44718a", "93e488d", "d2cb577"
+  ],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    "DONE (local, not pushed). Tests-first developer -> reviewer BLOCK on 1 HIGH (no nearest texture filter -> blurry pixel-art) -> developer fix (per-node texture_filter=1 on the hero AnimatedSprite2D, NOT the global default, to avoid aliasing the downscaled-0.2 M2 parallax) + 2 guard tests -> reviewer re-ACCEPT. Final: full GUT 757/757, crucial 61/61, gdlint clean; collision RectangleShape2D (24,40) byte-identical; feet seated at measured 1.0px. Documented gaps: glide -> 'fall' fallback; death -> hold last hurt frame (candidates for a later PixelLab generation pass). fps/which-idle/offset fine-tuning left as DIRECT playtest tweaks. 7 commits, NOT pushed (awaiting human go per repo etiquette)."
+  ],
   "created_at": "2026-06-05T16:00:00.000Z",
-  "updated_at": "2026-06-05T16:00:00.000Z",
+  "updated_at": "2026-06-05T16:20:00.000Z",
   "jira_key": null
 }
