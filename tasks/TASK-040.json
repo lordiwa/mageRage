@@ -9,7 +9,7 @@
     "Anti-dominance preserved: combo consumes both elements' mana (or premium) AND fires on a slower combo cadence than single shots, so it cannot be spammed as a win button; single-element swapping (the RPS micro-loop) remains viable. No flight/gating regression (hero flies from spawn).",
     "Tests-first; full GUT suite green exit 0 run multiple times (flake-aware, held-axis + InputGate hygiene); gdlint clean; reviewer re-runs the feature-vetting checklist with no FAIL gate."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "godot",
@@ -27,6 +27,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-05T03:47:08.131Z",
-  "updated_at": "2026-06-05T05:31:37.072Z",
+  "updated_at": "2026-06-05T06:14:18.163Z",
   "jira_key": null
 }

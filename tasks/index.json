@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T05:31:37.072Z",
+  "generated_at": "2026-06-05T06:14:18.163Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -238,7 +238,7 @@
     {
       "key": "TASK-040",
       "title": "M2.1 Combat-feel: dual-cast element MIXING / combo shot (DD-013) — both triggers fire one blended projectile",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     },
     {
