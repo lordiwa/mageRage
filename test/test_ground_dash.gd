@@ -359,6 +359,14 @@ func test_ground_dash_speed_const_exists_and_matches_air_dash() -> void:
 	assert_eq(ground_speed, air_speed,
 		"ground dash speed must equal air dash speed (DASH_SPEED kept in sync)")
 
+	# Direct const-parity guard (AC6): both DASH_SPEED and DASH_TIME are duplicated
+	# literals across MoveState/JumpState protected only by a code comment. Pin both
+	# so any future drift in either file fails this test.
+	assert_eq(MoveState.DASH_SPEED, JumpState.DASH_SPEED,
+		"MoveState.DASH_SPEED must stay in sync with JumpState.DASH_SPEED")
+	assert_eq(MoveState.DASH_TIME, JumpState.DASH_TIME,
+		"MoveState.DASH_TIME must stay in sync with JumpState.DASH_TIME")
+
 
 # ---------------------------------------------------------------------------
 # ANIMATION gap (AC7): no dedicated anim — movement anim continues during dash.
