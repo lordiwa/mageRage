@@ -1,0 +1,21 @@
+{
+  "key": "TASK-050",
+  "title": "De-duplicate the crucial-core: run the 61 in place (no test/crucial copies) to remove drift risk",
+  "description": "Fast-follow to TASK-049 (reviewer MEDIUM). The crucial push/PR gate currently runs 61 tests from test/crucial/ that are COPIES of methods in the originals under test/ (13 method-copy files + 3 extends-forwarders). The copies are faithful today, but they duplicate the 61 crucial tests, so if someone later tightens/fixes an assertion in an original and forgets the copy, the fast push/PR gate keeps running the STALE copy and can pass a regression that only the nightly full suite catches a day later (gate erosion). GUT 9.4.0 DOES expose a method-level filter -gunit_test_name (a single substring matched against test method names; see addons/gut/cli/gut_cli.gd:124), plus -gtest (explicit script-path list) and -ginner_class. OPTIONS to evaluate: (1) tag the 61 curated crucial methods with a shared name token (e.g. rename to a 'test_crucial_...' prefix or add a 'crucial' substring) and run the crucial gate IN PLACE over res://test with -gunit_test_name=crucial -> zero duplication, the originals ARE the crucial tests; nightly stays -gdir=res://test (superset by definition). (2) GUT inner-class grouping. (3) Keep the copies but add a CI check that each test/crucial copy is byte-identical to its origin (cheap guard, but keeps the duplication). PREFER option 1 if the rename churn is acceptable; it removes the test/crucial/ tree entirely. Whatever is chosen: the crucial run must still be exactly the curated set (<66) and green 2-3x; the nightly full suite must remain a superset; docs/CRUCIAL-TESTS.md updated to match; no behavior change to the tests themselves.",
+  "acceptance_criteria": [
+    "The crucial push/PR gate runs the curated 61 (<66) with NO duplicated test bodies (or, if copies are kept, a CI guard fails when a test/crucial copy diverges from its origin).",
+    "Mechanism documented in docs/CRUCIAL-TESTS.md; crucial run green 2-3x; nightly full suite still a superset and green.",
+    "gdlint clean; no change to what the crucial tests assert."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": ["ci", "tests", "gut", "tooling", "tech-debt"],
+  "assignee": null,
+  "depends_on": ["TASK-049"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T09:40:00.000Z",
+  "updated_at": "2026-06-05T09:40:00.000Z",
+  "jira_key": null
+}

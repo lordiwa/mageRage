@@ -58,7 +58,7 @@ array, fall back to a thin `test/crucial/` dir of forwarder scripts
 > NOTE: TASK-048 is being reworked to align ALL capped surfaces and parametrize
 > these across floor + LedgeA/B/C + BossStep. Follow the methods by name after
 > that lands (the count may rise a few — still under 66).
-- test_sector_02_visual_bounds.gd :: test_floor_cap_visible_lip_sits_at_the_collision_floor_top
+- test_sector_02_visual_bounds.gd :: test_every_capped_surface_lip_sits_on_its_own_collision_top
 - test_sector_02_visual_bounds.gd :: test_floor_cap_lip_is_not_below_the_feet_line
 
 ### G. Projectile-pool physics callback (TASK-044) [3]
