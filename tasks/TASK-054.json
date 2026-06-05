@@ -11,14 +11,16 @@
     "Full GUT + crucial(61) green; gdlint clean; docs/DECISIONES-DISENO.md updated (ground+air dash, binding fixed).",
     "Dash has no dedicated animation (documented gap; current movement anim is used during the brief burst)."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": ["gameplay", "movement", "fsm", "dash", "input"],
   "assignee": null,
   "depends_on": [],
-  "linked_commits": [],
+  "linked_commits": ["b641271", "8670ba2", "bce2af1", "fa4b991"],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    "DONE (local, branch task-052-hero-art, NOT pushed; rides with the TASK-052 hero PR #6). Tests-first developer -> reviewer ACCEPT (no HIGH). Ground dash added to MoveState mirroring the air dash: Fire-gated, InputGate.just_pressed('dash') (RB/Shift, NO input-map change, A stays Jump), velocity.x=facing*DASH_SPEED(460) for DASH_TIME(0.12) with gravity suppressed, then normal run. Anti-spam via DASH_COOLDOWN=0.35s (PROVISIONAL/tunable) that ticks every physics frame and deliberately does NOT reset on enter (no ledge-brush re-dash). Jump still cancels a ground dash (buffered-jump->JumpState fires even mid-burst). Reviewer independently confirmed: jump_state.gd byte-identical (air dash unchanged, still one-per-airtime), no input-map/collision change, and NO new gate/flight bypass (horizontal only, velocity.y=0, ~55px, can't clear the 98px flight-only boss gap or the anti-magic flight zone). MEDIUM folded in: DASH_SPEED+DASH_TIME parity now asserted directly (closes AC6 drift gap). docs/DECISIONES-DISENO.md updated (DD-005 ground+air dash note; DD-007 binding fixed B->RB/btn10). No dedicated dash anim (documented gap; movement anim used during the 0.12s burst). Final: full GUT 769/769, crucial 61/61, gdlint clean. 4 commits (b641271 tests, 8670ba2 impl, bce2af1 docs, fa4b991 parity guard). Skipped 2 behavior-neutral LOWs (hoist facing update; extract _try_buffered_jump helper). DASH_COOLDOWN value to confirm in playtest."
+  ],
   "created_at": "2026-06-05T16:55:00.000Z",
   "updated_at": "2026-06-05T16:55:00.000Z",
   "jira_key": null
