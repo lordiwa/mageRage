@@ -417,6 +417,96 @@ func test_debug_hud_is_present_and_bound_to_the_player() -> void:
 		"the debug HUD is bound to the sector's Player")
 
 
+# --- TASK-039 loadout + trigger HUD in the PLAYABLE sector -------------------
+# The whole point of TASK-039: while PLAYING sector_02 (the main_scene) the hero
+# must see WHICH TRIGGER fires WHICH element. The reusable scenes/player_hud.tscn
+# (loadout swatches/labels + the RT/LT trigger Labels) is instanced into the
+# sector and bound to THIS sector's Player + MagicManager so it reads the live
+# loadout. Deterministic structure-style (no physics await), autofreed.
+
+## The default loadout from scenes/player.tscn's MagicManager.spells:
+## [firebolt(FIRE), ice_shard(ICE), lightning(ELEC)] -> primary FIRE, secondary ICE.
+const _DEFAULT_PRIMARY_EL := SpellData.Element.FIRE
+const _DEFAULT_SECONDARY_EL := SpellData.Element.ICE
+
+
+## Resolve the instanced loadout HUD (the reusable scenes/player_hud.tscn) under the
+## sector. Instanced as a direct child "PlayerHUD" CanvasLayer running player_hud.gd.
+func _loadout_hud(level: Node2D) -> PlayerHUD:
+	return level.get_node_or_null("PlayerHUD") as PlayerHUD
+
+
+func test_loadout_hud_is_instanced_in_sector_02() -> void:
+	# The reusable loadout HUD scene resolves under the playable sector and runs the
+	# PlayerHUD script (so the loadout/trigger read appears IN-GAME, not just test_level).
+	var level: Node2D = await _make_sector()
+	var hud := _loadout_hud(level)
+	assert_not_null(hud, "scenes/player_hud.tscn is instanced into sector_02 as PlayerHUD")
+	assert_true(hud is PlayerHUD, "the instanced loadout HUD runs the PlayerHUD script")
+
+
+func test_loadout_hud_is_bound_to_this_sectors_player_and_manager() -> void:
+	# The HUD must read THIS sector's Player + MagicManager (the live loadout), wired via
+	# the relative NodePaths preset on the instance (../Player, ../Player/MagicManager).
+	var level: Node2D = await _make_sector()
+	var hud := _loadout_hud(level)
+	assert_not_null(hud, "the loadout HUD resolves")
+	assert_eq(hud.get("player_path"), NodePath("../Player"),
+		"the loadout HUD is bound to the sector's Player")
+	assert_eq(hud.get("magic_manager_path"), NodePath("../Player/MagicManager"),
+		"the loadout HUD is bound to the sector's MagicManager (live loadout)")
+	assert_not_null(level.get_node_or_null("Player/MagicManager"),
+		"the bound MagicManager resolves under the sector's Player")
+
+
+func test_loadout_hud_has_trigger_labels_bound_to_the_right_slots() -> void:
+	# The RT/LT trigger glyphs appear in-game: PRIMARY = RT, SECONDARY = LT.
+	var level: Node2D = await _make_sector()
+	var hud := _loadout_hud(level)
+	assert_not_null(hud, "the loadout HUD resolves")
+	var primary_trigger := hud.get_node_or_null("PrimaryTrigger") as Label
+	var secondary_trigger := hud.get_node_or_null("SecondaryTrigger") as Label
+	assert_not_null(primary_trigger, "the HUD contains a PrimaryTrigger Label")
+	assert_not_null(secondary_trigger, "the HUD contains a SecondaryTrigger Label")
+	assert_eq(primary_trigger.text, PlayerHUD.PRIMARY_TRIGGER,
+		"the primary trigger reads RT (which trigger fires the primary slot)")
+	assert_eq(secondary_trigger.text, PlayerHUD.SECONDARY_TRIGGER,
+		"the secondary trigger reads LT (which trigger fires the secondary slot)")
+
+
+func test_loadout_hud_element_names_reflect_the_sector_loadout() -> void:
+	# The element NAMES read the sector's live default loadout (FIRE primary, ICE secondary).
+	var level: Node2D = await _make_sector()
+	var hud := _loadout_hud(level)
+	assert_not_null(hud, "the loadout HUD resolves")
+	var primary_label := hud.get_node_or_null("PrimaryLabel") as Label
+	var secondary_label := hud.get_node_or_null("SecondaryLabel") as Label
+	assert_not_null(primary_label, "the HUD contains a PrimaryLabel")
+	assert_not_null(secondary_label, "the HUD contains a SecondaryLabel")
+	assert_eq(primary_label.text, PlayerHUD.element_label(_DEFAULT_PRIMARY_EL),
+		"the primary element name reflects the sector loadout (FIRE)")
+	assert_eq(secondary_label.text, PlayerHUD.element_label(_DEFAULT_SECONDARY_EL),
+		"the secondary element name reflects the sector loadout (ICE)")
+
+
+func test_loadout_hud_swatch_colors_use_projectile_style_for_the_sector_loadout() -> void:
+	# Colors come from the single source of truth (ProjectileStyle), matching the live
+	# default loadout. The swatches AND the element-tinted trigger glyphs both read it.
+	var level: Node2D = await _make_sector()
+	var hud := _loadout_hud(level)
+	assert_not_null(hud, "the loadout HUD resolves")
+	var primary_swatch := hud.get_node_or_null("PrimarySwatch") as ColorRect
+	var secondary_swatch := hud.get_node_or_null("SecondarySwatch") as ColorRect
+	assert_not_null(primary_swatch, "the HUD contains a PrimarySwatch")
+	assert_not_null(secondary_swatch, "the HUD contains a SecondarySwatch")
+	assert_eq(primary_swatch.color,
+		ProjectileStyle.for_element(_DEFAULT_PRIMARY_EL)["color"],
+		"the primary swatch is the ProjectileStyle Fire color (sector loadout)")
+	assert_eq(secondary_swatch.color,
+		ProjectileStyle.for_element(_DEFAULT_SECONDARY_EL)["color"],
+		"the secondary swatch is the ProjectileStyle Ice color (sector loadout)")
+
+
 # --- Mixed-armor enemy presence (DD-006) -------------------------------------
 
 func test_three_plus_enemies_in_group_with_mixed_armor() -> void:

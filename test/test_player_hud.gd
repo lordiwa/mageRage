@@ -103,3 +103,35 @@ func test_is_low_mana_threshold_boundary() -> void:
 		"exactly at the threshold is not yet the low-mana state")
 	assert_true(PlayerHUD.is_low_mana(PlayerHUD.LOW_MANA_THRESHOLD - 0.01),
 		"just below the threshold is the low-mana state")
+
+
+# --- TASK-039 trigger->slot binding: which TRIGGER fires which SLOT ------------
+# The HUD must say PRIMARY is fired by RT and SECONDARY by LT (the canonical
+# DD-008 scheme). The trigger glyph text is a pure function of the SLOT (static,
+# element-independent); only the slot's element NAME + COLOR change on loadout.
+
+func test_trigger_label_primary_is_rt() -> void:
+	assert_eq(PlayerHUD.trigger_label(MagicManager.SLOT_PRIMARY), "RT",
+		"the PRIMARY slot is fired by the RIGHT trigger (RT)")
+
+
+func test_trigger_label_secondary_is_lt() -> void:
+	assert_eq(PlayerHUD.trigger_label(MagicManager.SLOT_SECONDARY), "LT",
+		"the SECONDARY slot is fired by the LEFT trigger (LT)")
+
+
+func test_trigger_label_constants_match_helper() -> void:
+	# The exposed constants are the single source of the glyph strings.
+	assert_eq(PlayerHUD.PRIMARY_TRIGGER, "RT",
+		"PRIMARY_TRIGGER is the RT glyph")
+	assert_eq(PlayerHUD.SECONDARY_TRIGGER, "LT",
+		"SECONDARY_TRIGGER is the LT glyph")
+	assert_eq(PlayerHUD.trigger_label(MagicManager.SLOT_PRIMARY),
+		PlayerHUD.PRIMARY_TRIGGER, "the helper returns the PRIMARY_TRIGGER glyph")
+	assert_eq(PlayerHUD.trigger_label(MagicManager.SLOT_SECONDARY),
+		PlayerHUD.SECONDARY_TRIGGER, "the helper returns the SECONDARY_TRIGGER glyph")
+
+
+func test_trigger_label_unknown_slot_is_blank() -> void:
+	assert_eq(PlayerHUD.trigger_label(999), "",
+		"an unknown slot id yields no trigger glyph (safe default)")

@@ -1,7 +1,8 @@
-[gd_scene load_steps=18 format=3 uid="uid://c8magerasec02"]
+[gd_scene load_steps=19 format=3 uid="uid://c8magerasec02"]
 
 [ext_resource type="PackedScene" uid="uid://b8mageragepl0r" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/levels/sector_02.gd" id="2_sector"]
+[ext_resource type="PackedScene" uid="uid://b8mageragephud0" path="res://scenes/player_hud.tscn" id="12_playerhud"]
 [ext_resource type="PackedScene" uid="uid://b8mageparallaxbg" path="res://scenes/parallax_background.tscn" id="3_backdrop"]
 [ext_resource type="PackedScene" uid="uid://b8mageragegate" path="res://scenes/elemental_gate.tscn" id="4_gate"]
 [ext_resource type="PackedScene" uid="uid://b8mageragezone" path="res://scenes/anti_magic_zone.tscn" id="5_zone"]
@@ -280,3 +281,5 @@ offset_bottom = 320.0
 theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
 theme_override_font_sizes/font_size = 48
 text = "SECTOR CLEAR"
+
+[node name="PlayerHUD" parent="." instance=ExtResource("12_playerhud")]

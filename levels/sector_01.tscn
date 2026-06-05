@@ -1,7 +1,8 @@
-[gd_scene load_steps=16 format=3 uid="uid://c8magerasec01"]
+[gd_scene load_steps=17 format=3 uid="uid://c8magerasec01"]
 
 [ext_resource type="PackedScene" uid="uid://b8mageragepl0r" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/levels/sector_01.gd" id="2_sector"]
+[ext_resource type="PackedScene" uid="uid://b8mageragephud0" path="res://scenes/player_hud.tscn" id="10_playerhud"]
 [ext_resource type="PackedScene" uid="uid://b8mageragedr0n" path="res://scenes/empire_drone.tscn" id="3_drone"]
 [ext_resource type="PackedScene" uid="uid://b8mageragechrg" path="res://scenes/charger.tscn" id="4_charger"]
 [ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="5_hud"]
@@ -248,3 +249,5 @@ offset_bottom = 320.0
 theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
 theme_override_font_sizes/font_size = 48
 text = "SECTOR CLEAR"
+
+[node name="PlayerHUD" parent="." instance=ExtResource("10_playerhud")]

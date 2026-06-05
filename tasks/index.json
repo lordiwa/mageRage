@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T04:12:48.612Z",
+  "generated_at": "2026-06-05T04:50:41.798Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -226,13 +226,13 @@
     {
       "key": "TASK-038",
       "title": "M2.1 Combat-feel: hold-to-fire + per-element fire rate (Fire fast / Elec med / Ice slow)",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high"
     },
     {
       "key": "TASK-039",
       "title": "M2.1 Combat-feel: trigger-element HUD (show which element is on RT vs LT)",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

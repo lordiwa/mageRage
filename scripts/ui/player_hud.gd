@@ -29,6 +29,19 @@ const MANA_LOW_COLOR := Color(0.95, 0.45, 0.30, 1.0)   # warning tint when low/e
 const _ELEMENT_NAMES := ["FIRE", "ICE", "ELECTRICITY", "ANTIMATTER"]
 const _EMPTY_LABEL := "—"
 
+# --- TASK-039 trigger->element binding ---------------------------------------
+# Playtest feedback: the player couldn't tell WHICH TRIGGER fires WHICH element.
+# Each loadout slot now shows an explicit trigger glyph next to its element
+# swatch+label. The canonical DD-008 scheme is RT = PRIMARY, LT = SECONDARY. The
+# glyph TEXT is a pure function of the SLOT (static, element-independent); only the
+# slot's element name + color change on loadout_changed. The glyph is tinted to the
+# element color too so the binding reads at a glance without burying the HP/Mana read.
+
+## Trigger glyph for the PRIMARY slot (right trigger).
+const PRIMARY_TRIGGER := "RT"
+## Trigger glyph for the SECONDARY slot (left trigger).
+const SECONDARY_TRIGGER := "LT"
+
 # --- TASK-016 damage feedback ------------------------------------------------
 
 ## Player-damage color language: damage reads RED (distinct from the element
@@ -59,6 +72,12 @@ const INDICATOR_DURATION := 0.45
 @export var secondary_swatch_path: NodePath     # ColorRect: smaller secondary tint
 @export var secondary_label_path: NodePath      # Label: secondary element name
 
+## TASK-039 per-slot trigger glyph Labels (optional; the HUD degrades gracefully if
+## a level omits them). PRIMARY shows "RT", SECONDARY shows "LT" — which trigger
+## fires that slot. Static text per slot; tinted live to the slot's element color.
+@export var primary_trigger_label_path: NodePath    # Label: "RT" (primary trigger)
+@export var secondary_trigger_label_path: NodePath  # Label: "LT" (secondary trigger)
+
 ## TASK-016 damage feedback widgets (all optional; the HUD degrades gracefully if
 ## a level omits them). Vignette = a full-screen RED edge frame (low/zero center
 ## alpha) that flashes and fades. Indicator = an arrow pivot that rotates toward
@@ -77,6 +96,8 @@ var _primary_swatch: ColorRect
 var _primary_label: Label
 var _secondary_swatch: ColorRect
 var _secondary_label: Label
+var _primary_trigger_label: Label
+var _secondary_trigger_label: Label
 
 var _vignette: CanvasItem
 var _indicator_pivot: CanvasItem
@@ -116,6 +137,18 @@ static func element_label(element: int) -> String:
 ## Low-mana warning predicate: strictly below the threshold fraction.
 static func is_low_mana(fraction: float) -> bool:
 	return fraction < LOW_MANA_THRESHOLD
+
+## TASK-039: the trigger glyph that fires a loadout SLOT (RT for PRIMARY, LT for
+## SECONDARY — the DD-008 scheme). Pure function of the slot id so the binding is
+## unit-testable headless. An unknown slot yields "" (no glyph; safe default).
+static func trigger_label(slot: int) -> String:
+	match slot:
+		MagicManager.SLOT_PRIMARY:
+			return PRIMARY_TRIGGER
+		MagicManager.SLOT_SECONDARY:
+			return SECONDARY_TRIGGER
+		_:
+			return ""
 
 # --- TASK-016: damage-feedback pure math (unit-tested headless) --------------
 
@@ -192,6 +225,8 @@ func _ready() -> void:
 	_primary_label = get_node_or_null(primary_label_path) as Label
 	_secondary_swatch = get_node_or_null(secondary_swatch_path) as ColorRect
 	_secondary_label = get_node_or_null(secondary_label_path) as Label
+	_primary_trigger_label = get_node_or_null(primary_trigger_label_path) as Label
+	_secondary_trigger_label = get_node_or_null(secondary_trigger_label_path) as Label
 	_vignette = get_node_or_null(vignette_path) as CanvasItem
 	_indicator_pivot = get_node_or_null(indicator_pivot_path) as CanvasItem
 	# TASK-016: start the feedback widgets hidden (alpha 0); they flash on damage.
@@ -259,6 +294,15 @@ func _refresh_loadout() -> void:
 		_secondary_swatch.color = element_color(secondary_el)
 	if _secondary_label != null:
 		_secondary_label.text = element_label(secondary_el)
+	# TASK-039: the trigger glyph TEXT is static per slot (RT/LT — which trigger
+	# fires it), but its tint tracks the slot's current element so the trigger and
+	# its element read as one binding. An empty slot falls back to the default tint.
+	if _primary_trigger_label != null:
+		_primary_trigger_label.text = trigger_label(MagicManager.SLOT_PRIMARY)
+		_primary_trigger_label.modulate = element_color(primary_el)
+	if _secondary_trigger_label != null:
+		_secondary_trigger_label.text = trigger_label(MagicManager.SLOT_SECONDARY)
+		_secondary_trigger_label.modulate = element_color(secondary_el)
 
 ## The element id of a player loadout slot accessor, or -1 (empty) when missing.
 func _slot_element(accessor: String) -> int:

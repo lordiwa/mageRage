@@ -1,0 +1,28 @@
+{
+  "key": "TASK-039",
+  "title": "M2.1 Combat-feel: trigger-element HUD (show which element is on RT vs LT)",
+  "description": "Playtest feedback: it's not clear what element is bound to which trigger. Today scripts/ui/player_hud.gd shows a PRIMARY swatch+label (prominent) and SECONDARY swatch+label (smaller) using ProjectileStyle colors, but NOTHING tells the player that RT fires PRIMARY and LT fires SECONDARY. Add an explicit, readable trigger->element binding to the HUD: label/icon each loadout slot with its trigger (PRIMARY = 'RT', SECONDARY = 'LT'), keeping the element color language (Fire warm / Ice cold / Electricity arc per game-design Readable-VFX). Keep it greybox-appropriate (text/ColorRect, no new art). Should update live via the existing magic_manager.loadout_changed signal (player_hud already listens). Keep it legible and uncluttered (game-design: juice must never bury the read). This is UI only; do not touch combat/casting logic. Honor godot-game-dev (HUD/CanvasLayer hygiene) + game-design (readability). Tests-first: extend test_player_hud / test_player_hud_feedback to assert the trigger labels exist, are bound to the correct slot, and reflect the current element + color on loadout_changed.",
+  "acceptance_criteria": [
+    "The player HUD shows, for each loadout slot, BOTH the trigger that fires it (PRIMARY=RT, SECONDARY=LT) AND the current element (name + color), updating live on loadout_changed.",
+    "Color language matches ProjectileStyle (single source of truth shared with projectiles); legible greybox (no new art assets).",
+    "UI only: no change to casting/combat logic or other scenes; arena/sector_01/sector_02 still load clean.",
+    "Tests-first; HUD tests assert the trigger->element binding + color + live update; full GUT suite green exit 0 run multiple times; gdlint clean."
+  ],
+  "status": "in_progress",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "ui",
+    "hud",
+    "game-feel",
+    "milestone-m2.1"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T03:46:45.275Z",
+  "updated_at": "2026-06-05T04:50:41.798Z",
+  "jira_key": null
+}
