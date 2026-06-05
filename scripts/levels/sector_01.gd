@@ -30,6 +30,16 @@ signal encounter_started
 ## Emitted once when the Warden is defeated and the SECTOR victory state is reached.
 signal sector_victory
 
+## TASK-045: this sector's camera clamp (playfield bounds). The shared player scene carries
+## NO limits (so encounter/arena/test_level stay unclamped); each real sector sets them at
+## runtime. Horizontal = corridor inner faces (WallLeft inner x=0, WallRight at x=4232 →
+## inner x=4200 — NARROWER than sector_02); vertical = the ceiling/floor body centers
+## (y=-320 / y=+360), a band that keeps the view inside the widened backstop with no void.
+const CAM_LIMIT_LEFT := 0
+const CAM_LIMIT_TOP := -320
+const CAM_LIMIT_RIGHT := 4200
+const CAM_LIMIT_BOTTOM := 360
+
 
 func _ready() -> void:
 	# Snap the hero to the spawn marker so the designer can reposition PlayerSpawn in
@@ -38,6 +48,10 @@ func _ready() -> void:
 		_player.global_position = _player_spawn.global_position
 		if _player.has_method("record_spawn"):
 			_player.record_spawn()
+	# TASK-045: clamp THIS sector's camera to its playfield so the freely-flying hero's
+	# view never exits the backdrops into void. Applied per-level (NOT on the shared player
+	# scene) so non-sector levels that reuse the player keep their unclamped camera.
+	_apply_camera_limits()
 	# TASK-029: arm the boss-room entry trigger and listen for the Warden's defeat so
 	# the sector — not the arena — owns the victory state.
 	var trigger := boss_room_trigger()
@@ -46,6 +60,20 @@ func _ready() -> void:
 	var boss := warden()
 	if boss != null and not boss.defeated.is_connected(_on_warden_defeated):
 		boss.defeated.connect(_on_warden_defeated)
+
+
+## TASK-045: clamp the hero's Camera2D to this sector's playfield bounds. Guarded so it is
+## a no-op if the player or its camera is absent. Idempotent (safe to call once on ready).
+func _apply_camera_limits() -> void:
+	if _player == null:
+		return
+	var cam := _player.get_node_or_null("Camera2D") as Camera2D
+	if cam == null:
+		return
+	cam.limit_left = CAM_LIMIT_LEFT
+	cam.limit_top = CAM_LIMIT_TOP
+	cam.limit_right = CAM_LIMIT_RIGHT
+	cam.limit_bottom = CAM_LIMIT_BOTTOM
 
 
 ## TASK-027 anchor (read-only accessor).

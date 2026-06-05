@@ -22,20 +22,30 @@ extends GutTest
 const SECTOR := preload("res://levels/sector_02.tscn")
 const SECTOR_01 := preload("res://levels/sector_01.tscn")
 const PLAYER := preload("res://scenes/player.tscn")
+## Non-sector levels that reuse the shared player; they must NOT inherit a sector clamp.
+const ENCOUNTER := preload("res://levels/encounter.tscn")
+const ARENA := preload("res://levels/arena.tscn")
 
 ## The default Godot viewport (no [display] section): 1152x648, half-extents 576x324.
 const VIEW_HALF := Vector2(576, 324)
 
-## The chosen, finite camera limits clamping the view to the playable level bounds.
-## Horizontal: the corridor inner faces (WallLeft inner x=0, WallRight inner x=4600).
-## Vertical: the ceiling/floor OUTER faces (Ceiling top y=-320, Floor bottom y=+360) — a
-## 680px band that keeps the view inside the backdrop coverage (~y=-600..600) with no void.
+## The chosen, finite camera limits each sector applies to the hero's Camera2D AT RUNTIME
+## (in its _ready), clamping the view to THAT sector's playable bounds. The shared player
+## scene carries NO limits, so non-sector levels (encounter/arena/test_level) stay
+## unclamped — the clamp is per-level, not baked into the shared player.
+##   - Horizontal: the corridor inner faces (WallLeft inner x=0; WallRight inner x). The two
+##     sectors differ: sector_02 right=4600, sector_01 right=4200 (its right wall is at
+##     x=4232 → inner x=4200) — so the test asserts each sector's OWN right bound.
+##   - Vertical: the ceiling/floor body centers (y=-320 / y=+360), a band that keeps the
+##     view inside the widened backstop with no void at the extremes (shared by both).
 const CAM_LEFT := 0
-const CAM_RIGHT := 4600
 const CAM_TOP := -320
 const CAM_BOTTOM := 360
+const SECTOR_02_RIGHT := 4600
+const SECTOR_01_RIGHT := 4200
 
-## The Godot default Camera2D limits (the "no limit" sentinel) the fix must move OFF.
+## The Godot default Camera2D limits (the "no limit" sentinel). The shared player scene must
+## KEEP this on every side; only a sector's _ready replaces it on that sector's own camera.
 const DEFAULT_LIMIT := 10000000
 
 
@@ -87,24 +97,23 @@ func test_kept_backstop_sits_behind_the_parallax_own_fill() -> void:
 		% [bg.z_index, parallax_fill.z_index])
 
 
-# --- BUG-1 (shared): every sector's backstop covers the camera-reachable view -
-# The camera limits live on the shared player, so the clamp is the SAME in every
-# sector. A sector's flat backstop fill must therefore enclose the worst-case
-# camera-reachable view rect (the clamp window grown by the viewport half-extents)
-# or void shows at the camera extremes. This pins the sector_01 far-right void the
-# shared clamp would otherwise expose (its old fill ended short of the new bound).
+# --- BUG-1 (per-sector): each sector's backstop covers its camera-reachable view -
+# A sector applies its own clamp at runtime, so its flat backstop fill must enclose the
+# worst-case camera-reachable view rect (its clamp window grown by the viewport
+# half-extents) or void shows at the camera extremes. This pins the sector_01 far-right
+# void the clamp would otherwise expose (its old fill ended short of the new bound).
 
-## The worst-case camera-reachable view rect given the shared clamp + viewport.
-func _camera_reachable_rect() -> Rect2:
+## The worst-case camera-reachable view rect for a sector with the given right bound.
+func _camera_reachable_rect(right_bound: int) -> Rect2:
 	var min_corner := Vector2(CAM_LEFT, CAM_TOP) - VIEW_HALF
-	var max_corner := Vector2(CAM_RIGHT, CAM_BOTTOM) + VIEW_HALF
+	var max_corner := Vector2(right_bound, CAM_BOTTOM) + VIEW_HALF
 	return Rect2(min_corner, max_corner - min_corner)
 
 
-func _assert_backstop_covers_camera(bg: ColorRect, where: String) -> void:
+func _assert_backstop_covers_camera(bg: ColorRect, right_bound: int, where: String) -> void:
 	assert_not_null(bg, "%s has a flat backstop Background ColorRect" % where)
 	var bg_rect := Rect2(bg.global_position, bg.size)
-	var reachable := _camera_reachable_rect()
+	var reachable := _camera_reachable_rect(right_bound)
 	assert_true(bg_rect.encloses(reachable),
 		"%s backstop %s encloses the camera-reachable view %s (no void at any extreme)"
 		% [where, str(bg_rect), str(reachable)])
@@ -112,49 +121,106 @@ func _assert_backstop_covers_camera(bg: ColorRect, where: String) -> void:
 
 func test_sector_02_backstop_covers_the_camera_reachable_view() -> void:
 	var level: Node2D = await _make_sector()
-	_assert_backstop_covers_camera(level.get_node_or_null("Background") as ColorRect, "sector_02")
+	_assert_backstop_covers_camera(
+		level.get_node_or_null("Background") as ColorRect, SECTOR_02_RIGHT, "sector_02")
 
 
 func test_sector_01_backstop_covers_the_camera_reachable_view() -> void:
-	# Regression: the shared clamp lets the camera reach past sector_01's old flat fill
+	# Regression: the per-level clamp lets the camera reach past sector_01's old flat fill
 	# (which ended at x=4500) and showed void on the far right. Its backstop must now
-	# enclose the full camera-reachable rect.
+	# enclose the full camera-reachable rect for sector_01's own bound.
 	var level := SECTOR_01.instantiate()
 	add_child_autofree(level)
 	await get_tree().process_frame
-	_assert_backstop_covers_camera(level.get_node_or_null("Background") as ColorRect, "sector_01")
+	_assert_backstop_covers_camera(
+		level.get_node_or_null("Background") as ColorRect, SECTOR_01_RIGHT, "sector_01")
 
 
-# --- BUG-2: the shared player Camera2D is clamped to the level bounds ---------
+# --- BUG-2: each sector clamps the hero's Camera2D in _ready (NOT the shared scene) --
 
-func _player_camera() -> Camera2D:
-	var player := PLAYER.instantiate()
-	add_child_autofree(player)
+## Resolve the hero's Camera2D from an instanced + readied sector.
+func _sector_camera(level: Node2D) -> Camera2D:
+	var player := level.get_node_or_null("Player")
+	assert_not_null(player, "the sector has a Player")
 	return player.get_node_or_null("Camera2D") as Camera2D
 
 
-func test_player_camera_has_finite_non_default_limits() -> void:
-	# The camera must no longer use the ±10000000 "no limit" default on any side.
-	var cam := _player_camera()
+func test_shared_player_scene_carries_no_baked_camera_limits() -> void:
+	# The shared player scene must NOT carry per-level bounds: instanced ALONE its camera
+	# keeps the ±1e7 default on every side, so non-sector levels (encounter/arena/test_level)
+	# that reuse it stay unclamped. Sectors set the clamp at runtime instead.
+	var player := PLAYER.instantiate()
+	add_child_autofree(player)
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
 	assert_not_null(cam, "the player scene has a Camera2D")
+	assert_eq(absi(cam.limit_left), DEFAULT_LIMIT, "the bare player keeps the default limit_left")
+	assert_eq(absi(cam.limit_top), DEFAULT_LIMIT, "the bare player keeps the default limit_top")
+	assert_eq(absi(cam.limit_right), DEFAULT_LIMIT, "the bare player keeps the default limit_right")
+	assert_eq(absi(cam.limit_bottom), DEFAULT_LIMIT, "the bare player keeps the default limit_bottom")
+
+
+func test_sector_02_camera_has_finite_non_default_limits() -> void:
+	# After the sector's _ready runs, the hero camera no longer uses the ±1e7 default.
+	var level: Node2D = await _make_sector()
+	var cam := _sector_camera(level)
+	assert_not_null(cam, "the sector's hero camera resolves")
 	assert_ne(absi(cam.limit_left), DEFAULT_LIMIT, "limit_left is no longer the ±1e7 default")
 	assert_ne(absi(cam.limit_top), DEFAULT_LIMIT, "limit_top is no longer the ±1e7 default")
 	assert_ne(absi(cam.limit_right), DEFAULT_LIMIT, "limit_right is no longer the ±1e7 default")
 	assert_ne(absi(cam.limit_bottom), DEFAULT_LIMIT, "limit_bottom is no longer the ±1e7 default")
 
 
-func test_player_camera_limits_match_the_level_bounds() -> void:
-	# The clamp equals the chosen playable bounds so the view never exits the art.
-	var cam := _player_camera()
-	assert_not_null(cam, "the player scene has a Camera2D")
+func test_sector_02_camera_limits_match_the_level_bounds() -> void:
+	# sector_02 clamps to its own playable bounds (right=4600).
+	var level: Node2D = await _make_sector()
+	var cam := _sector_camera(level)
 	assert_eq(cam.limit_left, CAM_LEFT, "limit_left clamps to the corridor inner-left face (x=0)")
-	assert_eq(cam.limit_right, CAM_RIGHT, "limit_right clamps to the corridor inner-right face (x=4600)")
-	assert_eq(cam.limit_top, CAM_TOP, "limit_top clamps to the ceiling outer face (y=-320)")
-	assert_eq(cam.limit_bottom, CAM_BOTTOM, "limit_bottom clamps to the floor outer face (y=+360)")
-
-
-func test_camera_limits_form_a_sane_ordered_window() -> void:
-	# Sanity: left < right and top < bottom (a non-degenerate, correctly-ordered window).
-	var cam := _player_camera()
+	assert_eq(cam.limit_right, SECTOR_02_RIGHT, "limit_right clamps to sector_02's inner-right face (x=4600)")
+	assert_eq(cam.limit_top, CAM_TOP, "limit_top clamps to the ceiling band (y=-320)")
+	assert_eq(cam.limit_bottom, CAM_BOTTOM, "limit_bottom clamps to the floor band (y=+360)")
 	assert_lt(cam.limit_left, cam.limit_right, "the horizontal limits are correctly ordered")
 	assert_lt(cam.limit_top, cam.limit_bottom, "the vertical limits are correctly ordered")
+
+
+func test_sector_01_camera_limits_match_its_own_narrower_bounds() -> void:
+	# sector_01 clamps to ITS bounds (right=4200, narrower than sector_02) — proving the
+	# clamp is per-level, not a single shared value that would void/crop the other sector.
+	var level := SECTOR_01.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	var cam := _sector_camera(level)
+	assert_eq(cam.limit_left, CAM_LEFT, "sector_01 limit_left clamps to its inner-left face (x=0)")
+	assert_eq(cam.limit_right, SECTOR_01_RIGHT, "sector_01 limit_right clamps to ITS inner-right face (x=4200)")
+	assert_eq(cam.limit_top, CAM_TOP, "sector_01 limit_top clamps to the ceiling band (y=-320)")
+	assert_eq(cam.limit_bottom, CAM_BOTTOM, "sector_01 limit_bottom clamps to the floor band (y=+360)")
+	assert_ne(absi(cam.limit_right), DEFAULT_LIMIT, "sector_01's camera is clamped, not default")
+
+
+# --- Regression: non-sector levels reusing the shared player stay UNCLAMPED ---
+# The whole reason the clamp is per-level (not baked into player.tscn): encounter, arena
+# and test_level reuse the player and must keep their pre-TASK-045 unclamped camera so we
+# introduce NO far-right void / vertical crop into scenes we are not deciding to ship.
+
+func _assert_level_camera_is_unclamped(level: Node2D, tag: String) -> void:
+	var player := level.get_node_or_null("Player")
+	assert_not_null(player, "%s instances a Player that reuses the shared scene" % tag)
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	assert_not_null(cam, "%s's reused Player has a Camera2D" % tag)
+	assert_eq(absi(cam.limit_left), DEFAULT_LIMIT, "%s keeps the default (unclamped) limit_left" % tag)
+	assert_eq(absi(cam.limit_top), DEFAULT_LIMIT, "%s keeps the default (unclamped) limit_top" % tag)
+	assert_eq(absi(cam.limit_right), DEFAULT_LIMIT, "%s keeps the default (unclamped) limit_right" % tag)
+	assert_eq(absi(cam.limit_bottom), DEFAULT_LIMIT, "%s keeps the default (unclamped) limit_bottom" % tag)
+
+
+func test_encounter_level_camera_stays_unclamped() -> void:
+	var level := ENCOUNTER.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	_assert_level_camera_is_unclamped(level, "encounter")
+
+
+func test_arena_level_camera_stays_unclamped() -> void:
+	var level := ARENA.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	_assert_level_camera_is_unclamped(level, "arena")
