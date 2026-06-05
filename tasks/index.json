@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T06:31:44.428Z",
+  "generated_at": "2026-06-05T06:49:51.379Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -256,7 +256,7 @@
     {
       "key": "TASK-043",
       "title": "M2.2 Art P2 — retile sector_02 greybox geometry with the industrial City tileset (collision UNCHANGED)",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     }
   ]

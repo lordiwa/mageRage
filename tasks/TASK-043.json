@@ -8,7 +8,7 @@
     "Only curated tile PNGs (+ .import) committed under a tracked assets/ tree; AssetBundles/ stays gitignored; assets/CREDITS.md updated; sizes reasonable.",
     "Full GUT suite green exit 0; gdlint clean; sector_01/arena/encounter/test_level still load clean; the full M2 loop remains satisfiable in sector_02."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "godot",
@@ -25,6 +25,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-05T06:22:41.683Z",
-  "updated_at": "2026-06-05T06:31:44.428Z",
+  "updated_at": "2026-06-05T06:49:51.379Z",
   "jira_key": null
 }

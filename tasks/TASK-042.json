@@ -8,7 +8,7 @@
     "Import settings correct for painterly HD (filtering ON, not pixel-art nearest).",
     "test/test_parallax_background.gd updated to assert Sprite2D+texture per layer (keeping scroll_scale/ordering/z_index/fill assertions, no motion); full GUT suite green exit 0 (1 run default, 2-3 only if flake surface touched); gdlint clean; sector_01/sector_02/arena/encounter/test_level still load clean."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "godot",
@@ -22,6 +22,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-05T06:22:25.056Z",
-  "updated_at": "2026-06-05T06:22:56.607Z",
+  "updated_at": "2026-06-05T06:31:43.954Z",
   "jira_key": null
 }
