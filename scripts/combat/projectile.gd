@@ -38,6 +38,14 @@ var _trail_curve: Curve = null
 ## existing behavior is byte-for-byte unchanged when no pool is wired.
 var _release_to_pool: Callable = Callable()
 
+## TASK-044: the LOGICAL spent/parked flag. Set SYNCHRONOUSLY when the projectile
+## is parked back in its pool — even though the actual CollisionObject disable is
+## DEFERRED a frame (Godot forbids disabling a CollisionObject inside a physics
+## callback). _is_spent() reads this so a second hit arriving in the same callback /
+## deferred-gap frame is still blocked: deferring the disable cannot reopen a
+## double-hit. Cleared on _pool_activate() when the instance is re-acquired.
+var _parked: bool = false
+
 ## TASK-014 readability: the Polygon2D body is restyled per element in setup() via
 ## ProjectileStyle (single source of truth). Cached so the style survives even if
 ## setup() runs before _ready (tests instance + setup in either order).
@@ -183,23 +191,42 @@ func _despawn() -> void:
 	queue_free()
 
 
-## ProjectilePool hook: re-arm an acquired projectile (show + processing on). The
-## per-shot state itself is reset in setup(), which the caller runs right after.
+## ProjectilePool hook: re-arm an acquired projectile (show + processing on, monitor
+## on). Re-acquire happens OUTSIDE any physics callback, so the CollisionObject can
+## be re-enabled synchronously here — the reused instance must process/collide on the
+## very frame it is fired. The per-shot state itself is reset in setup(), which the
+## caller runs right after. Clears the logical _parked flag so the shot is live again.
 func _pool_activate() -> void:
+	_parked = false
 	visible = true
 	process_mode = Node.PROCESS_MODE_INHERIT
+	monitoring = true
+	monitorable = true
+	# TASK-044 ordering guard: a release() in the SAME frame queued a DEFERRED disable
+	# of these CollisionObject props. Re-queue the ENABLE deferred too so it runs AFTER
+	# that disable in the flush (last write wins) — otherwise a projectile freed and
+	# re-fired within one frame would be silently disabled when the stale disable flushes.
+	set_deferred("process_mode", Node.PROCESS_MODE_INHERIT)
 	set_deferred("monitoring", true)
 	set_deferred("monitorable", true)
 
 
 ## ProjectilePool hook: park a released projectile — hide it, stop its physics and
-## collision so it neither moves nor hits while idle, and clear the trail tail so
-## no stale tail flashes when it is next acquired.
+## collision so it neither moves nor hits while idle, and clear the trail tail so no
+## stale tail flashes when it is next acquired.
+##
+## TASK-044: this runs INSIDE the body_entered/area_entered physics callback (a hit
+## parks the shot), and Godot forbids disabling a CollisionObject during a physics
+## callback. So the LOGICAL park is synchronous (_parked = true, read by _is_spent so
+## a same-frame double-hit is still blocked) while the actual CollisionObject disable
+## (process_mode + monitoring/monitorable) is DEFERRED one frame via set_deferred.
+## visible=false stays synchronous (a CanvasItem flag, not a CollisionObject toggle).
 func _pool_deactivate() -> void:
+	_parked = true
 	_velocity = Vector2.ZERO
 	_clear_trail()
 	visible = false
-	process_mode = Node.PROCESS_MODE_DISABLED
+	set_deferred("process_mode", Node.PROCESS_MODE_DISABLED)
 	set_deferred("monitoring", false)
 	set_deferred("monitorable", false)
 
@@ -234,9 +261,12 @@ func _on_area_entered(area: Node) -> void:
 	_try_hit(area)
 
 ## A shot is spent if it has been freed (unpooled) OR parked back in the pool
-## (pooled: processing disabled). Either way it deals no further hits this frame.
+## (pooled). Either way it deals no further hits this frame. TASK-044: read the
+## SYNCHRONOUS _parked flag, NOT process_mode — the CollisionObject disable is now
+## deferred a frame, so process_mode lags by a frame; _parked flips immediately and
+## keeps this guard correct (no double-hit) during that deferred gap.
 func _is_spent() -> bool:
-	return is_queued_for_deletion() or process_mode == Node.PROCESS_MODE_DISABLED
+	return is_queued_for_deletion() or _parked
 
 
 func _try_hit(target: Node) -> void:

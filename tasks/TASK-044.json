@@ -1,0 +1,28 @@
+{
+  "key": "TASK-044",
+  "title": "M2.1 bugfix: projectile pool disables CollisionObject during physics callback (defer it)",
+  "description": "Found in live sector_02 playtest (not caught by headless tests). On EVERY projectile hit, Godot logs: 'ERROR: Disabling a CollisionObject node during a physics callback is not allowed and will cause undesired behavior. Disable with call_deferred() instead.' Stack: scripts/combat/projectile.gd:202 _pool_deactivate <- projectile_pool.gd:94 _deactivate <- projectile_pool.gd:57 release <- projectile.gd:181 _despawn <- projectile.gd:266 _try_hit <- projectile.gd:231 _on_body_entered (also _on_area_entered and via _chain_to_next_target). Root cause: the pooled-projectile deactivation (introduced in TASK-037) disables the Area2D CollisionObject2D synchronously (process_mode = DISABLED and/or monitoring/monitorable) while inside the body_entered/area_entered physics callback, which Godot disallows. Fix: DEFER the node-disabling in _pool_deactivate -- use set_deferred('process_mode', PROCESS_MODE_DISABLED), set_deferred('monitoring', false), set_deferred('monitorable', false) (and any collision-shape disable) so it applies after the physics step. Keep the LOGICAL spent/parked state synchronous (the existing _is_spent() guard already prevents double-hits in the deferred gap -- preserve that). Visibility (CanvasItem.visible) can stay synchronous. Ensure the pool release/return logic still works (the node returns to the pool; the deferred disable just lands a frame later). This must not reintroduce double-hits or break pooling reset (TASK-037 invariants). Tests-first: add a real-physics test that drives a projectile into a body in the enemies layer so _on_body_entered fires, awaits a physics frame, and asserts (a) no double-hit, (b) the projectile is returned/parked, and (c) the deactivation path does not synchronously disable the CollisionObject during the callback (e.g. assert monitoring is still true synchronously within the hit, false after the deferred frame) -- i.e. reproduce the callback context the headless suite missed. Use held-input/InputGate hygiene only if input is involved; this is the physics flake surface so run the full suite 2-3x.",
+  "acceptance_criteria": [
+    "No 'Disabling a CollisionObject node during a physics callback' error occurs when a projectile hits an enemy/body/area or chains -- the pool deactivation defers the CollisionObject disable (set_deferred / call_deferred).",
+    "No double-hit or pooling-reset regression: the TASK-037 invariants (full state reset on reuse, no hit-while-parked, bounded pool) still hold; existing projectile/pool/shot-type/chain tests stay green.",
+    "Tests-first: a real-physics test reproduces the hit-callback despawn path and asserts the disable is deferred (not synchronous) with no double-hit; it would fail against the current synchronous code.",
+    "Full GUT suite green exit 0 run 2-3x (physics flake surface); gdlint clean; no new stderr noise; manual: firing in-game logs no such error."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "combat",
+    "bug",
+    "pooling",
+    "milestone-m2.1"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T06:53:09.095Z",
+  "updated_at": "2026-06-05T06:53:16.166Z",
+  "jira_key": null
+}

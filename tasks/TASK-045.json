@@ -1,0 +1,26 @@
+{
+  "key": "TASK-045",
+  "title": "M2.2 Art polish — sector_02 skyline placement/scale, tile reads, skin WallRight (pending playtest specifics)",
+  "description": "Follow-up after the M2.2 art pass (TASK-042 parallax skyline + TASK-043 City tileset) landed and the user playtested sector_02. The user said the art still needs fixes but had not yet given the specifics when the session was paused for /clear. KNOWN candidate items to confirm with the user at resume (DO NOT guess — ask for their specifics first): (1) parallax skyline height/scale/position behind the corridor (the 3 Sprite2D layers in scenes/parallax_background.tscn currently use scale 0.2, repeat_size (900,0), y-offsets far -380 / mid -340 / near +40, x-start -200; tune to taste); (2) tile reads on specific surfaces -- the thin 260x24 ledges and the tall boss wall may tile awkwardly with the 64px City cells (assets/tilesets/city, Tile_85 rail-cap + Tile_88 grate); possibly add more tile variants/edges; (3) the far-right boundary WallRight/Vis ColorRect was intentionally left greybox (off-screen-right) -- skin it or confirm leave; (4) optional set-dressing props (Containers/Crates/Railing/Stairs from the same Bundle A pack) to dress the rooms. SAFETY: any geometry/tile change is VISUAL ONLY -- keep all collision + corridor metrics (-288/+328) and the 98px flight-only boss gap byte-identical (the sector_02 corridor-span + real-physics boss-reachability tests must stay green unchanged). Curate any new tiles/props into assets/ (AssetBundles/ stays gitignored); update assets/CREDITS.md; keep .import siblings. AT RESUME: ask the user for the specific art changes they want, then scope precisely.",
+  "acceptance_criteria": [
+    "User's specific sector_02 art-polish requests are gathered at resume and scoped (skyline placement/scale, tile reads on ledges/boss wall, WallRight skin, optional props).",
+    "Changes are visual only: collision + corridor metrics (-288/+328) + 98px boss gap byte-identical; sector_02 corridor-span + boss-reachability tests pass UNCHANGED.",
+    "New assets curated into assets/ (AssetBundles/ gitignored), CREDITS updated, .import committed; full GUT suite green; gdlint clean."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "art",
+    "polish",
+    "milestone-m2.2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T06:55:01.873Z",
+  "updated_at": "2026-06-05T06:55:01.873Z",
+  "jira_key": null
+}

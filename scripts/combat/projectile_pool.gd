@@ -89,10 +89,13 @@ func _activate(node: Node) -> void:
 
 ## Deactivate a released instance: prefer the node's own _pool_deactivate() hook
 ## (which also resets per-shot state), else fall back to hide + disable processing.
+## TASK-044: release() can run inside a physics callback (a hit parks the node), so
+## the generic fallback DEFERS the process_mode disable too — disabling a node (and
+## any CollisionObject under it) synchronously mid-callback is forbidden by Godot.
 func _deactivate(node: Node) -> void:
 	if node.has_method("_pool_deactivate"):
 		node._pool_deactivate()
 		return
 	if node is CanvasItem:
 		(node as CanvasItem).visible = false
-	node.process_mode = Node.PROCESS_MODE_DISABLED
+	node.set_deferred("process_mode", Node.PROCESS_MODE_DISABLED)
