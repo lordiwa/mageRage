@@ -16,12 +16,17 @@ the attribution below is provided as courtesy.
 ## Tilesets
 
 ### `assets/tilesets/city/` — industrial City tiles (sector_02 surface skin)
-- **Files:** `Tile_85.png`, `Tile_88.png` (curated from the pack's Medium/128px set),
-  plus the derived `city_tileset.tres` `TileSet`.
+- **Files:** `Tile_27.png`, `Tile_30.png` (SOLID opaque GREY/SLATE ground — TASK-046),
+  and `Tile_85.png`, `Tile_88.png` (grate accents); all curated from the pack's 128px
+  set, plus the derived `city_tileset.tres` `TileSet`.
 - **Author:** Franco Giachetti / Simirk
 - **Pack:** "City / Industrial Platform Tileset"
-- **Use:** weathered grey industrial grate tiles (full X-brace body + rail-capped top)
-  built into a `TileSet` and painted by the `CityTiles` `TileMapLayer` to VISUALLY skin
-  sector_02's greybox surfaces (floor / ceiling / left wall / ledges / boss wall+step).
-  Purely decorative — the TileSet carries no physics layer; collision remains on the
-  sector_02 `StaticBody2D` nodes.
+- **Use:** `Tile_27` (a solid grey-capped slate) skins the walkable TOP surface and
+  `Tile_30` (a solid dark-slate slab) the body/fill — including the ceiling underside,
+  so the floor / ledges / boss step read as CONTINUOUS SOLID GROUND and the ceiling
+  reads as a plain slab (TASK-046 readability fix; severe industrial grey/teal tone).
+  `Tile_88` / `Tile_85` (the weathered grey X-brace + rail-capped GRATE tiles) are
+  retained as see-through accent/detail sources. Built into a `TileSet` and painted by
+  the `CityTiles` `TileMapLayer` to VISUALLY skin sector_02's greybox surfaces (floor /
+  ceiling / left wall / ledges / boss wall+step). Purely decorative — the TileSet
+  carries no physics layer; collision remains on the sector_02 `StaticBody2D` nodes.
