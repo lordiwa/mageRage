@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T03:17:27.665Z",
+  "generated_at": "2026-06-05T03:24:55.468Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -214,7 +214,7 @@
     {
       "key": "TASK-036",
       "title": "M2 T4 — Switch main_scene to sector_02 + integration pass",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     }
   ]
