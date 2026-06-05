@@ -151,6 +151,97 @@ func _floor_top(level: Node2D) -> float:
 	return _collision_top(level, "Environment/Floor/Col")
 
 
+# --- TASK-051: ELEVATED thin capped platforms render as BOUNDED slabs ----------
+# Live-playtest VISUAL bug (bugpiso.png): sector_02's elevated thin platforms (LedgeA/B/C,
+# BossStep) painted as ~130-190px-tall DARK rectangles floating against the bright parallax
+# sky — ugly black towers hanging in mid-air. Root cause: each ledge's collision is only
+# 24px tall, but the painter filled whole 64px cells (a 24px rect straddling a cell boundary
+# yields TWO rows) AND added an extra fill cell directly below every cap — so LedgeA
+# (collision y 188..212) painted cells cy 2,3 plus below cy4 = world y 128..320, a ~192px
+# skirt for a 24px platform. The FLOOR hides its own skirt below the camera bottom (off-
+# screen); the elevated ledges are mid-air so the tall skirts show.
+#
+# Fix (VISUAL ONLY, via the generator): elevated thin capped platforms render as a THIN
+# slab — the seated cap row + a bounded underside of about ONE cell (<= 2 cells total),
+# instead of the 2-rows-plus-below column. The FLOOR keeps its full body (its downward
+# fill is correct and falls off-screen). These tests assert the painted vertical cell-extent
+# over each elevated thin platform's columns is BOUNDED (<= 2 cells), while the floor is
+# allowed its full body.
+#
+# SAFETY: VISUAL ONLY. These tests read the painted TileMapLayer cells + each surface's
+# collision shape (to DERIVE its columns, NEVER mutating it). The corridor-span +
+# boss-reachability tests remain the collision truth and stay UNCHANGED.
+
+## The maximum painted vertical cell-extent (rows) allowed for an elevated thin platform —
+## a seated cap row plus at most one underside fill row (a real slab, not a tower).
+const THIN_SLAB_MAX_ROWS := 2
+
+## The elevated thin capped platforms (24px collision) whose painted body must be a bounded
+## slab — and the COLLISION node whose horizontal span defines the columns to inspect.
+const THIN_PLATFORMS := {
+	"LedgeA": "Environment/LedgeA/Col",
+	"LedgeB": "Environment/LedgeB/Col",
+	"LedgeC": "Environment/LedgeC/Col",
+	"BossStep": "Environment/BossStep/Col",
+}
+
+
+## The collision horizontal span [x0, x1] (world) of a surface, read live from its shape.
+func _collision_x_span(level: Node2D, col_path: String) -> Vector2:
+	var col := level.get_node(col_path) as CollisionShape2D
+	var rect := col.shape as RectangleShape2D
+	return Vector2(col.global_position.x - rect.size.x * 0.5,
+		col.global_position.x + rect.size.x * 0.5)
+
+
+## The painted vertical cell-extent (max_cy - min_cy + 1) over the cell columns that a
+## surface's collision span covers. Counts only CONTIGUOUS painted rows starting at the
+## cap row so an unrelated surface sharing a column (e.g. the floor) cannot inflate it.
+func _painted_slab_rows(level: Node2D, tiles: TileMapLayer, col_path: String) -> int:
+	var span := _collision_x_span(level, col_path)
+	var top := _collision_top(level, col_path)
+	var cap_cell := tiles.local_to_map(tiles.to_local(Vector2(span.x + 1.0, top + 1.0)))
+	# Inspect every column the surface covers; the slab is the contiguous painted run that
+	# starts at the cap row and grows downward. Take the tallest such run across columns.
+	var left_cell := tiles.local_to_map(tiles.to_local(Vector2(span.x + 1.0, top + 1.0)))
+	var right_cell := tiles.local_to_map(tiles.to_local(Vector2(span.y - 1.0, top + 1.0)))
+	var max_rows := 0
+	for cx in range(left_cell.x, right_cell.x + 1):
+		var rows := 0
+		var cy := cap_cell.y
+		while tiles.get_cell_source_id(Vector2i(cx, cy)) >= 0:
+			rows += 1
+			cy += 1
+		max_rows = maxi(max_rows, rows)
+	return max_rows
+
+
+func test_elevated_thin_platforms_paint_a_bounded_slab() -> void:
+	# The TASK-051 assertion: every elevated thin capped platform paints a BOUNDED slab
+	# (<= 2 cells of contiguous body starting at its cap), NOT a tall floating tower. This
+	# FAILS on the pre-fix generator (LedgeA painted 3 contiguous rows = a ~192px skirt).
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
+	for name in THIN_PLATFORMS:
+		var rows := _painted_slab_rows(level, tiles, THIN_PLATFORMS[name])
+		assert_gte(rows, 1, "%s: a cap/body is actually painted (slab exists)" % name)
+		assert_lte(rows, THIN_SLAB_MAX_ROWS,
+			"%s: painted body is a bounded slab (<= %d cells), not a floating tower (got %d)"
+			% [name, THIN_SLAB_MAX_ROWS, rows])
+
+
+func test_floor_keeps_its_full_body_below_the_camera() -> void:
+	# The floor is NOT thinned: it is the large ground surface and its downward fill (which
+	# falls below the camera bottom, off-screen) is correct. Assert the floor still paints a
+	# body that reaches below the elevated thin-slab bound (so we did not over-thin it).
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
+	var rows := _painted_slab_rows(level, tiles, "Environment/Floor/Col")
+	assert_gt(rows, THIN_SLAB_MAX_ROWS,
+		"the floor keeps its full body (more than the %d-cell thin-slab bound: got %d)"
+		% [THIN_SLAB_MAX_ROWS, rows])
+
+
 func test_every_capped_surface_lip_sits_on_its_own_collision_top() -> void:
 	# THE rework assertion: for EVERY capped walkable surface, the cap's VISIBLE opaque
 	# lip lands on that surface's OWN collision top — so a global nudge (which can only
