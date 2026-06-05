@@ -20,6 +20,11 @@ signal loadout_changed(primary: SpellData, secondary: SpellData)
 ## The PlayerHUD listens to this to flash/pulse the mana bar.
 signal cast_failed(slot: int)
 
+## TASK-038 (M2.1 combat-feel) hold-to-fire: emitted on every REAL held cast that
+## actually fires (after mana is spent), carrying the slot id and the SpellData. Lets
+## the HUD/audio/tests observe the cadence without depending on a projectile scene.
+signal cast_fired(slot: int, spell: SpellData)
+
 ## Slot ids carried by cast_failed so the HUD can react per-slot if it wants.
 enum {SLOT_PRIMARY, SLOT_SECONDARY}
 
@@ -44,7 +49,22 @@ var secondary: SpellData
 ## where the casts spawn them. Visuals/behavior are unchanged — only node lifetime.
 var _pools: Dictionary = {}     # PackedScene -> ProjectilePool
 
+## TASK-038 hold-to-fire: independent "time since last shot" accumulators, one per
+## SLOT (not per element — so holding both triggers fires each on its own element's
+## interval). Seeded high (READY_MARGIN) so the first held tick fires immediately and
+## deterministically; each fired shot resets its slot's accumulator to 0. delta is
+## fed in by the player each frame (no hidden _process), keeping the gate pure/testable.
+var _primary_accum := 0.0
+var _secondary_accum := 0.0
+
+## Seed value that marks an accumulator as "ready to fire now". Large enough to clear
+## any element's fire_interval so a fresh hold (or element swap) fires on tick 1.
+const _READY_MARGIN := 1000.0
+
 func _ready() -> void:
+	# Both slots start cadence-ready so the very first held frame can fire.
+	_primary_accum = _READY_MARGIN
+	_secondary_accum = _READY_MARGIN
 	# Default loadout: the first two distinct spells (primary, secondary).
 	if spells.size() >= 1:
 		primary = spells[0]
@@ -63,6 +83,10 @@ func select(index: int) -> void:
 		return                       # already primary: no-op
 	secondary = primary              # demote old primary
 	primary = chosen                 # promote selection
+	# TASK-038: a loadout change re-arms both slots so the newly promoted/demoted
+	# elements fire immediately on the next held tick (deterministic, no dead frame).
+	_primary_accum = _READY_MARGIN
+	_secondary_accum = _READY_MARGIN
 	loadout_changed.emit(primary, secondary)
 
 ## The element of the primary slot (or -1 if none).
@@ -169,3 +193,58 @@ func cast_secondary(origin: Node2D, direction: Vector2) -> bool:
 		cast_failed.emit(SLOT_SECONDARY)
 		return false
 	return _spawn(try_cast_secondary(), origin, direction)
+
+# --- TASK-038 hold-to-fire cadence ------------------------------------------
+# The player calls these every frame with the held-trigger flag and the frame
+# delta. They ALWAYS advance the slot accumulator by delta (so cadence keeps time
+# whether or not the trigger is down); a shot fires only when the trigger is held,
+# the accumulator has reached the slot element's data-driven fire_interval, AND
+# mana affords it. A real fire spends mana, spawns the pooled projectile, resets
+# that slot's accumulator and emits cast_fired. Per-element constants live in the
+# SpellData (fire_interval), never here.
+
+## Held PRIMARY cast (see _held_cast). Ticks the primary accumulator and fires the
+## primary slot at its element's interval while `held`.
+func try_cast_primary_held(origin: Node2D, direction: Vector2, held: bool, delta: float) -> bool:
+	var fired := _held_cast(primary, SLOT_PRIMARY, _primary_accum, origin, direction, held, delta)
+	_primary_accum = fired.accum
+	return fired.shot
+
+
+## Held SECONDARY cast (see _held_cast). Ticks the secondary accumulator and fires
+## the secondary slot at its element's interval while `held`.
+func try_cast_secondary_held(origin: Node2D, direction: Vector2, held: bool, delta: float) -> bool:
+	var fired := _held_cast(
+		secondary, SLOT_SECONDARY, _secondary_accum, origin, direction, held, delta)
+	_secondary_accum = fired.accum
+	return fired.shot
+
+
+## Core cadence step for one slot. Advances `accum` by delta (capped so it can't grow
+## unbounded across long idle holds), then — if held, ready, and affordable — spends
+## mana, spawns the pooled projectile, emits cast_fired and resets the accumulator.
+## Returns {shot: bool, accum: float} so the caller can store the slot's new timer.
+func _held_cast(
+	spell: SpellData,
+	slot: int,
+	accum: float,
+	origin: Node2D,
+	direction: Vector2,
+	held: bool,
+	delta: float,
+) -> Dictionary:
+	var interval := spell.fire_interval if spell != null else _READY_MARGIN
+	# Advance the timer; cap at READY_MARGIN so a long release doesn't overflow but a
+	# ready slot still fires on the first held tick.
+	accum = minf(accum + delta, _READY_MARGIN)
+	if not held:
+		return {"shot": false, "accum": accum}
+	if spell == null or accum < interval:
+		return {"shot": false, "accum": accum}
+	if not can_afford(spell):
+		return {"shot": false, "accum": accum}   # mana gates: keep timer ready, retry next tick
+	if not mana.spend(spell.mana_cost):
+		return {"shot": false, "accum": accum}
+	_spawn(spell, origin, direction)             # pooled spawn (no-op without a scene)
+	cast_fired.emit(slot, spell)
+	return {"shot": true, "accum": 0.0}           # reset this slot's cadence

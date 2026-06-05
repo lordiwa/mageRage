@@ -48,3 +48,39 @@ func test_all_spells_carry_a_projectile_scene() -> void:
 	for path in [FIRE_PATH, ICE_PATH, LIGHTNING_PATH]:
 		var s := _load(path)
 		assert_not_null(s.projectile, "%s should reference a projectile scene" % path)
+
+
+# --- TASK-038 per-element fire rate (hold-to-fire cadence) -------------------
+# DD-004 identity: Fire fastest, Electricity medium, Ice slowest. Each SpellData
+# carries its own `fire_interval` (seconds between held shots) so cadence is
+# data-driven (NO per-element constants in scripts).
+
+func test_spell_data_exposes_a_positive_fire_interval_default() -> void:
+	var s := SpellData.new()
+	assert_gt(s.fire_interval, 0.0,
+		"SpellData exposes a fire_interval that defaults to a positive value")
+
+
+func test_each_spell_has_a_positive_fire_interval() -> void:
+	for path in [FIRE_PATH, ICE_PATH, LIGHTNING_PATH]:
+		var s := _load(path)
+		assert_gt(s.fire_interval, 0.0,
+			"%s should define a positive fire_interval" % path)
+
+
+func test_fire_interval_ordering_fire_fastest_ice_slowest() -> void:
+	# DD-004: Fire fastest (smallest interval) < Electricity < Ice slowest.
+	var fire := _load(FIRE_PATH)
+	var ice := _load(ICE_PATH)
+	var lightning := _load(LIGHTNING_PATH)
+	assert_lt(fire.fire_interval, lightning.fire_interval,
+		"Fire fires faster than Electricity (shorter interval)")
+	assert_lt(lightning.fire_interval, ice.fire_interval,
+		"Electricity fires faster than Ice (shorter interval)")
+
+
+func test_fire_interval_provisional_values() -> void:
+	# Provisional, tunable: Fire 0.18 / Electricity 0.28 / Ice 0.40.
+	assert_almost_eq(_load(FIRE_PATH).fire_interval, 0.18, 0.0001)
+	assert_almost_eq(_load(LIGHTNING_PATH).fire_interval, 0.28, 0.0001)
+	assert_almost_eq(_load(ICE_PATH).fire_interval, 0.40, 0.0001)

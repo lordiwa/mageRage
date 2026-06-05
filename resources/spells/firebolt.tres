@@ -15,3 +15,4 @@ applies_slow = false
 max_targets = 1
 shot_type = 0
 chain_radius = 160.0
+fire_interval = 0.18

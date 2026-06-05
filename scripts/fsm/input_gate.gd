@@ -25,7 +25,18 @@ static func just_pressed(action: String) -> bool:
 	return Input.is_action_just_pressed(action)
 
 
-## TEST ONLY: force `just_pressed(action)` to return `value` deterministically.
+## True while `action` is HELD this frame (hold-to-fire reads cadence triggers
+## through here). Returns the test override when set; otherwise the real engine
+## reading. TASK-038: same seam as just_pressed so held-input tests stay deterministic
+## under cross-script physics-frame poisoning.
+static func pressed(action: String) -> bool:
+	if _overrides.has(action):
+		return _overrides[action]
+	return Input.is_action_pressed(action)
+
+
+## TEST ONLY: force `just_pressed(action)` / `pressed(action)` to return `value`
+## deterministically.
 static func set_test_override(action: String, value: bool) -> void:
 	_overrides[action] = value
 

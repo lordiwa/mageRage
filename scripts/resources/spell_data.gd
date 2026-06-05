@@ -32,3 +32,10 @@ enum ShotType { SINGLE, PIERCE, CHAIN }
 
 ## TASK-022 CHAIN reach: max distance the bolt may arc to the next unhit enemy.
 @export var chain_radius: float = 160.0
+
+## TASK-038 (M2.1 combat-feel) per-element fire rate: seconds between shots while a
+## trigger is HELD (hold-to-fire cadence). Data-driven so each element fires at its
+## own rhythm (DD-004: Fire fastest, Electricity medium, Ice slowest) with NO
+## per-element constants in code. The MagicManager gates each slot's held casts on
+## this interval. Default 0.2s keeps SpellData built without it behaving sanely.
+@export var fire_interval: float = 0.2

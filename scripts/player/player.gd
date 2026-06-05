@@ -326,24 +326,46 @@ func _process_blink(delta: float) -> void:
 ## the primary slot, cast_secondary the secondary — both in the facing direction,
 ## paying mana via MagicManager.
 func _process_magic(delta: float) -> void:
-	if _magic == null:
+	# Resolve the manager untyped (by node name) so a duck-typed MagicManager double
+	# works in headless tests (mirrors cast_primary_for_test); the real game child is
+	# a MagicManager. No manager -> nothing to process.
+	var mgr: Node = get_node_or_null("MagicManager")
+	if mgr == null:
 		return
 	if _mana != null:
 		_mana.regenerate(delta)
+	# Element select stays edge-triggered (one swap per press).
 	if Input.is_action_just_pressed("element_1"):
-		_magic.select(0)
+		mgr.select(0)
 	elif Input.is_action_just_pressed("element_2"):
-		_magic.select(1)
+		mgr.select(1)
 	elif Input.is_action_just_pressed("element_3"):
-		_magic.select(2)
+		mgr.select(2)
+	# TASK-038 hold-to-fire: read the cast triggers as HELD (through the InputGate
+	# seam, like the FSM edges) and ask the MagicManager to try-cast each slot every
+	# frame with `delta`. The manager's per-slot cadence accumulator decides whether a
+	# shot actually fires (per-element fire_interval, mana-gated) — so holding a
+	# trigger fires continuously at its element's rhythm and releasing stops it.
+	var primary_held := InputGate.pressed("cast_primary")
+	var secondary_held := InputGate.pressed("cast_secondary")
+	_drive_held_casts(primary_held, secondary_held, delta)
+
+
+## TASK-038: drive both cadence slots for one frame. Origin is the muzzle (else the
+## body); both slots cast along the DD-012 ASSISTED aim, preserving the aim-assist
+## pipeline. Always ticks the accumulators (delta) so cadence keeps time whether or
+## not a trigger is down. Extracted so headless tests can drive it without Input.
+func _drive_held_casts(primary_held: bool, secondary_held: bool, delta: float) -> void:
+	# Resolve the manager untyped (by node name) so a duck-typed MagicManager double
+	# in tests is accepted — mirrors cast_primary_for_test. In game this is the real
+	# MagicManager child.
+	var mgr: Node = get_node_or_null("MagicManager")
+	if mgr == null or not mgr.has_method("try_cast_primary_held"):
+		return
 	var origin: Node2D = _muzzle if _muzzle != null else self
-	# DD-012: cast along the ASSISTED aim (magnetized toward a roughly-aimed-at
-	# enemy), not the raw manual aim. The reticle already reflects this direction.
 	var aim := cast_aim()
-	if Input.is_action_just_pressed("cast_primary"):
-		_magic.cast_primary(origin, aim)
-	if Input.is_action_just_pressed("cast_secondary"):
-		_magic.cast_secondary(origin, aim)
+	mgr.try_cast_primary_held(origin, aim, primary_held, delta)
+	mgr.try_cast_secondary_held(origin, aim, secondary_held, delta)
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:
@@ -408,3 +430,11 @@ func cast_primary_for_test() -> void:
 	var origin: Node2D = _muzzle if _muzzle != null else self
 	# Mirror gameplay: cast along the DD-012 assisted aim.
 	mgr.cast_primary(origin, cast_aim())
+
+
+## TASK-038: run one frame of the magic/cast path (the hold-to-fire wiring) for a
+## given delta, reading the HELD triggers through the InputGate seam. Lets headless
+## tests drive continuous fire deterministically (override the trigger, step delta)
+## without synthesizing real Input edges.
+func process_magic_for_test(delta: float) -> void:
+	_process_magic(delta)

@@ -1,0 +1,31 @@
+{
+  "key": "TASK-038",
+  "title": "M2.1 Combat-feel: hold-to-fire + per-element fire rate (Fire fast / Elec med / Ice slow)",
+  "description": "Playtest feedback: (a) shooting should fire WHILE the trigger is held (continuous), not one shot per press; (b) fire rate should vary by element type. User decision: Fire fastest (burst, DD-004), Electricity medium (chain), Ice slowest (control). Currently both casts use Input.is_action_just_pressed (player.gd:343/345 -> one shot per press) and the player has NO cooldown at all (magic_manager spends mana only; mana is the sole gate). Implement: (1) switch primary/secondary fire to Input.is_action_pressed (held = continuous auto-fire); (2) add a per-element fire cadence so each element fires at its own interval. Add a data-driven field to SpellData (e.g. @export var fire_interval: float seconds-between-shots) and gate casting on a per-slot cooldown accumulator in magic_manager (independent timers for primary and secondary so holding both fires both at their own rates). Starting values (tunable in playtest, record provisional): Fire ~0.18s, Electricity ~0.28s, Ice ~0.40s. Keep mana cost as the secondary gate (holding still drains mana). Update firebolt.tres / lightning.tres / ice_shard.tres with their fire_interval. Honor DD-008 control scheme + DD-004 identities; keep deterministic per DD-001 (no randomness). DEPENDS ON the stutter fix (TASK-037) since hold-to-fire greatly increases shot volume — build on the pooled spawn path. Tests-first: per-element cadence gating (a held trigger fires at the element's interval, not every frame), switching element changes cadence, both-triggers-held fires both on independent timers, mana still gates. Mirror existing magic_manager / spell_data tests.",
+  "acceptance_criteria": [
+    "Holding the primary trigger fires continuously at the primary element's fire_interval (not one-per-press, not every frame); same for the secondary trigger independently. Verified by GUT tests driving held input over time.",
+    "SpellData has a data-driven fire_interval (.tres) per element; Fire fastest, Electricity medium, Ice slowest (provisional Fire 0.18 / Elec 0.28 / Ice 0.40, tunable). No hardcoded per-element constants in script.",
+    "Switching the equipped element changes the firing cadence accordingly; mana still gates (holding drains mana and stops when empty).",
+    "Deterministic (DD-001): cadence is timer/accumulator based, no randomness. Holding both triggers fires both elements on independent cooldowns.",
+    "Tests-first; full GUT suite green exit 0 run multiple times (flake-aware) using held-axis input + InputGate hygiene (release input + clear_test_overrides in after_each to avoid the cross-script edge-poison flake); gdlint clean."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "combat",
+    "game-feel",
+    "input",
+    "milestone-m2.1"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-037"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T03:46:38.074Z",
+  "updated_at": "2026-06-05T04:12:44.708Z",
+  "jira_key": null
+}
