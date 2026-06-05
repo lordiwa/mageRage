@@ -41,6 +41,10 @@ offset_bottom = 6.0
 color = Color(1, 0.85, 0.3, 1)
 
 [node name="Camera2D" type="Camera2D" parent="."]
+limit_left = 0
+limit_top = -320
+limit_right = 4600
+limit_bottom = 360
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 

@@ -20,7 +20,11 @@
 extends GutTest
 
 const SECTOR := preload("res://levels/sector_02.tscn")
+const SECTOR_01 := preload("res://levels/sector_01.tscn")
 const PLAYER := preload("res://scenes/player.tscn")
+
+## The default Godot viewport (no [display] section): 1152x648, half-extents 576x324.
+const VIEW_HALF := Vector2(576, 324)
 
 ## The chosen, finite camera limits clamping the view to the playable level bounds.
 ## Horizontal: the corridor inner faces (WallLeft inner x=0, WallRight inner x=4600).
@@ -81,6 +85,44 @@ func test_kept_backstop_sits_behind_the_parallax_own_fill() -> void:
 	assert_lte(bg.z_index, parallax_fill.z_index,
 		"the kept sector backstop sits at or behind the parallax's own fill (z=%d <= %d)"
 		% [bg.z_index, parallax_fill.z_index])
+
+
+# --- BUG-1 (shared): every sector's backstop covers the camera-reachable view -
+# The camera limits live on the shared player, so the clamp is the SAME in every
+# sector. A sector's flat backstop fill must therefore enclose the worst-case
+# camera-reachable view rect (the clamp window grown by the viewport half-extents)
+# or void shows at the camera extremes. This pins the sector_01 far-right void the
+# shared clamp would otherwise expose (its old fill ended short of the new bound).
+
+## The worst-case camera-reachable view rect given the shared clamp + viewport.
+func _camera_reachable_rect() -> Rect2:
+	var min_corner := Vector2(CAM_LEFT, CAM_TOP) - VIEW_HALF
+	var max_corner := Vector2(CAM_RIGHT, CAM_BOTTOM) + VIEW_HALF
+	return Rect2(min_corner, max_corner - min_corner)
+
+
+func _assert_backstop_covers_camera(bg: ColorRect, where: String) -> void:
+	assert_not_null(bg, "%s has a flat backstop Background ColorRect" % where)
+	var bg_rect := Rect2(bg.global_position, bg.size)
+	var reachable := _camera_reachable_rect()
+	assert_true(bg_rect.encloses(reachable),
+		"%s backstop %s encloses the camera-reachable view %s (no void at any extreme)"
+		% [where, str(bg_rect), str(reachable)])
+
+
+func test_sector_02_backstop_covers_the_camera_reachable_view() -> void:
+	var level: Node2D = await _make_sector()
+	_assert_backstop_covers_camera(level.get_node_or_null("Background") as ColorRect, "sector_02")
+
+
+func test_sector_01_backstop_covers_the_camera_reachable_view() -> void:
+	# Regression: the shared clamp lets the camera reach past sector_01's old flat fill
+	# (which ended at x=4500) and showed void on the far right. Its backstop must now
+	# enclose the full camera-reachable rect.
+	var level := SECTOR_01.instantiate()
+	add_child_autofree(level)
+	await get_tree().process_frame
+	_assert_backstop_covers_camera(level.get_node_or_null("Background") as ColorRect, "sector_01")
 
 
 # --- BUG-2: the shared player Camera2D is clamped to the level bounds ---------
