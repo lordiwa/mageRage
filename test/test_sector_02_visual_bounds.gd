@@ -56,18 +56,22 @@ func _make_sector() -> Node2D:
 	return level
 
 
-# --- TASK-048: the VISIBLE tile floor sits under the hero's feet (no float) ----
-# Live-playtest bug: collision works (the hero rests at floor_top y=328) but the
-# VISIBLE grey tile floor does NOT reach the feet, so the hero looks airborne. The
-# root cause: the floor-cap tile (Tile_27) is TRANSPARENT for its top ~44.5% — its
-# solid grey lip only begins partway down the cell — so painting the cap row at cell
-# cy=5 (cell-top world y=320) puts the visible solid lip ~28px BELOW the cell top,
-# i.e. ~20px BELOW the feet, showing parallax through the gap. The fix nudges the
-# TileMapLayer up so the cap's VISIBLE solid lip lands at the collision floor top.
+# --- TASK-048: EVERY capped walkable surface's visible lip sits on ITS collision top -
+# Live-playtest bug: collision works (the hero rests at floor_top y=328) but the VISIBLE
+# grey tile floor does NOT reach the feet, so the hero looks airborne ("estoy flotando en
+# el aire"). Root cause: the cap art (Tile_27) is TRANSPARENT for its top ~44.5%, so its
+# VISIBLE grey lip renders ~28.5px BELOW its cell top. And because each capped surface's
+# collision top sits at a DIFFERENT sub-cell offset, a single global TileMapLayer nudge
+# CANNOT seat them all (it fixes the floor but FLOATS the ledge caps — the original
+# rework). The fix seats EACH capped surface independently via a per-cap texture_origin.
 #
-# SAFETY: VISUAL ONLY. These tests read only the TileMapLayer position / tile_set
-# and the Floor collision shape (to derive the target y, NEVER mutating it). The
-# corridor-span + boss-reachability tests remain the collision truth UNCHANGED.
+# These tests parametrize over EVERY capped walkable surface (floor + LedgeA/B/C +
+# BossStep) and assert the cap's VISIBLE opaque lip lands on THAT surface's OWN collision
+# top. They would FAIL on the global-nudge state for the ledges (their lips would float).
+#
+# SAFETY: VISUAL ONLY. These tests read the TileMapLayer + tile_set (incl. per-cell
+# texture_origin) and each surface's collision shape (to DERIVE the target y, NEVER
+# mutating it). The corridor-span + boss-reachability tests remain the collision truth.
 
 ## The collision floor top (DD-011 reused metric); the hero's feet rest here.
 const FLOOR_TOP := 328.0
@@ -75,81 +79,115 @@ const FLOOR_TOP := 328.0
 const FLOOR_CAP_CELL_Y := 5
 ## The cap texture whose opaque lip is the visible ground edge the hero stands ON.
 const CAP_TEXTURE := "Tile_27.png"
-## How close (world px) the cap's visible solid lip must sit to the collision floor
-## top so the hero reads as standing ON solid ground (sub-pixel rounding tolerance).
+## How close (world px) each cap's visible solid lip must sit to its collision top so the
+## surface reads as solid ground the hero stands ON (sub-pixel + rounding tolerance).
 const LIP_EPS := 2.0
 
+## Every CAPPED walkable surface in sector_02 and the COLLISION node whose top its cap
+## must seat on. Each is read live from the scene (collision shape) — never hard-coded —
+## so the test stays true if a designer moves a body.
+const CAPPED_SURFACES := {
+	"Floor": "Environment/Floor/Col",
+	"LedgeA": "Environment/LedgeA/Col",
+	"LedgeB": "Environment/LedgeB/Col",
+	"LedgeC": "Environment/LedgeC/Col",
+	"BossStep": "Environment/BossStep/Col",
+}
 
-## The fraction (0..1) down the cap texture at which its first opaque row appears —
-## the cap art is transparent above this, so this is where the visible lip begins.
+
+## The fraction (0..1) down the cap texture at which its first opaque row appears — the
+## cap art is transparent above this, so the un-shifted visible lip begins here.
 func _cap_opaque_onset_fraction(tiles: TileMapLayer) -> float:
-	var src: TileSetAtlasSource = null
 	for i in range(tiles.tile_set.get_source_count()):
 		var sid := tiles.tile_set.get_source_id(i)
 		var s := tiles.tile_set.get_source(sid) as TileSetAtlasSource
 		if s != null and s.texture != null and s.texture.resource_path.get_file() == CAP_TEXTURE:
-			src = s
-			break
-	assert_not_null(src, "the cap texture %s resolves in the TileSet" % CAP_TEXTURE)
-	var img := src.texture.get_image()
-	var h := img.get_height()
-	var w := img.get_width()
-	for y in range(h):
-		for x in range(w):
-			if img.get_pixel(x, y).a > 0.16:
-				return float(y) / float(h)
+			var img := s.texture.get_image()
+			for y in range(img.get_height()):
+				for x in range(img.get_width()):
+					if img.get_pixel(x, y).a > 0.16:
+						return float(y) / float(img.get_height())
 	return 0.0
 
 
-## World Y of the cap row cell's TOP edge (cell-top, not the visible lip), via the
-## live TileMapLayer transform (so a position nudge is reflected).
-func _cap_cell_top_world_y(tiles: TileMapLayer) -> float:
-	var cell := Vector2i(3, FLOOR_CAP_CELL_Y)  # a cell over the spawn column
+## The COLLISION top (world y) of a capped surface, read live from its CollisionShape2D.
+func _collision_top(level: Node2D, col_path: String) -> float:
+	var col := level.get_node(col_path) as CollisionShape2D
+	var rect := col.shape as RectangleShape2D
+	return col.global_position.y - rect.size.y * 0.5
+
+
+## The cap CELL directly seating a surface: the painted cap cell whose column overlaps the
+## surface and whose row is the one snapping the collision top. Returns Vector2i(cx, cy).
+func _cap_cell_for_surface(level: Node2D, tiles: TileMapLayer, col_path: String) -> Vector2i:
+	var col := level.get_node(col_path) as CollisionShape2D
+	var top := _collision_top(level, col_path)
+	# Probe just BELOW the collision top, at the surface's center x, to land on the cap row.
+	var probe := Vector2(col.global_position.x, top + 1.0)
+	return tiles.local_to_map(tiles.to_local(probe))
+
+
+## The world Y of a cap cell's VISIBLE opaque lip, accounting for the per-cell
+## texture_origin shift (the seating mechanism). lip = cell_top + (onset_px - origin_px)
+## * scale, where onset_px/origin_px are in tile (unscaled) pixels.
+func _cap_lip_world_y(tiles: TileMapLayer, cell: Vector2i, onset_frac: float) -> float:
 	var center := tiles.to_global(tiles.map_to_local(cell))
-	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
-	return center.y - cell_world_h * 0.5
+	var tile_h := float(tiles.tile_set.tile_size.y)
+	var cell_world_h := tile_h * tiles.scale.y
+	var cell_top := center.y - cell_world_h * 0.5
+	var origin_px := 0.0
+	var sid := tiles.get_cell_source_id(cell)
+	if sid >= 0:
+		var src := tiles.tile_set.get_source(sid) as TileSetAtlasSource
+		var atlas := tiles.get_cell_atlas_coords(cell)
+		var alt := tiles.get_cell_alternative_tile(cell)
+		var data := src.get_tile_data(atlas, alt)
+		origin_px = float(data.texture_origin.y)
+	# Positive texture_origin moves the drawn texture UP, so it SUBTRACTS from the lip row.
+	return cell_top + (onset_frac * tile_h - origin_px) * tiles.scale.y
 
 
 func _floor_top(level: Node2D) -> float:
-	var floor_col := level.get_node("Environment/Floor/Col") as CollisionShape2D
-	var floor_rect := floor_col.shape as RectangleShape2D
-	return floor_col.global_position.y - floor_rect.size.y * 0.5
+	return _collision_top(level, "Environment/Floor/Col")
 
 
-func test_floor_cap_visible_lip_sits_at_the_collision_floor_top() -> void:
-	# The whole TASK-048 bug: the cap's VISIBLE solid lip (cell-top + opaque-onset)
-	# must land at the collision floor top (y=328) so the hero visibly stands ON the
-	# tile floor with no parallax-showing void under the feet.
+func test_every_capped_surface_lip_sits_on_its_own_collision_top() -> void:
+	# THE rework assertion: for EVERY capped walkable surface, the cap's VISIBLE opaque
+	# lip lands on that surface's OWN collision top — so a global nudge (which can only
+	# satisfy one surface) FAILS here for the ledges, while the per-cap seating passes.
 	var level: Node2D = await _make_sector()
 	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
-	var floor_top := _floor_top(level)
-	assert_almost_eq(floor_top, FLOOR_TOP, 1.0, "the collision floor top is the reused y=328")
 	var onset := _cap_opaque_onset_fraction(tiles)
-	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
-	var lip_world_y := _cap_cell_top_world_y(tiles) + onset * cell_world_h
-	assert_almost_eq(lip_world_y, floor_top, LIP_EPS,
-		"the cap tile's VISIBLE solid lip (cell-top %.1f + %.1f%% onset) sits at the "
-		% [_cap_cell_top_world_y(tiles), onset * 100.0]
-		+ "collision floor top %.1f so the hero stands ON the floor (no float)" % floor_top)
+	assert_gt(onset, 0.0, "the cap art has a measurable transparent header (onset > 0)")
+	for name in CAPPED_SURFACES:
+		var col_path: String = CAPPED_SURFACES[name]
+		var top := _collision_top(level, col_path)
+		var cell := _cap_cell_for_surface(level, tiles, col_path)
+		assert_gte(tiles.get_cell_source_id(cell), 0,
+			"%s: a cap tile is actually painted on its surface (cell %s)" % [name, str(cell)])
+		var lip := _cap_lip_world_y(tiles, cell, onset)
+		assert_almost_eq(lip, top, LIP_EPS,
+			"%s: the cap's visible opaque lip (%.1f) sits on ITS collision top (%.1f) — "
+			% [name, lip, top]
+			+ "the hero/platform reads solid, no floating cap strip")
 
 
 func test_floor_cap_lip_is_not_below_the_feet_line() -> void:
-	# Regression guard for the exact symptom ("flotando en el aire"): the visible lip
-	# must NOT sit below the feet line — if it does, the feet hover over the cap's
-	# transparent header and the parallax shows through.
+	# Regression guard for the exact symptom ("flotando en el aire"): the floor cap's
+	# visible lip must NOT sit below the feet line — if it does, the feet hover over the
+	# cap's transparent header and the parallax shows through under the hero.
 	var level: Node2D = await _make_sector()
 	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
 	var onset := _cap_opaque_onset_fraction(tiles)
-	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
-	var lip_world_y := _cap_cell_top_world_y(tiles) + onset * cell_world_h
-	assert_lte(lip_world_y, _floor_top(level) + LIP_EPS,
-		"the visible cap lip is at/above the feet line (not below it, which would float "
-		+ "the hero over the cap's transparent header: lip=%.1f)" % lip_world_y)
+	var cell := _cap_cell_for_surface(level, tiles, "Environment/Floor/Col")
+	var lip := _cap_lip_world_y(tiles, cell, onset)
+	assert_lte(lip, _floor_top(level) + LIP_EPS,
+		"the visible floor-cap lip is at/above the feet line (not below it: lip=%.1f)" % lip)
 
 
 func test_floor_cap_covers_the_player_spawn_column() -> void:
-	# The visible floor must actually exist under the spawn x — a painted cap cell on
-	# the floor-cap row at the spawn column (so there IS tile floor where the hero lands).
+	# The visible floor must actually exist under the spawn x — a painted cap cell on the
+	# floor-cap row at the spawn column (so there IS tile floor where the hero lands).
 	var level: Node2D = await _make_sector()
 	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
 	var spawn := level.get_node("PlayerSpawn") as Node2D
