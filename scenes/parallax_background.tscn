@@ -1,0 +1,91 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8mageparallaxbg"]
+
+[ext_resource type="Script" path="res://scripts/levels/parallax_background.gd" id="1_backdrop"]
+
+[node name="ParallaxBackground" type="Node2D"]
+script = ExtResource("1_backdrop")
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -40
+offset_left = -200.0
+offset_top = -600.0
+offset_right = 4400.0
+offset_bottom = 600.0
+color = Color(0.05, 0.06, 0.1, 1)
+
+[node name="FarSky" type="Parallax2D" parent="."]
+z_index = -30
+scroll_scale = Vector2(0.15, 1)
+repeat_size = Vector2(0, 0)
+autoscroll = Vector2(0, 0)
+follow_viewport = true
+
+[node name="HorizonBand" type="ColorRect" parent="FarSky"]
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 4400.0
+offset_bottom = 220.0
+color = Color(0.07, 0.08, 0.13, 1)
+
+[node name="MidStructures" type="Parallax2D" parent="."]
+z_index = -25
+scroll_scale = Vector2(0.45, 1)
+repeat_size = Vector2(0, 0)
+autoscroll = Vector2(0, 0)
+follow_viewport = true
+
+[node name="Tower0" type="ColorRect" parent="MidStructures"]
+offset_left = 200.0
+offset_top = -240.0
+offset_right = 360.0
+offset_bottom = 260.0
+color = Color(0.11, 0.12, 0.18, 1)
+
+[node name="Tower1" type="ColorRect" parent="MidStructures"]
+offset_left = 1100.0
+offset_top = -360.0
+offset_right = 1280.0
+offset_bottom = 260.0
+color = Color(0.11, 0.12, 0.18, 1)
+
+[node name="Tower2" type="ColorRect" parent="MidStructures"]
+offset_left = 2200.0
+offset_top = -180.0
+offset_right = 2350.0
+offset_bottom = 260.0
+color = Color(0.11, 0.12, 0.18, 1)
+
+[node name="Tower3" type="ColorRect" parent="MidStructures"]
+offset_left = 3300.0
+offset_top = -300.0
+offset_right = 3500.0
+offset_bottom = 260.0
+color = Color(0.11, 0.12, 0.18, 1)
+
+[node name="NearPillars" type="Parallax2D" parent="."]
+z_index = -20
+scroll_scale = Vector2(0.8, 1)
+repeat_size = Vector2(0, 0)
+autoscroll = Vector2(0, 0)
+follow_viewport = true
+
+[node name="Pillar0" type="ColorRect" parent="NearPillars"]
+offset_left = 500.0
+offset_top = 40.0
+offset_right = 660.0
+offset_bottom = 320.0
+color = Color(0.14, 0.15, 0.22, 1)
+
+[node name="Pillar1" type="ColorRect" parent="NearPillars"]
+offset_left = 1800.0
+offset_top = -20.0
+offset_right = 1980.0
+offset_bottom = 320.0
+color = Color(0.14, 0.15, 0.22, 1)
+
+[node name="Pillar2" type="ColorRect" parent="NearPillars"]
+offset_left = 3000.0
+offset_top = 60.0
+offset_right = 3160.0
+offset_bottom = 320.0
+color = Color(0.14, 0.15, 0.22, 1)

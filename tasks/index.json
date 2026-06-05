@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-04T22:47:48.660Z",
+  "generated_at": "2026-06-04T22:56:19.349Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -190,13 +190,13 @@
     {
       "key": "TASK-032",
       "title": "M2 T0 — Researcher: parallax2d skill (train the team on Godot 4.6 Parallax2D)",
-      "status": "todo",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-033",
       "title": "M2 T1 — Reusable greybox parallax background component (Parallax2D)",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {
