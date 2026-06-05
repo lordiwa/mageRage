@@ -1,0 +1,25 @@
+{
+  "key": "TASK-054",
+  "title": "Movement: add a GROUND dash (MoveState) mirroring the existing air-dash — Fire-gated, on the existing 'dash' input (RB / Shift)",
+  "description": "Today the hero only has an AIR dash (scripts/fsm/states/jump_state.gd: one explosive Fire dash per airtime, DASH_SPEED 460 / DASH_TIME 0.12, triggered by InputGate.just_pressed('dash')). The 'dash' input action already exists and is bound to RB (joypad button 10) + Shift (keyboard) — NO input-map change is needed and the A button stays Jump (DD-008). The user wants the dash to ALSO work on the GROUND.\n\nAdd a ground dash in scripts/fsm/states/move_state.gd that mirrors the air-dash: while grounded in MoveState, InputGate.just_pressed('dash'), gated by the 'fire' ability, performs a horizontal burst at DASH_SPEED in the player's facing direction for DASH_TIME (override velocity.x, suppress gravity for the burst, move_and_slide). Reuse the same DASH_SPEED/DASH_TIME values (share a constant or duplicate with a comment so air + ground stay in sync).\n\nKEY DIFFERENCE FROM AIR DASH (anti-spam): the air dash is limited to one-per-airtime via _dash_used (reset on enter). MoveState is re-entered/persistent on the ground, so use a short COOLDOWN instead (provisional ~0.35s, @export or const, tunable in playtest, deterministic per DD-001) so the ground dash can't be spammed but is repeatable. Tick the cooldown down each physics frame.\n\nINTERACTIONS to preserve: during a ground dash the player should still be able to jump-cancel (a buffered/just-pressed jump still transitions to JumpState as today), walking off a ledge / hitting a wall ends the dash naturally (move_and_slide handles the wall; if not on floor, fall as normal). Keep MoveState's existing run/coyote/jump-buffer logic intact. Without the 'fire' ability the ground dash does nothing (same gating as air dash and as the leap).\n\nANIMATION: there is no dedicated dash animation in the PixelLab hero set (TASK-052). The brief (0.12s) ground dash can keep the current movement animation (walk/idle); optionally the AnimationController could show 'walk' during the dash. Do NOT invent a dash anim — document the (minor) gap; a dedicated dash anim can join the TASK-053 PixelLab follow-up if desired.\n\nDOCS: update docs/DECISIONES-DISENO.md (Spanish, DD-005) to note the dash now works on ground + air (Fire-gated, RB/Shift), and fix the existing Dash-binding inconsistency in that doc (it lists both 'B' and 'RB' in different rows) to match reality (RB = joypad button 10).\n\nFULL CEREMONY (gameplay/FSM/movement): tests-first developer -> reviewer block-on-HIGH. Collision unchanged.",
+  "acceptance_criteria": [
+    "While grounded in MoveState with 'fire' unlocked, pressing the 'dash' input performs a horizontal burst at DASH_SPEED in the facing direction for DASH_TIME (deterministic), then returns to normal grounded movement.",
+    "A short cooldown (provisional ~0.35s, tunable) prevents spamming the ground dash; it is repeatable after the cooldown. Without 'fire' the ground dash does nothing.",
+    "The existing AIR dash (one per airtime) and all other MoveState/JumpState behavior (run, coyote time, jump buffer, double-jump->flight, glide) are unchanged; a jump still cancels/overrides a ground dash.",
+    "No input-map change (the 'dash' action and A=Jump are untouched); collision is byte-identical.",
+    "Tests-first: unit/real-physics tests cover ground-dash fires on grounded dash press (Fire on), respects the cooldown, no-op without Fire, and that the air-dash + transitions still behave; existing suite stays green.",
+    "Full GUT + crucial(61) green; gdlint clean; docs/DECISIONES-DISENO.md updated (ground+air dash, binding fixed).",
+    "Dash has no dedicated animation (documented gap; current movement anim is used during the brief burst)."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": ["gameplay", "movement", "fsm", "dash", "input"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T16:55:00.000Z",
+  "updated_at": "2026-06-05T16:55:00.000Z",
+  "jira_key": null
+}
