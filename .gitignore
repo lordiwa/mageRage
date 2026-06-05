@@ -25,3 +25,10 @@ Thumbs.db
 
 # ---- Claude Code local settings (machine-specific) ----
 .claude/settings.local.json
+
+# ---- Raw art drop (UNTRACKED on purpose) ----
+# Purchased/third-party source art lives here for local reference only.
+# Licenses likely forbid redistributing raw sources (.psd/.ai/.eps/.kra), so do
+# NOT commit this folder. Curate only the licensed PNG exports we actually use
+# into assets/ (consider Git-LFS). See docs/ART-ASSETS.md.
+AssetBundles/

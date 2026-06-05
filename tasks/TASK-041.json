@@ -1,0 +1,28 @@
+{
+  "key": "TASK-041",
+  "title": "M2.1 Combat-feel follow-up: pool the muzzle flash + impact spark (kill residual per-shot/per-hit allocation)",
+  "description": "Follow-up from TASK-037 (reviewer MEDIUM). The projectile + trail are now pooled, but magic_manager._spawn_muzzle_flash still does muzzle_flash_scene.instantiate() per cast, and scripts/juice/impact_spark.gd queue_free()s a CPUParticles2D per hit. These are residual per-shot/per-hit allocations on the same hot path (and get worse with hold-to-fire from TASK-038). Route the muzzle flash and the impact spark through a pool (the existing scripts/combat/projectile_pool.gd ProjectilePool is generic and already supports a CanvasItem with no hooks). NOTE: test/test_muzzle_flash.gd asserts the flash is a DIRECT child of the passed parent — pooling nests it under a pool node, so this test's contract must be updated alongside (keep the visual identical; assert the flash still renders at the muzzle position). Tests-first: extend the pool tests to cover flash/spark acquire-release-no-leak; keep all visual tests green. Lower priority than the combo/HUD work; schedule after TASK-038/039/040 unless stutter persists.",
+  "acceptance_criteria": [
+    "Muzzle flash and impact spark are pooled/reused (no per-shot/per-hit instantiate+free), reusing ProjectilePool or an equivalent; visuals identical.",
+    "test/test_muzzle_flash.gd updated so its parent/position contract matches the pooled structure while still asserting the flash renders at the muzzle; all visual tests green.",
+    "Pool acquire/release/no-leak tests cover the flash + spark; full GUT suite green exit 0 run multiple times; gdlint clean."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": [
+    "godot",
+    "combat",
+    "performance",
+    "game-feel",
+    "milestone-m2.1",
+    "follow-up"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T04:12:48.612Z",
+  "updated_at": "2026-06-05T04:12:48.612Z",
+  "jira_key": null
+}
