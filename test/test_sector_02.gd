@@ -238,6 +238,24 @@ func test_corridor_uses_the_proven_flight_safe_metrics() -> void:
 		"the floor top is at y=+328 (flight-safe corridor bottom)")
 
 
+# --- TASK-043 City-tileset VISUAL skin (structure-only, no physics) ----------
+# The greybox surfaces are skinned with the City/Industrial TileSet via a
+# TileMapLayer under Environment. This is a VISUAL overlay ONLY: it asserts the
+# tiled visuals LOAD (a TileMapLayer carrying a TileSet is present and painted).
+# It deliberately makes NO collision/physics assertions — the corridor-span,
+# gate/zone-blocker and boss-reachability tests above remain the collision truth.
+
+func test_city_tileset_visual_skin_is_present() -> void:
+	var level: Node2D = await _make_sector()
+	var env := level.get_node_or_null("Environment")
+	assert_not_null(env, "the sector has an Environment node holding the geometry")
+	var tiles := env.get_node_or_null("CityTiles") as TileMapLayer
+	assert_not_null(tiles, "the City-tileset TileMapLayer skins the geometry under Environment")
+	assert_not_null(tiles.tile_set, "the skin TileMapLayer carries a TileSet (the City tiles)")
+	assert_gt(tiles.get_used_cells().size(), 0,
+		"the City-tileset skin is painted (the surfaces are tiled, not bare greybox)")
+
+
 # ============================================================================
 # T3 (TASK-035) GAMEPLAY WIRING — FIRE gate, ELEC zone, mixed-armor enemies,
 # dormant Warden + HUDs, encounter/victory signals, and the ONE real-physics

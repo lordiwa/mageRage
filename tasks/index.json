@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T06:22:56.607Z",
+  "generated_at": "2026-06-05T06:31:44.428Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -250,13 +250,13 @@
     {
       "key": "TASK-042",
       "title": "M2.2 Art P1 — wire the industrial parallax skyline into sector_02 backdrop",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-043",
       "title": "M2.2 Art P2 — retile sector_02 greybox geometry with the industrial City tileset (collision UNCHANGED)",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     }
   ]

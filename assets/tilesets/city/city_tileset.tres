@@ -1,0 +1,27 @@
+[gd_resource type="TileSet" load_steps=5 format=3 uid="uid://b8magecitytileset"]
+
+; City / Industrial TileSet for sector_02 (TASK-043). VISUAL ONLY — this TileSet
+; carries NO physics layer; collision remains on the sector_02 StaticBody2D nodes.
+; Two atlas sources of weathered grey industrial grate tiles (Franco Giachetti /
+; Simirk "City / Industrial Platform Tileset"):
+;   source 0 = Tile_88 (full X-brace grate body — fill for ceiling/wall/interior)
+;   source 1 = Tile_85 (rail-capped grate — top surface of floor/ledges/step)
+; Native tile is 128x128; the TileMapLayer is scaled 0.5 so each cell = 64 world px.
+
+[ext_resource type="Texture2D" uid="uid://d3c5m7ndhd3dd" path="res://assets/tilesets/city/Tile_88.png" id="1_fill"]
+[ext_resource type="Texture2D" uid="uid://bv0vdfgs44gkv" path="res://assets/tilesets/city/Tile_85.png" id="2_cap"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fill"]
+texture = ExtResource("1_fill")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_cap"]
+texture = ExtResource("2_cap")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[resource]
+tile_size = Vector2i(128, 128)
+sources/0 = SubResource("TileSetAtlasSource_fill")
+sources/1 = SubResource("TileSetAtlasSource_cap")
