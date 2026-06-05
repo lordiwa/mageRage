@@ -8,7 +8,7 @@
     "Tests-first test/test_parallax_background.gd asserts the structure/scroll_scale/ordering (NO motion assertions, per the headless caveat) and is green.",
     "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "godot",
@@ -21,6 +21,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-04T22:47:07.481Z",
-  "updated_at": "2026-06-04T22:56:19.349Z",
+  "updated_at": "2026-06-05T02:43:33.709Z",
   "jira_key": null
 }
