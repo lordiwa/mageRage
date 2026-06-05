@@ -56,6 +56,111 @@ func _make_sector() -> Node2D:
 	return level
 
 
+# --- TASK-048: the VISIBLE tile floor sits under the hero's feet (no float) ----
+# Live-playtest bug: collision works (the hero rests at floor_top y=328) but the
+# VISIBLE grey tile floor does NOT reach the feet, so the hero looks airborne. The
+# root cause: the floor-cap tile (Tile_27) is TRANSPARENT for its top ~44.5% — its
+# solid grey lip only begins partway down the cell — so painting the cap row at cell
+# cy=5 (cell-top world y=320) puts the visible solid lip ~28px BELOW the cell top,
+# i.e. ~20px BELOW the feet, showing parallax through the gap. The fix nudges the
+# TileMapLayer up so the cap's VISIBLE solid lip lands at the collision floor top.
+#
+# SAFETY: VISUAL ONLY. These tests read only the TileMapLayer position / tile_set
+# and the Floor collision shape (to derive the target y, NEVER mutating it). The
+# corridor-span + boss-reachability tests remain the collision truth UNCHANGED.
+
+## The collision floor top (DD-011 reused metric); the hero's feet rest here.
+const FLOOR_TOP := 328.0
+## The floor-cap row in CityTiles cell space (the walkable TOP surface row).
+const FLOOR_CAP_CELL_Y := 5
+## The cap texture whose opaque lip is the visible ground edge the hero stands ON.
+const CAP_TEXTURE := "Tile_27.png"
+## How close (world px) the cap's visible solid lip must sit to the collision floor
+## top so the hero reads as standing ON solid ground (sub-pixel rounding tolerance).
+const LIP_EPS := 2.0
+
+
+## The fraction (0..1) down the cap texture at which its first opaque row appears —
+## the cap art is transparent above this, so this is where the visible lip begins.
+func _cap_opaque_onset_fraction(tiles: TileMapLayer) -> float:
+	var src: TileSetAtlasSource = null
+	for i in range(tiles.tile_set.get_source_count()):
+		var sid := tiles.tile_set.get_source_id(i)
+		var s := tiles.tile_set.get_source(sid) as TileSetAtlasSource
+		if s != null and s.texture != null and s.texture.resource_path.get_file() == CAP_TEXTURE:
+			src = s
+			break
+	assert_not_null(src, "the cap texture %s resolves in the TileSet" % CAP_TEXTURE)
+	var img := src.texture.get_image()
+	var h := img.get_height()
+	var w := img.get_width()
+	for y in range(h):
+		for x in range(w):
+			if img.get_pixel(x, y).a > 0.16:
+				return float(y) / float(h)
+	return 0.0
+
+
+## World Y of the cap row cell's TOP edge (cell-top, not the visible lip), via the
+## live TileMapLayer transform (so a position nudge is reflected).
+func _cap_cell_top_world_y(tiles: TileMapLayer) -> float:
+	var cell := Vector2i(3, FLOOR_CAP_CELL_Y)  # a cell over the spawn column
+	var center := tiles.to_global(tiles.map_to_local(cell))
+	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
+	return center.y - cell_world_h * 0.5
+
+
+func _floor_top(level: Node2D) -> float:
+	var floor_col := level.get_node("Environment/Floor/Col") as CollisionShape2D
+	var floor_rect := floor_col.shape as RectangleShape2D
+	return floor_col.global_position.y - floor_rect.size.y * 0.5
+
+
+func test_floor_cap_visible_lip_sits_at_the_collision_floor_top() -> void:
+	# The whole TASK-048 bug: the cap's VISIBLE solid lip (cell-top + opaque-onset)
+	# must land at the collision floor top (y=328) so the hero visibly stands ON the
+	# tile floor with no parallax-showing void under the feet.
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
+	var floor_top := _floor_top(level)
+	assert_almost_eq(floor_top, FLOOR_TOP, 1.0, "the collision floor top is the reused y=328")
+	var onset := _cap_opaque_onset_fraction(tiles)
+	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
+	var lip_world_y := _cap_cell_top_world_y(tiles) + onset * cell_world_h
+	assert_almost_eq(lip_world_y, floor_top, LIP_EPS,
+		"the cap tile's VISIBLE solid lip (cell-top %.1f + %.1f%% onset) sits at the "
+		% [_cap_cell_top_world_y(tiles), onset * 100.0]
+		+ "collision floor top %.1f so the hero stands ON the floor (no float)" % floor_top)
+
+
+func test_floor_cap_lip_is_not_below_the_feet_line() -> void:
+	# Regression guard for the exact symptom ("flotando en el aire"): the visible lip
+	# must NOT sit below the feet line — if it does, the feet hover over the cap's
+	# transparent header and the parallax shows through.
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
+	var onset := _cap_opaque_onset_fraction(tiles)
+	var cell_world_h := float(tiles.tile_set.tile_size.y) * tiles.scale.y
+	var lip_world_y := _cap_cell_top_world_y(tiles) + onset * cell_world_h
+	assert_lte(lip_world_y, _floor_top(level) + LIP_EPS,
+		"the visible cap lip is at/above the feet line (not below it, which would float "
+		+ "the hero over the cap's transparent header: lip=%.1f)" % lip_world_y)
+
+
+func test_floor_cap_covers_the_player_spawn_column() -> void:
+	# The visible floor must actually exist under the spawn x — a painted cap cell on
+	# the floor-cap row at the spawn column (so there IS tile floor where the hero lands).
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
+	var spawn := level.get_node("PlayerSpawn") as Node2D
+	var spawn_cell := tiles.local_to_map(tiles.to_local(
+		Vector2(spawn.global_position.x, _floor_top(level) + 1.0)))
+	assert_eq(spawn_cell.y, FLOOR_CAP_CELL_Y,
+		"the cell directly under the spawn feet is the floor-cap row (cy=%d)" % FLOOR_CAP_CELL_Y)
+	assert_gte(tiles.get_cell_source_id(spawn_cell), 0,
+		"a tile is actually painted under the spawn column (the floor exists there)")
+
+
 # --- BUG-1: the sector-level backstop never occludes the parallax skyline ----
 
 func test_sector_background_does_not_occlude_the_parallax_skyline() -> void:
