@@ -54,12 +54,12 @@ array, fall back to a thin `test/crucial/` dir of forwarder scripts
 - test_sector_02_visual_bounds.gd :: test_sector_02_backstop_covers_the_camera_reachable_view
 - test_sector_02_visual_bounds.gd :: test_sector_01_backstop_covers_the_camera_reachable_view
 
-### F. Floor-cap alignment (TASK-048 — visible lip == collision top) [2]
-> NOTE: TASK-048 is being reworked to align ALL capped surfaces and parametrize
-> these across floor + LedgeA/B/C + BossStep. Follow the methods by name after
-> that lands (the count may rise a few — still under 66).
-- test_sector_02_visual_bounds.gd :: test_every_capped_surface_lip_sits_on_its_own_collision_top
-- test_sector_02_visual_bounds.gd :: test_floor_cap_lip_is_not_below_the_feet_line
+### F. Floor/platform slab seating (TASK-046/048/051 — visible top == collision top) [2]
+> The surfaces are solid slate SLABS (Sprite2D per collision footprint) after the
+> slab rewrite replaced the finicky City TileMapLayer (transparent-cap + grid snap
+> that kept the hero floating). These guard the floating-hero + floating-tower bugs.
+- test_sector_02_visual_bounds.gd :: test_each_walkable_slab_top_sits_on_its_collision_top
+- test_sector_02_visual_bounds.gd :: test_elevated_slabs_are_thin_not_towers
 
 ### G. Projectile-pool physics callback (TASK-044) [3]
 - test_projectile_pool_physics.gd :: test_hit_parks_synchronously_but_defers_collision_disable

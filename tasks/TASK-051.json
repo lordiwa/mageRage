@@ -1,0 +1,33 @@
+{
+  "key": "TASK-051",
+  "title": "sector_02 elevated platforms render as tall floating dark blocks — make ledges/boss-step read as thin slabs",
+  "description": "Live-playtest bug (user screenshot bugpiso.png). After TASK-046/048 the floor reads solid, but the ELEVATED thin platforms (LedgeA/B/C, BossStep) render as ~130-190px-tall dark rectangles floating against the bright parallax sky — they look like black blocks hanging in mid-air. ROOT CAUSE (verified in tools/build_sector_02_tiles.gd _paint_surface + _cells_for): the ledge/boss-step COLLISION is only 24px tall, but the painter fills whole 64px cells and `_cells_for` returns TWO rows for a 24px rect that straddles a cell boundary, THEN _paint_surface adds an extra FILL cell directly below every cap (the 'back every cap with a fill body' line). For LedgeA (collision y 188..212) this paints cells cy 2,3 + below cy4 = world y 128..320 (~192px cell-extent, ~132px visible body) for a 24px platform. The floor doesn't show this because its extra fill falls below the camera bottom limit (y=360, off-screen); the ledges are mid-air so their tall fill skirts are fully visible. FIX (VISUAL ONLY): make elevated thin capped platforms render as THIN SLABS — the seated cap + a bounded, modest underside (about one cell, e.g. cap cell + exactly one fill cell, ~64-68px total) instead of a 2-cells-plus-below column. Keep the floor (large, bottom), ceiling, and walls as they are (they read fine). Preserve the TASK-048 per-surface cap seating (the cap's opaque lip must still land exactly on each surface's collision top). Regenerate levels/sector_02_tiles.tscn via the tool (tools/build_sector_02_tiles.gd) — do not hand-edit tile_map_data. SAFETY: VISUAL ONLY — the TileMapLayer/TileSet carry no physics; sector_02 StaticBody2D collision + corridor metrics (-288/+328) + 98px boss gap stay BYTE-IDENTICAL and the corridor-span + boss-reachability tests pass UNCHANGED. VERIFY with a REAL settled-player GL screenshot (the actual game, like bugpiso.png) showing the ledges as thin seated slabs, not floating towers; report the path. Consider whether the boss-step near the tall BossWall still reads OK. Update/extend the visual-bounds tests to assert an elevated capped platform's painted vertical extent is bounded (e.g. <= 2 cells) so the tall-skirt regression can't return.",
+  "acceptance_criteria": [
+    "LedgeA/B/C and BossStep render as thin seated slabs (~1 cell, cap lip on collision top + a bounded underside), NOT ~130-190px floating dark towers; verified in a REAL settled-player screenshot.",
+    "TASK-048 cap seating preserved: each capped surface's visible opaque lip still lands on its own collision top (the per-surface lip test stays green).",
+    "Visual only: sector_02 collision + corridor metrics (-288/+328) + 98px boss gap byte-identical; corridor-span + boss-reachability tests pass UNCHANGED.",
+    "Scene regenerated via the tool; a test bounds an elevated capped platform's painted vertical cell-extent so the tall-skirt regression cannot return; full GUT (crucial + full) green; gdlint clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "art", "tilemap", "bug", "milestone-m2.2"],
+  "assignee": null,
+  "depends_on": ["TASK-048"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "at": "2026-06-05T10:40:00.000Z",
+      "author": "orchestrator",
+      "body": "RESOLVED — but the playtest revealed the deeper problem: even thinned tiles still left an INVISIBLE GAP above the floor (the user resized the window and saw the floor low/thin with space above; the hero floated). Root cause was the whole City TileMapLayer approach: the cap tile Tile_27 is transparent on its top ~44% AND the 64px tile grid never aligns to the arbitrary collision-top y's, so per-cell texture_origin shimming kept misbehaving in the real game. DECISIVE FIX (per the new 'ceremony scales to risk' rule — done directly by the orchestrator, no subagent chain): replaced the tilemap with EXACT solid slate SLABS — tools/build_sector_02_tiles.gd now emits a Node2D 'CityTiles' of Sprite2D slabs (Tile_30 slate, tiled) sized 1:1 to each collision footprint, each walkable surface topped by a thin lighter Polygon2D edge. Visible top == collision top BY CONSTRUCTION (no grid, no transparent header): Floor seats at 328 and fills down past the camera; ledges/boss-step are thin ~48px slabs (no towers). VISUAL ONLY — sector_02.tscn collision untouched, corridor (-288/+328) + 98px boss gap byte-identical. Obsolete tile/cap/tileset tests (test_sector_02.gd, test_sector_02_visual_bounds.gd + its crucial copy) replaced with slab-seating assertions (slab top == collision top; elevated slabs are thin). Full GUT 711/711 green, crucial 61/61, gdlint clean. User confirmed live: 'ya se ve el piso'. Throwaways removed; the old City TileMapLayer + city_tileset.tres cap machinery are now unused (tileset orphaned, left in place). Landed directly (lighter process)."
+    },
+    {
+      "at": "2026-06-05T10:05:00.000Z",
+      "author": "orchestrator",
+      "body": "User playtested the real game (bugpiso.png) and flagged the floor/platforms. Floor itself is fine now (TASK-046/048); the visible problem is the elevated ledges/boss-step painting as tall floating dark blocks. Diagnosed in the generator: 24px collisions get full-64px-cell fill x2 rows + an extra below-cell -> ~130-190px towers. Scoped to thinning those elevated platforms only; floor/walls/ceiling unchanged."
+    }
+  ],
+  "created_at": "2026-06-05T10:05:00.000Z",
+  "updated_at": "2026-06-05T10:05:00.000Z",
+  "jira_key": null
+}
