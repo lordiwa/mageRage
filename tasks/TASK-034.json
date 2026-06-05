@@ -9,7 +9,7 @@
     "Tests-first test/test_sector_02.gd deterministic structure assertions pass; parallax layers resolve under the level.",
     "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean; arena/sector_01/encounter/test_level still load clean (not modified)."
   ],
-  "status": "todo",
+  "status": "in_progress",
   "priority": "medium",
   "labels": [
     "godot",
@@ -22,6 +22,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-04T22:47:25.106Z",
-  "updated_at": "2026-06-04T22:47:25.106Z",
+  "updated_at": "2026-06-05T02:43:34.672Z",
   "jira_key": null
 }
