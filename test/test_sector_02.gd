@@ -256,6 +256,78 @@ func test_city_tileset_visual_skin_is_present() -> void:
 		"the City-tileset skin is painted (the surfaces are tiled, not bare greybox)")
 
 
+# --- TASK-046 solid-floor readability bugfix (VISUAL ONLY, structure-only) ----
+# The City TileSet originally skinned every surface with the two SEE-THROUGH grate
+# tiles (Tile_88 X-brace body / Tile_85 rail-capped), so the dark parallax showed
+# through the holes and the floor never read as solid ground (hero looked mid-air).
+# The fix curates SOLID OPAQUE City tiles and repaints the walkable surfaces with
+# them. These tests pin the meaningful STRUCTURE — that the TileSet now exposes a
+# solid (non-grate) source and that the walkable floor-top row uses a solid source —
+# WITHOUT asserting the PackedByteArray byte layout. They make NO collision/physics
+# assertion: the corridor-span + boss-reachability tests remain the collision truth
+# and must keep passing UNCHANGED.
+
+## The grate tiles that caused the bug — any source backed by one of these is the
+## see-through art that must NOT skin the walkable floor surface.
+const _GRATE_TEXTURES := ["Tile_88.png", "Tile_85.png"]
+## The walkable floor TOP row in CityTiles cell space (scale 0.5 → world_y=320, the
+## cap row sitting at the collision floor top y=+328). Sampled across the corridor.
+const _FLOOR_TOP_CELL_Y := 5
+
+
+## The basename of the Texture2D backing a TileMapLayer cell's atlas source, or "".
+func _cell_texture_name(tiles: TileMapLayer, cell: Vector2i) -> String:
+	var sid := tiles.get_cell_source_id(cell)
+	if sid < 0:
+		return ""
+	var src := tiles.tile_set.get_source(sid) as TileSetAtlasSource
+	if src == null or src.texture == null:
+		return ""
+	return src.texture.resource_path.get_file()
+
+
+func test_city_tileset_exposes_a_solid_non_grate_floor_source() -> void:
+	# The TileSet must now carry at least one SOLID (non-grate) atlas source so the
+	# walkable surfaces can be skinned with opaque ground instead of see-through grate.
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node_or_null("Environment/CityTiles") as TileMapLayer
+	assert_not_null(tiles, "the CityTiles TileMapLayer resolves")
+	var ts := tiles.tile_set
+	assert_not_null(ts, "the CityTiles layer carries a TileSet")
+	var solid_sources := 0
+	for i in range(ts.get_source_count()):
+		var sid := ts.get_source_id(i)
+		var src := ts.get_source(sid) as TileSetAtlasSource
+		if src == null or src.texture == null:
+			continue
+		if not (src.texture.resource_path.get_file() in _GRATE_TEXTURES):
+			solid_sources += 1
+	assert_gt(solid_sources, 0,
+		"the City TileSet exposes at least one SOLID (non-grate) atlas source for the floor")
+
+
+func test_walkable_floor_top_row_uses_a_solid_non_grate_tile() -> void:
+	# The whole bug: the floor-top walkable row was painted with a SEE-THROUGH grate.
+	# Every painted cell on the floor-top row must now be a SOLID (non-grate) tile so
+	# the floor reads as continuous solid ground and the hero visibly stands ON it.
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node_or_null("Environment/CityTiles") as TileMapLayer
+	assert_not_null(tiles, "the CityTiles TileMapLayer resolves")
+	var floor_top_cells: Array = []
+	for c in tiles.get_used_cells():
+		if c.y == _FLOOR_TOP_CELL_Y:
+			floor_top_cells.append(c)
+	assert_gt(floor_top_cells.size(), 0,
+		"the walkable floor-top row (cell y=%d) is painted" % _FLOOR_TOP_CELL_Y)
+	var grate_cells := 0
+	for c in floor_top_cells:
+		if _cell_texture_name(tiles, c) in _GRATE_TEXTURES:
+			grate_cells += 1
+	assert_eq(grate_cells, 0,
+		"no floor-top cell uses a see-through grate tile (%d/%d still grate)"
+		% [grate_cells, floor_top_cells.size()])
+
+
 # ============================================================================
 # T3 (TASK-035) GAMEPLAY WIRING — FIRE gate, ELEC zone, mixed-armor enemies,
 # dormant Warden + HUDs, encounter/victory signals, and the ONE real-physics
