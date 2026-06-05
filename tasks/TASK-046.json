@@ -1,0 +1,40 @@
+{
+  "key": "TASK-046",
+  "title": "sector_02 floor/surfaces read SOLID — fix grate transparency making the hero look airborne",
+  "description": "Live-playtest bug (after TASK-045): the user reports the floor/walls look like 'cuadros sueltos' (loose squares) and the character looks like it is standing in mid-air ('parece que el personaje esta parado en el aire'). ROOT CAUSE (verified): the City TileSet (assets/tilesets/city/city_tileset.tres) only carries the two GRATE tiles from Bundle A — source 0 = Tile_88 (X-brace grate body) and source 1 = Tile_85 (rail-capped grate). Both are OPEN/see-through grate art, so the dark parallax background shows through the holes and the floor never reads as solid ground. The City pack has 88 tiles total (AssetBundles/431689a73a96c74c20dca76dd77d8366a978ca1e/Large/Tile_1.png .. Tile_88.png; AssetBundles/ is gitignored) — there are SOLID opaque metal/panel tiles among Tile_1..Tile_84 not yet used. FIX: pick solid opaque tiles (a top-surface 'cap' for the walkable floor/ledge top + a solid interior 'fill' for body/wall + ideally an edge/wall-cap), curate the chosen PNGs into assets/tilesets/city/, rebuild city_tileset.tres with the new solid sources, and repaint the sector_02 floor + ledges + boss wall (levels/sector_02_tiles.tscn TileMapLayer) so the WALKABLE SURFACES READ AS CONTINUOUS SOLID GROUND with the floor-top visually aligned to the collision floor top (the hero must visibly stand ON the ground, not above a transparent grate). Scope of THIS ticket = the readability of the solid surfaces (floor, the three 260x24 ledges, the boss step/wall). Deferred to TASK-047: skinning the far-right WallRight greybox + set-dressing props (containers/crates/railing/stairs). SAFETY: VISUAL ONLY — the TileSet carries NO physics layer; collision stays on the sector_02 StaticBody2D nodes. Do NOT change any collision shape, body position, or corridor metric: corridor -288/+328 + 98px boss gap must stay BYTE-IDENTICAL and the corridor-span + boss-reachability tests must pass UNCHANGED. Painterly HD art -> keep texture filtering ON (not pixel art). Commit only the USED PNGs under assets/ (+ .import siblings); update assets/CREDITS.md; AssetBundles/ stays gitignored.",
+  "acceptance_criteria": [
+    "city_tileset.tres gains at least one SOLID opaque floor-top 'cap' source and one SOLID opaque 'fill' source (curated from the City pack Tile_1..Tile_84); the see-through grate is no longer the walkable floor surface.",
+    "levels/sector_02_tiles.tscn floor + ledges + boss wall are repainted so the walkable surfaces read as continuous SOLID ground, with the floor-top visually aligned to the collision floor top (hero visibly stands on the ground; no dark background showing through the play surface).",
+    "Visual only: no collision shape / body position / corridor metric changed; corridor -288/+328 + 98px boss gap byte-identical; sector_02 corridor-span + boss-reachability tests pass UNCHANGED.",
+    "Only the newly-used solid PNGs committed under assets/tilesets/city/ (+ .import); assets/CREDITS.md updated; AssetBundles/ stays gitignored; full GUT suite green; gdlint clean.",
+    "Verified in a REAL run (render/screenshot) that the floor now reads solid under the player at spawn and along the corridor."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "art",
+    "tileset",
+    "readability",
+    "milestone-m2.2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "at": "2026-06-05T08:05:00.000Z",
+      "author": "orchestrator",
+      "body": "RESOLVED. Root cause: city_tileset.tres skinned the walkable floor with the two see-through GRATE tiles (Tile_85 cap / Tile_88 fill) so the dark parallax bled through -> floor read as loose squares, hero looked airborne. Fix (elegant, zero tile_map_data churn): the paint already put cap-source-id 1 on top rows and fill-source-id 0 below, so re-pointing those two sources to SOLID opaque City tiles repaints every walkable surface. First shipped Tile_2(red cap)/Tile_5(red fill), reviewer ACCEPT (no HIGH); user reviewed the render and chose a cooler grey + ceiling fix, so final = source 0 Tile_30 (solid dark-slate fill) / source 1 Tile_27 (solid grey-capped slate), grates kept as accent sources 2/3, red tiles dropped. Ceiling 'upward cap band' was actually the old grate texture on the fill source -> gone once fill became the slate slab (ceiling rows already used fill-only; no tile_map_data edit). levels/sector_02_tiles.tscn + sector_02.tscn BYTE-IDENTICAL (not in diff) -> collision/corridor (-288/+328)/98px boss gap untouched; corridor-span + boss-reachability tests pass UNCHANGED. 3 structural tests (floor-uses-solid-non-grate x2 + ceiling-plain-slab). GUT 649/649 green x2, gdlint clean. Real GL renders confirm solid grey floor under the hero + clean ceiling slab. Only used PNGs (Tile_27/Tile_30 + .import) committed under assets/; CREDITS updated; AssetBundles/ gitignored. Branch task-046-solid-floor."
+    },
+    {
+      "at": "2026-06-05T07:40:00.000Z",
+      "author": "orchestrator",
+      "body": "Split out of the TASK-045 art-polish playtest feedback. User multi-selected: tile reads (ledges/boss wall), WallRight skin, decoration props, AND flagged the priority bug — the floor reads as loose squares / hero looks airborne. This ticket = the floor/surface solidity bug (highest value). WallRight skin + props deferred to TASK-047 so the solidity fix can ship and be playtested first."
+    }
+  ],
+  "created_at": "2026-06-05T07:40:00.000Z",
+  "updated_at": "2026-06-05T07:40:00.000Z",
+  "jira_key": null
+}
