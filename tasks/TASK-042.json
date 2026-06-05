@@ -1,0 +1,27 @@
+{
+  "key": "TASK-042",
+  "title": "M2.2 Art P1 — wire the industrial parallax skyline into sector_02 backdrop",
+  "description": "User confirmed rights to use the AssetBundles art and wants it in. Phase 1 of the docs/ART-ASSETS.md rollout (highest visible win, lowest risk). Replace the greybox ColorRect silhouettes in scenes/parallax_background.tscn with the real 3-layer industrial skyline from Bundle A (AssetBundles/431689a73a96c74c20dca76dd77d8366a978ca1e/...): Background_Layer_1.png (far, blurred teal skyline), Background_Layer_2.png (mid), Background_Layer_3.png (near). KEEP the existing node tree + Parallax2D structure: FarSky/MidStructures/NearPillars stay Parallax2D with scroll_scale.x 0.15/0.45/0.80 (y=1.0), follow_viewport=true, z_index -30/-25/-20; keep the flat Background ColorRect fill at z=-40 (edge safety). Replace each layer's ColorRect children with a Sprite2D textured from the matching Background_Layer_N.png, and set repeat_size.x to the texture width so it tiles seamlessly across the ~4600px level (keep Y scroll 1.0, autoscroll off, determinism). Map far->Layer_1, mid->Layer_2, near->Layer_3 (the pack is authored as a 3-layer parallax). \\n\\nASSET HYGIENE: curate ONLY the PNGs used into a TRACKED assets/parallax/sector_02/ folder (do NOT reference files under the gitignored AssetBundles/). Pick a sensible single resolution (these are big backdrops; prefer the Large/native unless file size is excessive — report the committed file sizes; if any single PNG is very large, say so and we'll consider Git-LFS). Keep the textures' .import siblings for reproducible CI import. Import settings per ART-ASSETS.md §4: painterly HD, leave FILTERING ON (do NOT force nearest/filter-off), mipmaps on for the parallax layers. Add/append an assets/CREDITS.md crediting Franco Giachetti / Simirk for the City pack. \\n\\nTESTS: update test/test_parallax_background.gd — it currently asserts each Parallax2D has >=1 ColorRect child; change those to assert each layer now has a Sprite2D with a non-null texture (keep ALL the scroll_scale.x 0.15/0.45/0.80 strictly-increasing, y==1.0, z_index<-10, and Background-fill-at-z=-40 assertions; per the headless caveat, still NO motion assertions). Follow .claude/skills/parallax2d/SKILL.md + godot-game-dev. sector_02 uses this scene, so confirm sector_02 still loads headless clean.",
+  "acceptance_criteria": [
+    "scenes/parallax_background.tscn renders the 3 industrial skyline layers (Sprite2D textured from Background_Layer_1/2/3.png) in the existing 3 Parallax2D layers, scroll_scale.x 0.15/0.45/0.80 + z_index/ordering preserved, flat z=-40 fill kept; tiles horizontally via repeat_size so it covers the ~4600px level with no gap; loads headless clean and shows in sector_02.",
+    "Only curated PNGs (+ their .import) committed under a tracked assets/ tree; AssetBundles/ stays gitignored; assets/CREDITS.md credits the pack author; committed file sizes reported (LFS only if flagged necessary).",
+    "Import settings correct for painterly HD (filtering ON, not pixel-art nearest).",
+    "test/test_parallax_background.gd updated to assert Sprite2D+texture per layer (keeping scroll_scale/ordering/z_index/fill assertions, no motion); full GUT suite green exit 0 (1 run default, 2-3 only if flake surface touched); gdlint clean; sector_01/sector_02/arena/encounter/test_level still load clean."
+  ],
+  "status": "in_progress",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "art",
+    "parallax",
+    "milestone-m2.2"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T06:22:25.056Z",
+  "updated_at": "2026-06-05T06:22:56.607Z",
+  "jira_key": null
+}

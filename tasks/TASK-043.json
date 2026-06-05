@@ -1,0 +1,30 @@
+{
+  "key": "TASK-043",
+  "title": "M2.2 Art P2 — retile sector_02 greybox geometry with the industrial City tileset (collision UNCHANGED)",
+  "description": "Phase 2 of the art rollout (DEPENDS ON P1 parallax). Skin sector_02's greybox level geometry with Bundle A's City/Industrial tileset (AssetBundles/431689a73a96c74c20dca76dd77d8366a978ca1e/...: Tile_1..88 individual PNGs and/or _Spritesheet_Tileset.png; weathered teal/grey metal, hazard stripes — the Empire-prison look). Build a Godot TileSet (per godot-game-dev §3/§5 + ART-ASSETS.md §4: TileSet from the tiles, paint with TileMapLayer, use Terrains/autotiling for floor/wall/edge connection where it helps) for sector_02's floor, ceiling, left wall, the 3 staggered ledges, the boss wall/step, and combat-pocket floor. \\n\\nNON-NEGOTIABLE SAFETY (DD-011 flight-gating; see memory gating-with-flight-from-spawn): this is a VISUAL skin ONLY. Do NOT change any collision: keep every StaticBody2D + CollisionShape2D and the corridor metrics EXACTLY (ceiling-bottom y=-288 / floor-top y=+328), and keep the EL:elemental-gate / anti-magic-zone / boss-wall geometry and the ~98px flight-only boss gap UNCHANGED. The art replaces (or overlays) the ColorRect 'Vis' nodes only; collision shapes/positions/sizes stay byte-identical. If you add a TileMapLayer for visuals, the existing StaticBody2D collision remains the source of truth (or, if you drive collision from the tileset physics layer on Environment layer 1, you MUST reproduce the exact same collision bounds and prove it). \\n\\nASSET HYGIENE: curate only the used tile PNGs (one resolution, Medium/128 is a good balance) into a tracked assets/tilesets/city/ (or similar); AssetBundles/ stays gitignored; update assets/CREDITS.md; keep .import siblings; filtering ON (painterly HD). \\n\\nTESTS: keep the sector_02 structure + real-physics boss-reachability + gate/zone corridor-span tests GREEN UNCHANGED (they encode the flight-gating invariants — if any fails, you changed collision and must revert that). Add/adjust only what's needed to assert the tiled visuals load clean. Confirm sector_02 loads headless clean and the full loop (FIRE gate -> ELEC purge+fly -> boss) is still satisfiable. This is the bigger/riskier art job; go room-by-room and keep the suite green.",
+  "acceptance_criteria": [
+    "sector_02's greybox geometry is visually skinned with the City/Industrial tileset (TileSet + TileMapLayer, autotiling where useful); loads headless clean and reads as the Empire industrial prison.",
+    "ZERO collision change: all StaticBody2D/CollisionShape2D and corridor metrics (-288/+328), gate/zone/boss-wall bounds and the ~98px flight-only boss gap are byte-identical; the existing sector_02 structure, gate/zone corridor-span, and real-physics boss-reachability tests pass UNCHANGED (proving no flight-bypass introduced).",
+    "Only curated tile PNGs (+ .import) committed under a tracked assets/ tree; AssetBundles/ stays gitignored; assets/CREDITS.md updated; sizes reasonable.",
+    "Full GUT suite green exit 0; gdlint clean; sector_01/arena/encounter/test_level still load clean; the full M2 loop remains satisfiable in sector_02."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "art",
+    "tileset",
+    "level",
+    "milestone-m2.2"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-042"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T06:22:41.683Z",
+  "updated_at": "2026-06-05T06:22:41.683Z",
+  "jira_key": null
+}

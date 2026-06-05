@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T06:14:18.163Z",
+  "generated_at": "2026-06-05T06:22:56.607Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -246,6 +246,18 @@
       "title": "M2.1 Combat-feel follow-up: pool the muzzle flash + impact spark (kill residual per-shot/per-hit allocation)",
       "status": "todo",
       "priority": "low"
+    },
+    {
+      "key": "TASK-042",
+      "title": "M2.2 Art P1 — wire the industrial parallax skyline into sector_02 backdrop",
+      "status": "in_progress",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-043",
+      "title": "M2.2 Art P2 — retile sector_02 greybox geometry with the industrial City tileset (collision UNCHANGED)",
+      "status": "todo",
+      "priority": "medium"
     }
   ]
 }

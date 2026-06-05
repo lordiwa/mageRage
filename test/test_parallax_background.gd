@@ -68,11 +68,31 @@ func test_each_layer_scroll_scale_y_is_one() -> void:
 		assert_almost_eq(layer.scroll_scale.y, 1.0, EPS, "Y scroll is 1:1, not parallaxed")
 
 
-func test_each_layer_has_at_least_one_colorrect_silhouette() -> void:
+func test_each_layer_has_a_sprite_with_a_texture() -> void:
+	# TASK-042 (M2.2 art): the greybox ColorRect silhouettes are replaced by the real
+	# industrial skyline art — each Parallax2D layer now holds a Sprite2D whose texture
+	# is non-null (the authored Background_Layer_N.png). Structure only, no motion.
 	var backdrop: ParallaxBackdrop = await _make_backdrop()
 	for layer in backdrop.parallax_layers():
-		var rects := layer.find_children("*", "ColorRect", true, false)
-		assert_gt(rects.size(), 0, "each Parallax2D layer holds >= 1 ColorRect silhouette")
+		var sprites := layer.find_children("*", "Sprite2D", true, false)
+		assert_gt(sprites.size(), 0, "each Parallax2D layer holds >= 1 Sprite2D")
+		var has_textured_sprite := false
+		for sprite in sprites:
+			if (sprite as Sprite2D).texture != null:
+				has_textured_sprite = true
+				break
+		assert_true(
+			has_textured_sprite,
+			"each Parallax2D layer has a Sprite2D with a non-null texture (skyline art)"
+		)
+
+
+func test_each_layer_has_horizontal_repeat_enabled() -> void:
+	# TASK-042: repeat_size.x > 0 so the skyline tiles seamlessly across the level.
+	# Y repeat stays 0 (no vertical tiling; Y scroll is 1:1).
+	var backdrop: ParallaxBackdrop = await _make_backdrop()
+	for layer in backdrop.parallax_layers():
+		assert_gt(layer.repeat_size.x, 0.0, "each Parallax2D layer tiles horizontally (repeat_size.x > 0)")
 
 
 func test_all_parallax_layers_are_behind_the_playfield() -> void:
