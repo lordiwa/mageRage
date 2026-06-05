@@ -1,8 +1,16 @@
-[gd_scene load_steps=10 format=3 uid="uid://c8magerasec02"]
+[gd_scene load_steps=18 format=3 uid="uid://c8magerasec02"]
 
 [ext_resource type="PackedScene" uid="uid://b8mageragepl0r" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/levels/sector_02.gd" id="2_sector"]
 [ext_resource type="PackedScene" uid="uid://b8mageparallaxbg" path="res://scenes/parallax_background.tscn" id="3_backdrop"]
+[ext_resource type="PackedScene" uid="uid://b8mageragegate" path="res://scenes/elemental_gate.tscn" id="4_gate"]
+[ext_resource type="PackedScene" uid="uid://b8mageragezone" path="res://scenes/anti_magic_zone.tscn" id="5_zone"]
+[ext_resource type="PackedScene" uid="uid://b8mageragewrdn" path="res://scenes/warden.tscn" id="6_warden"]
+[ext_resource type="PackedScene" uid="uid://b8mageragedr0n" path="res://scenes/empire_drone.tscn" id="7_drone"]
+[ext_resource type="PackedScene" uid="uid://b8mageragechrg" path="res://scenes/charger.tscn" id="8_charger"]
+[ext_resource type="PackedScene" uid="uid://b8mageragshdr0" path="res://scenes/shield_drone.tscn" id="9_shield"]
+[ext_resource type="Script" path="res://scripts/ui/debug_hud.gd" id="10_hud"]
+[ext_resource type="Script" path="res://scripts/ui/boss_hud.gd" id="11_bosshud"]
 
 [sub_resource type="RectangleShape2D" id="Rect_floor"]
 size = Vector2(4600, 64)
@@ -160,11 +168,14 @@ color = Color(0.24, 0.2, 0.28, 1)
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(220, 288)
 
-[node name="ElementalGate" type="Marker2D" parent="."]
+[node name="ElementalGate" parent="." instance=ExtResource("4_gate")]
 position = Vector2(1400, 228)
+required_element = 0
+interaction = 1
 
-[node name="AntiMagicZone" type="Marker2D" parent="."]
+[node name="AntiMagicZone" parent="." instance=ExtResource("5_zone")]
 position = Vector2(2600, 160)
+purge_element = 2
 
 [node name="CombatPocket" type="Marker2D" parent="."]
 position = Vector2(3200, 288)
@@ -199,4 +210,73 @@ shape = SubResource("Rect_bosstrig")
 [node name="Player" parent="." instance=ExtResource("1_player")]
 position = Vector2(220, 288)
 
+[node name="Warden" parent="." instance=ExtResource("6_warden")]
+position = Vector2(4360, 280)
+dormant = true
+
 [node name="Enemies" type="Node2D" parent="."]
+
+[node name="EmpireDrone" parent="Enemies" instance=ExtResource("7_drone")]
+position = Vector2(1000, 180)
+armor_type = 2
+
+[node name="Charger" parent="Enemies" instance=ExtResource("8_charger")]
+position = Vector2(3080, 300)
+armor_type = 0
+
+[node name="ShieldDrone" parent="Enemies" instance=ExtResource("9_shield")]
+position = Vector2(3340, 300)
+armor_type = 1
+
+[node name="DebugHUD" type="CanvasLayer" parent="."]
+script = ExtResource("10_hud")
+state_machine_path = NodePath("../Player/StateMachine")
+label_path = NodePath("Label")
+player_path = NodePath("../Player")
+start_visible = false
+
+[node name="Label" type="Label" parent="DebugHUD"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 96.0
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+text = "STATE: —"
+
+[node name="BossHUD" type="CanvasLayer" parent="."]
+script = ExtResource("11_bosshud")
+boss_path = NodePath("../Warden")
+bar_fill_path = NodePath("BarFill")
+bar_label_path = NodePath("BarLabel")
+victory_label_path = NodePath("VictoryLabel")
+
+[node name="BarTrack" type="ColorRect" parent="BossHUD"]
+offset_left = 240.0
+offset_top = 540.0
+offset_right = 880.0
+offset_bottom = 560.0
+color = Color(0.05, 0.05, 0.08, 0.7)
+
+[node name="BarFill" type="ColorRect" parent="BossHUD"]
+offset_left = 240.0
+offset_top = 540.0
+offset_right = 880.0
+offset_bottom = 560.0
+color = Color(0.85, 0.3, 0.2, 1)
+
+[node name="BarLabel" type="Label" parent="BossHUD"]
+offset_left = 240.0
+offset_top = 514.0
+offset_right = 900.0
+offset_bottom = 538.0
+theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+text = "THE WARDEN"
+
+[node name="VictoryLabel" type="Label" parent="BossHUD"]
+offset_left = 420.0
+offset_top = 250.0
+offset_right = 700.0
+offset_bottom = 320.0
+theme_override_colors/font_color = Color(1, 0.95, 0.5, 1)
+theme_override_font_sizes/font_size = 48
+text = "SECTOR CLEAR"

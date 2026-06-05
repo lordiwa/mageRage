@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T02:43:34.672Z",
+  "generated_at": "2026-06-05T02:58:37.034Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -202,13 +202,13 @@
     {
       "key": "TASK-034",
       "title": "M2 T2 — sector_02 greybox sidescroller layout + Sector02 controller + parallax",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-035",
       "title": "M2 T3 — Wire gate + anti-magic zone + enemies + dormant Warden into sector_02",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

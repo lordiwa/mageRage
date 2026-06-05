@@ -9,7 +9,7 @@
     "Tests-first; full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise.",
     "The full M2 loop (spawn -> FIRE gate -> ELEC purge+fly -> boss -> sector victory) is satisfiable in sector_02."
   ],
-  "status": "todo",
+  "status": "in_progress",
   "priority": "medium",
   "labels": [
     "godot",
@@ -23,6 +23,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-04T22:47:35.801Z",
-  "updated_at": "2026-06-04T22:47:35.801Z",
+  "updated_at": "2026-06-05T02:58:37.034Z",
   "jira_key": null
 }
