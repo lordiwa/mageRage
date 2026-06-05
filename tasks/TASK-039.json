@@ -8,7 +8,7 @@
     "UI only: no change to casting/combat logic or other scenes; arena/sector_01/sector_02 still load clean.",
     "Tests-first; HUD tests assert the trigger->element binding + color + live update; full GUT suite green exit 0 run multiple times; gdlint clean."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "godot",
@@ -23,6 +23,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-05T03:46:45.275Z",
-  "updated_at": "2026-06-05T04:50:41.798Z",
+  "updated_at": "2026-06-05T05:31:35.572Z",
   "jira_key": null
 }

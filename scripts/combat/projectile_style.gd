@@ -17,6 +17,13 @@ const ELECTRICITY_COLOR := Color(1.0, 0.95, 0.35, 1.0)  # arc yellow
 const ANTIMATTER_COLOR := Color(0.75, 0.35, 1.0, 1.0)   # violet
 const DEFAULT_COLOR := Color(1.0, 1.0, 1.0, 1.0)        # safe fallback (white)
 
+# --- TASK-040 / DD-013 dual-cast COMBO readouts -------------------------------
+# Each blended combo reads as its OWN distinct thing, never as a base element.
+# Kept legible (clearly tinted, clearly apart from Fire/Ice/Electricity).
+const STEAM_COLOR := Color(1.0, 0.95, 0.92, 1.0)        # white-hot (Fire+Ice shatter)
+const PLASMA_COLOR := Color(0.95, 0.30, 0.90, 1.0)      # violet/magenta (Fire+Elec)
+const FROSTARC_COLOR := Color(0.70, 0.98, 1.0, 1.0)     # cyan-white (Ice+Elec)
+
 # --- Silhouette ids. Each element gets its own readable shape. ---------------
 enum {
 	SHAPE_DEFAULT,      # neutral diamond (fallback)
@@ -24,6 +31,9 @@ enum {
 	SHAPE_ICE,          # angular shard
 	SHAPE_ELECTRICITY,  # jagged arc bolt
 	SHAPE_ANTIMATTER,   # pinched star/void
+	SHAPE_STEAM,        # DD-013 combo: blooming burst (Fire+Ice thermal shock)
+	SHAPE_PLASMA,       # DD-013 combo: spiked orb (Fire+Elec overload)
+	SHAPE_FROSTARC,     # DD-013 combo: forked arc (Ice+Elec superconductor)
 }
 const DEFAULT_SHAPE := SHAPE_DEFAULT
 
@@ -32,6 +42,10 @@ const _STYLES := {
 	SpellData.Element.ICE: {"color": ICE_COLOR, "shape": SHAPE_ICE},
 	SpellData.Element.ELECTRICITY: {"color": ELECTRICITY_COLOR, "shape": SHAPE_ELECTRICITY},
 	SpellData.Element.ANTIMATTER: {"color": ANTIMATTER_COLOR, "shape": SHAPE_ANTIMATTER},
+	# DD-013 combos reuse the same element-keyed style table.
+	SpellData.Element.STEAM: {"color": STEAM_COLOR, "shape": SHAPE_STEAM},
+	SpellData.Element.PLASMA: {"color": PLASMA_COLOR, "shape": SHAPE_PLASMA},
+	SpellData.Element.FROSTARC: {"color": FROSTARC_COLOR, "shape": SHAPE_FROSTARC},
 }
 
 
@@ -70,6 +84,26 @@ static func polygon_for(shape: int) -> PackedVector2Array:
 				Vector2(7, 0), Vector2(2, 2), Vector2(0, 6),
 				Vector2(-2, 2), Vector2(-6, 0), Vector2(-2, -2),
 				Vector2(0, -6), Vector2(2, -2),
+			])
+		SHAPE_STEAM:
+			# DD-013 STEAM: a blooming, rounded burst (heavy thermal-shock head).
+			return PackedVector2Array([
+				Vector2(8, 0), Vector2(4, 5), Vector2(-2, 6),
+				Vector2(-7, 2), Vector2(-7, -2), Vector2(-2, -6), Vector2(4, -5),
+			])
+		SHAPE_PLASMA:
+			# DD-013 PLASMA: a spiked orb (explosive overload arc).
+			return PackedVector2Array([
+				Vector2(8, 0), Vector2(3, 3), Vector2(4, 6),
+				Vector2(-2, 3), Vector2(-7, 0), Vector2(-2, -3),
+				Vector2(4, -6), Vector2(3, -3),
+			])
+		SHAPE_FROSTARC:
+			# DD-013 FROSTARC: a forked arc (chilled superconductor bolt).
+			return PackedVector2Array([
+				Vector2(9, 1), Vector2(2, 3), Vector2(5, 5),
+				Vector2(-6, 2), Vector2(-2, 0), Vector2(-6, -2),
+				Vector2(5, -5), Vector2(2, -3),
 			])
 		_:
 			# Neutral diamond fallback.

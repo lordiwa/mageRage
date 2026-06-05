@@ -3,7 +3,12 @@
 ## DD-004 identity flags (Ice slow, Electricity chain max_targets).
 class_name SpellData extends Resource
 
-enum Element { FIRE, ICE, ELECTRICITY, ANTIMATTER }
+## Base elements (FIRE..ANTIMATTER) plus the TASK-040 / DD-013 dual-cast COMBO
+## blends (STEAM/PLASMA/FROSTARC). Combos reuse the SAME element-keyed pipeline
+## (ProjectileStyle color/shape, projectile setup, ELEMENT_SCALE) so a blended shot
+## flows through the existing system data-driven, NOT via bespoke per-combo scripts.
+## ANTIMATTER stays the separate DD-002 ultimate and is excluded from combos.
+enum Element { FIRE, ICE, ELECTRICITY, ANTIMATTER, STEAM, PLASMA, FROSTARC }
 
 ## TASK-022 / DD-004 per-element shot behavior, defined in the .tres data so each
 ## element FIRES differently, not just looks different:

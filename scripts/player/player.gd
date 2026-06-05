@@ -364,8 +364,24 @@ func _drive_held_casts(primary_held: bool, secondary_held: bool, delta: float) -
 		return
 	var origin: Node2D = _muzzle if _muzzle != null else self
 	var aim := cast_aim()
-	mgr.try_cast_primary_held(origin, aim, primary_held, delta)
-	mgr.try_cast_secondary_held(origin, aim, secondary_held, delta)
+	# TASK-040 (DD-013) dual-cast COMBO: when BOTH triggers are held, try the combo
+	# path FIRST. Holding both puts the player in COMBO MODE — the manager reports
+	# `suppress_singles`, so the in-between singles are MUTED every frame (you TRADE
+	# fast single fire for the slower, flexible combo/empowered rhythm; MEDIUM fix).
+	# You are never idle: while both are held you fire combos (just slower). When only
+	# one trigger is held — or the slots can't combo at all (Antimatter) — the singles
+	# run exactly as TASK-038 (no regression). The combo's summed mana + slower cadence
+	# + armor-respecting damage keep it from dominating the single-element swap loop.
+	var suppress_singles := false
+	if mgr.has_method("try_cast_combo_held"):
+		var combo: Dictionary = mgr.try_cast_combo_held(
+			origin, aim, primary_held, secondary_held, delta)
+		suppress_singles = combo.get("suppress_singles", false)
+	# In combo mode, mute both singles this frame; otherwise singles run as TASK-038.
+	var fire_primary := primary_held and not suppress_singles
+	var fire_secondary := secondary_held and not suppress_singles
+	mgr.try_cast_primary_held(origin, aim, fire_primary, delta)
+	mgr.try_cast_secondary_held(origin, aim, fire_secondary, delta)
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:

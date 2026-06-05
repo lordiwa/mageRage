@@ -1,0 +1,32 @@
+{
+  "key": "TASK-040",
+  "title": "M2.1 Combat-feel: dual-cast element MIXING / combo shot (DD-013) — both triggers fire one blended projectile",
+  "description": "Playtest feedback + user decision: 'shots are not mixing' -> build DUAL-CAST COMBO. Pressing BOTH triggers together fires ONE blended projectile that combines the two equipped elements, instead of two independent shots. There is no mixing system today (GDD defers it; game-design marks combos [judgment], data-driven). FIRST author DD-013 in docs/DECISIONES-DISENO.md with a filled game-design feature-vetting checklist (Spanish per DD-005), then implement DATA-DRIVEN.\\n\\nProposed combo table (Fire/Ice/Elec pairs; Antimatter is NOT in combos, it's the separate ultimate DD-002):\\n- Fire + Ice = STEAM / Thermal Shock (Ice-then-Fire shatter, doctrine's own example): heavy single-target burst, bonus vs slowed/frozen targets. (white-hot steam color)\\n- Fire + Electricity = PLASMA / Overload: explosive arc with a small AoE. (violet/magenta)\\n- Ice + Electricity = FROST-ARC / Superconductor: chilled chain that slows multiple targets (Elec chain + Ice slow). (cyan-white)\\n- Same element on both slots = no combo: fire a single empowered shot of that element (~1.5x), not two identical projectiles.\\n\\nMECHANIC / anti-dominance (game-design: must NOT become the only thing you do, must preserve the element-swap RPS): a combo fires only when both triggers are active within a short window (~0.12s); it consumes BOTH elements' mana (or a combo premium) and fires on a SLOWER combo cadence than single shots, so spamming combos is mana- and time-expensive -> it stays a deliberate tactical choice, not a win button. Combos ignore neither armor nor cost (they are NOT the antimatter ultimate). Thematic hook: dual-cast is a small rehearsal of the antimatter 'all elements at once' (pillar: the weapon/creation-destruction duality).\\n\\nDATA-DRIVEN: add combo SpellData .tres variants (e.g. resources/spells/combo_steam.tres / combo_plasma.tres / combo_frostarc.tres) reusing the existing SpellData/ShotType/projectile system; a small pure mapping (element_a, element_b) -> combo SpellData (deterministic, DD-001) rather than bespoke per-combo scripts. Detect simultaneous dual-trigger in player._process_magic / magic_manager and route to a combo cast that spawns the blended projectile via the POOLED spawn path. DEPENDS ON TASK-037 (pooled spawn) and TASK-038 (hold-to-fire + cadence; combo cadence builds on that). Reuse ProjectileStyle for the combo colors (extend it for the 3 combo readouts; keep legible).\\n\\nTests-first: the pure (elem,elem)->combo mapping (all 3 pairs commutative: Fire+Ice == Ice+Fire; same-element -> empowered single; antimatter excluded); dual-trigger detection within the window spawns ONE combo projectile not two singles; combo consumes both manas; combo cadence slower than singles; each combo projectile carries the right element/shot_type/effect. Use held-axis input + InputGate hygiene (release + clear_test_overrides in after_each) to avoid the edge-poison flake. Reviewer must re-run the game-design feature-vetting checklist and block on any FAIL gate or any flight/RPS-dominance regression.",
+  "acceptance_criteria": [
+    "DD-013 recorded in docs/DECISIONES-DISENO.md (Spanish, DD-005) with a filled game-design feature-vetting checklist scoring >=1 in each required gate and a SHIP verdict; defines the 3 combo pairs + same-element empowered shot + the anti-dominance cost model.",
+    "Pressing both triggers within the window fires exactly ONE blended combo projectile (not two singles); the (elem,elem)->combo mapping is a pure deterministic function, commutative, Antimatter excluded, same-element -> empowered single. Covered by tests-first.",
+    "Combo is data-driven via SpellData .tres variants reusing the existing projectile/ShotType system (no bespoke per-combo scripts); combo colors via ProjectileStyle, legible.",
+    "Anti-dominance preserved: combo consumes both elements' mana (or premium) AND fires on a slower combo cadence than single shots, so it cannot be spammed as a win button; single-element swapping (the RPS micro-loop) remains viable. No flight/gating regression (hero flies from spawn).",
+    "Tests-first; full GUT suite green exit 0 run multiple times (flake-aware, held-axis + InputGate hygiene); gdlint clean; reviewer re-runs the feature-vetting checklist with no FAIL gate."
+  ],
+  "status": "in_progress",
+  "priority": "medium",
+  "labels": [
+    "godot",
+    "combat",
+    "design-decision",
+    "game-feel",
+    "milestone-m2.1"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-037",
+    "TASK-038"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T03:47:08.131Z",
+  "updated_at": "2026-06-05T05:31:37.072Z",
+  "jira_key": null
+}

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T04:50:41.798Z",
+  "generated_at": "2026-06-05T05:31:37.072Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -232,13 +232,13 @@
     {
       "key": "TASK-039",
       "title": "M2.1 Combat-feel: trigger-element HUD (show which element is on RT vs LT)",
-      "status": "in_progress",
+      "status": "done",
       "priority": "medium"
     },
     {
       "key": "TASK-040",
       "title": "M2.1 Combat-feel: dual-cast element MIXING / combo shot (DD-013) — both triggers fire one blended projectile",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

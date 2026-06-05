@@ -25,6 +25,11 @@ signal cast_failed(slot: int)
 ## the HUD/audio/tests observe the cadence without depending on a projectile scene.
 signal cast_fired(slot: int, spell: SpellData)
 
+## TASK-040 (DD-013) dual-cast COMBO: emitted on every REAL combo shot (after BOTH
+## manas are spent), carrying the blended combo SpellData. Lets the HUD/audio/tests
+## observe combos without depending on a projectile scene.
+signal combo_fired(spell: SpellData)
+
 ## Slot ids carried by cast_failed so the HUD can react per-slot if it wants.
 enum {SLOT_PRIMARY, SLOT_SECONDARY}
 
@@ -57,14 +62,41 @@ var _pools: Dictionary = {}     # PackedScene -> ProjectilePool
 var _primary_accum := 0.0
 var _secondary_accum := 0.0
 
+## TASK-040 (DD-013) dual-cast COMBO cadence. A THIRD accumulator, independent of the
+## two single-slot ones, gates how often a blended combo may fire — seeded ready so
+## the first valid dual-trigger fires immediately, reset to 0 on every combo shot.
+var _combo_accum := 0.0
+
+## DD-013 dual-trigger WINDOW bookkeeping. To fire a combo BOTH triggers must engage
+## within a short window (~0.12s) of each other (so a deliberate single isn't turned
+## into a combo by a late second press). `_solo_hold_accum` measures how long exactly
+## ONE trigger has been held alone; when the second joins, the combo engages only if
+## that solo lag was within the window. `_dual_engaged` latches a valid dual-hold and
+## clears when either trigger releases.
+var _solo_hold_accum := 0.0
+var _dual_engaged := false
+
 ## Seed value that marks an accumulator as "ready to fire now". Large enough to clear
 ## any element's fire_interval so a fresh hold (or element swap) fires on tick 1.
 const _READY_MARGIN := 1000.0
+
+## DD-013 dual-trigger window (seconds): both triggers must engage within this of each
+## other to count as a combo, not two singles. Provisional / tunable.
+const COMBO_WINDOW := 0.12
+
+## DD-013 anti-dominance combo cadence premium: the combo interval is the SLOWER of
+## the two single intervals, multiplied by this (> 1), so combos always fire on a
+## strictly slower cadence than either single shot. Provisional / tunable.
+const COMBO_CADENCE_PREMIUM := 1.6
 
 func _ready() -> void:
 	# Both slots start cadence-ready so the very first held frame can fire.
 	_primary_accum = _READY_MARGIN
 	_secondary_accum = _READY_MARGIN
+	# DD-013: the combo cadence also starts ready, and no dual-trigger is engaged yet.
+	_combo_accum = _READY_MARGIN
+	_solo_hold_accum = 0.0
+	_dual_engaged = false
 	# Default loadout: the first two distinct spells (primary, secondary).
 	if spells.size() >= 1:
 		primary = spells[0]
@@ -87,6 +119,9 @@ func select(index: int) -> void:
 	# elements fire immediately on the next held tick (deterministic, no dead frame).
 	_primary_accum = _READY_MARGIN
 	_secondary_accum = _READY_MARGIN
+	# DD-013: a loadout change also re-arms the combo cadence so a fresh blend fires
+	# immediately on the next valid dual-trigger.
+	_combo_accum = _READY_MARGIN
 	loadout_changed.emit(primary, secondary)
 
 ## The element of the primary slot (or -1 if none).
@@ -248,3 +283,126 @@ func _held_cast(
 	_spawn(spell, origin, direction)             # pooled spawn (no-op without a scene)
 	cast_fired.emit(slot, spell)
 	return {"shot": true, "accum": 0.0}           # reset this slot's cadence
+
+
+# --- TASK-040 (DD-013) dual-cast COMBO ---------------------------------------
+# Pressing BOTH triggers (within a short window) fires ONE blended COMBO projectile
+# via the SAME pooled path — NOT two singles. Anti-dominance cost: the combo costs
+# BOTH elements' mana (sum) AND fires on a SLOWER combo cadence than either single,
+# so spamming combos is mana- and time-expensive (a tactical choice, not a win
+# button). The combo mapping is the pure, commutative ComboTable; ANTIMATTER and
+# same-element pairs never spawn a blended combo. Deterministic (DD-001): time is the
+# `delta` fed in, no wall-clock / RNG.
+
+## The dual-trigger window (seconds) both triggers must engage within. Exposed so the
+## player/tests reference the same tunable value.
+func combo_window() -> float:
+	return COMBO_WINDOW
+
+
+## The combo cadence (seconds between combos): the SLOWER of the two single intervals
+## times the anti-dominance premium, so it is always slower than either single shot.
+func combo_interval(spell_a: SpellData, spell_b: SpellData) -> float:
+	var a := spell_a.fire_interval if spell_a != null else _READY_MARGIN
+	var b := spell_b.fire_interval if spell_b != null else _READY_MARGIN
+	return maxf(a, b) * COMBO_CADENCE_PREMIUM
+
+
+## The summed mana cost of a combo: BOTH elements' costs (anti-dominance — a combo
+## always costs strictly more than either single shot). Null slots cost nothing.
+func combo_mana_cost() -> float:
+	var a := primary.mana_cost if primary != null else 0.0
+	var b := secondary.mana_cost if secondary != null else 0.0
+	return a + b
+
+
+## Drive the dual-trigger combo for one frame. ALWAYS advances the combo accumulator
+## by delta (cadence keeps time) and tracks the dual-trigger window.
+##
+## When BOTH triggers are held the player is in COMBO MODE — `suppress_singles` is
+## true so the player TRADES fast single fire for the slow combo rhythm (you don't
+## also get full-rate in-between singles; MEDIUM fix). On a cadence-ready, in-window,
+## affordable frame it FIRES exactly one shot:
+##   - KIND_COMBO     -> spawn the blended combo projectile (Fire/Ice/Elec pairs);
+##   - KIND_EMPOWERED -> same element both slots: spawn ONE shot scaled by
+##                       ComboTable.EMPOWERED_MULTIPLIER (HIGH-2; never two singles).
+## Both pay the SUMMED mana (anti-dominance, all-or-nothing) and reset the combo
+## cadence, and emit combo_fired. KIND_NONE (Antimatter / single trigger) never fires
+## here — the normal single path handles it.
+##
+## Returns {"shot": bool, "kind": int, "suppress_singles": bool}: `shot` is true only
+## when a combo/empowered shot actually fired this frame; `suppress_singles` tells the
+## player whether to mute the two single shots this frame (true whenever both held).
+func try_cast_combo_held(
+	origin: Node2D,
+	direction: Vector2,
+	primary_held: bool,
+	secondary_held: bool,
+	delta: float,
+) -> Dictionary:
+	# Cadence keeps time regardless of input (capped like the single slots).
+	_combo_accum = minf(_combo_accum + delta, _READY_MARGIN)
+	# Track the dual-trigger window: how the two triggers engaged relative to each other.
+	_update_dual_window(primary_held, secondary_held, delta)
+
+	var both_held := primary_held and secondary_held
+	# Resolve what this pair blends to (pure, commutative).
+	var result := ComboTable.combo_for(primary_element(), secondary_element())
+	if not both_held:
+		return {"shot": false, "kind": ComboTable.KIND_NONE, "suppress_singles": false}
+	# Antimatter / unmapped: no dual-cast output. Fall back to normal singles (do NOT
+	# suppress — comboing isn't possible with these slots).
+	if result.kind == ComboTable.KIND_NONE:
+		return {"shot": false, "kind": ComboTable.KIND_NONE, "suppress_singles": false}
+
+	# Both held AND a real blend/empower: COMBO MODE. Suppress the in-between singles
+	# regardless of whether the (slower) cadence fires this frame.
+	var out := {"shot": false, "kind": result.kind, "suppress_singles": true}
+	# Require a VALID dual-trigger window + ready combo cadence.
+	if not _dual_engaged or _combo_accum < combo_interval(primary, secondary):
+		return out
+	# Anti-dominance: pay BOTH manas (all-or-nothing).
+	var cost := combo_mana_cost()
+	if mana == null or mana.current_mana < cost or not mana.spend(cost):
+		return out
+	# Fire ONE shot: the blended combo, or the empowered single (same element).
+	var to_spawn: SpellData = result.spell
+	if result.kind == ComboTable.KIND_EMPOWERED:
+		to_spawn = _empowered_spell(primary)
+	_spawn(to_spawn, origin, direction)            # SAME pooled path as singles
+	combo_fired.emit(to_spawn)
+	_combo_accum = 0.0                             # reset the combo cadence
+	out["shot"] = true
+	return out
+
+
+## HIGH-2 empowered single: a one-off copy of the slot spell with damage scaled by
+## ComboTable.EMPOWERED_MULTIPLIER (~1.5x). A duplicate so the source .tres is never
+## mutated; the projectile/pool/style path is reused unchanged (data-driven). Null-safe.
+func _empowered_spell(spell: SpellData) -> SpellData:
+	if spell == null:
+		return null
+	var boosted := spell.duplicate() as SpellData
+	boosted.damage = spell.damage * ComboTable.EMPOWERED_MULTIPLIER
+	return boosted
+
+
+## DD-013 window tracker. While exactly one trigger is held, accrue the solo lag. When
+## the second trigger joins, the combo ENGAGES only if that lag was within the window;
+## a late join (lag > window) is treated as two deliberate singles, not a combo. Any
+## release clears the engaged latch and the solo timer.
+func _update_dual_window(primary_held: bool, secondary_held: bool, delta: float) -> void:
+	if primary_held and secondary_held:
+		# Both down: engage only if the second joined within the window of the first.
+		if not _dual_engaged:
+			_dual_engaged = _solo_hold_accum <= COMBO_WINDOW
+		_solo_hold_accum = 0.0
+	elif primary_held or secondary_held:
+		# Exactly one down: time how long it's been alone (the window the other has to
+		# join within). A lapse here is what blocks a late second trigger from comboing.
+		_solo_hold_accum += delta
+		_dual_engaged = false
+	else:
+		# Neither down: reset the window.
+		_solo_hold_accum = 0.0
+		_dual_engaged = false

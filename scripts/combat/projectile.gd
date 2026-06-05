@@ -54,6 +54,10 @@ const ELEMENT_SCALE := {
 	SpellData.Element.ICE: Vector2(1.5, 1.3),           # large angular shard
 	SpellData.Element.ELECTRICITY: Vector2(1.7, 0.7),   # long, slim bolt
 	SpellData.Element.ANTIMATTER: Vector2(1.3, 1.3),
+	# DD-013 combos read as BIGGER, weightier blended shots than a single element.
+	SpellData.Element.STEAM: Vector2(2.0, 2.0),         # heavy thermal-shock burst
+	SpellData.Element.PLASMA: Vector2(1.9, 1.7),        # explosive overload orb
+	SpellData.Element.FROSTARC: Vector2(1.9, 1.0),      # broad chilled arc
 }
 const DEFAULT_SCALE := Vector2(1.0, 1.0)
 var _visual_scale := DEFAULT_SCALE

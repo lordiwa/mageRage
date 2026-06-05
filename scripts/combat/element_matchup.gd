@@ -19,8 +19,37 @@ const _COUNTER := {
 	SpellData.Element.ELECTRICITY: SpellData.Element.ICE,
 }
 
+## TASK-040 / DD-013: a dual-cast COMBO is NOT its own matchup entry — it resolves
+## its armor multiplier THROUGH its two BASE elements (the constituents that formed
+## it). This keeps combos firmly INSIDE the DD-006 RPS (resisted/bonused like any
+## element; never above it — that is reserved for Antimatter). The decomposition is
+## pure, deterministic and commutative.
+const _COMBO_COMPONENTS := {
+	SpellData.Element.STEAM: [SpellData.Element.FIRE, SpellData.Element.ICE],
+	SpellData.Element.PLASMA: [SpellData.Element.FIRE, SpellData.Element.ELECTRICITY],
+	SpellData.Element.FROSTARC: [SpellData.Element.ICE, SpellData.Element.ELECTRICITY],
+}
+
+## The base element(s) an element resolves to for matchup: a combo -> its two
+## constituents; a base element -> just itself. Pure and order-stable.
+static func combo_components(element: int) -> Array:
+	return _COMBO_COMPONENTS.get(element, [element])
+
 ## Damage multiplier for a spell of `spell_element` hitting `armor_type`.
+## A combo element returns the MEAN of its two base-element multipliers (safer than
+## max: it can never exceed the larger base mult, so a combo never beats a perfectly
+## correct single's x1.5 weakness bonus). Base elements use the plain DD-006 table.
 static func multiplier(spell_element: int, armor_type: int) -> float:
+	var components := combo_components(spell_element)
+	if components.size() > 1:
+		var total := 0.0
+		for base in components:
+			total += _base_multiplier(base, armor_type)
+		return total / float(components.size())
+	return _base_multiplier(spell_element, armor_type)
+
+## The plain DD-006 single-element multiplier (no combo derivation).
+static func _base_multiplier(spell_element: int, armor_type: int) -> float:
 	if spell_element == armor_type:
 		return RESIST
 	if _COUNTER.get(armor_type, -1) == spell_element:

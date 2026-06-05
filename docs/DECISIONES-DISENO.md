@@ -288,3 +288,188 @@ jugador ya está casi apuntando:
 
 **Provisional** en números (cono, rango, fuerza del snap) — a afinar en playtest. El
 **modelo** (magnetismo suave, legible, determinista) queda **ACEPTADO**.
+
+---
+
+## DD-013 — Dual-cast: mezcla/combo de elementos (TASK-040, M2.1)  ·  **PROVISIONAL**
+
+**Origen:** decisión del usuario. Pulsar **AMBOS gatillos a la vez** dispara **UN solo
+proyectil COMBO mezclado** (no dos disparos independientes) que combina los dos
+elementos equipados. Es un pequeño ensayo de la fantasía de antimateria ("todos los
+elementos a la vez") pero **NO es el ultimate** (ese es DD-002) y **NO está por encima
+del RPS de armaduras** (DD-006). Sirve al loop micro: añade una decisión táctica
+deliberada sin matar el swap Fuego/Hielo/Electricidad.
+
+### Tabla de combos (Fuego/Hielo/Electricidad; ANTIMATERIA excluida)
+La mezcla es **CONMUTATIVA** (Fuego+Hielo == Hielo+Fuego) y **determinista** (DD-001):
+
+| Par | Combo | Identidad | Color (lectura) |
+|---|---|---|---|
+| **Fuego + Hielo** | **STEAM / Choque Térmico** | ráfaga pesada a un objetivo (el "shatter" Hielo→Fuego), bonus vs. ralentizados/congelados | blanco incandescente |
+| **Fuego + Electricidad** | **PLASMA / Sobrecarga** | arco explosivo con pequeña AoE | violeta/magenta |
+| **Hielo + Electricidad** | **FROST-ARC / Superconductor** | cadena fría que ralentiza varios objetivos (cadena de Elec + slow de Hielo) | cian-blanco |
+| **Mismo elemento en ambos slots** | (sin combo) | **disparo ÚNICO POTENCIADO** de ese elemento (~1.5x), NO dos proyectiles idénticos | el del elemento |
+| **ANTIMATERIA en cualquier slot** | (sin combo) | cae a disparo simple normal | — |
+
+### Anti-dominancia (CRÍTICO — el revisor lo verifica con la skill de game-design)
+El combo **NO** debe volverse lo único que hace el jugador (no debe matar el micro-loop
+de swap RPS). Coste real, así spamear combos es caro en maná **y** en tiempo, y NUNCA es
+más eficiente que swapear bien (elección táctica por **flexibilidad**, no botón de
+victoria). **Cuatro** palancas, todas **provisionales/tunables**:
+
+- **Ventana de doble gatillo:** ambos gatillos deben estar activos dentro de una ventana
+  corta (`COMBO_WINDOW ≈ 0.12s`). Un segundo gatillo tardío se trata como dos disparos
+  simples deliberados, no como combo.
+- **Maná de ambos:** cada combo consume la **suma** del coste de los dos elementos
+  (`combo_mana_cost()` = coste_primario + coste_secundario). Todo-o-nada: si no alcanza
+  el maná combinado, no dispara y no gasta nada. Siempre cuesta **estrictamente más** que
+  un disparo simple.
+- **Cadencia más lenta:** el combo dispara con una cadencia **más lenta** que cualquiera
+  de los dos intervalos simples — `combo_interval = max(intervalo_a, intervalo_b) ×
+  COMBO_CADENCE_PREMIUM (1.6)`. Construido sobre los acumuladores por slot de TASK-038,
+  con un **tercer** acumulador de combo independiente.
+- **Combo-mode = intercambio, no suma (MEDIUM):** mientras AMBOS gatillos estén pulsados
+  el jugador entra en **modo combo** y NO recibe además los disparos simples intermedios
+  a cadencia rápida (el manager devuelve `suppress_singles=true` cada frame; el jugador
+  silencia los dos simples). Sostener ambos **cambia** fuego simple rápido por el ritmo de
+  combo lento y flexible — no se obtienen las dos cosas. (Coherente con "no te quedas sin
+  hacer nada": sigues actuando, disparando combos, solo más lento.)
+
+**Los combos RESPETAN la armadura (DENTRO del RPS, NO por encima — HIGH-1).** Un combo no
+es una entrada propia en la tabla DD-006: resuelve su multiplicador de armadura **a través
+de sus dos elementos base** (los constituyentes que lo formaron), usando la **MEDIA** de
+los dos multiplicadores base (`ElementMatchup.multiplier` → `combo_components` pura,
+determinista, conmutativa). La media (no el máximo) garantiza que un combo **nunca** supera
+el x1.5 de un simple perfectamente correcto. Multiplicador derivado por combo×armadura:
+
+| Combo (bases) | vs armadura Fuego | vs armadura Hielo | vs armadura Elec |
+|---|---|---|---|
+| **STEAM** (Fuego+Hielo) | 0.75 | 1.00 | 1.25 |
+| **PLASMA** (Fuego+Elec) | 1.00 | 1.25 | 0.75 |
+| **FROST-ARC** (Hielo+Elec) | 1.25 | 0.75 | 1.00 |
+
+**Invariante dmg-por-maná (anti-dominancia dura, test `test_combo_anti_dominance.gd`):**
+para CADA armadura, el mejor simple correcto (el jugador swapea óptimo) tiene dmg/maná
+**>=** el mejor combo. Mejores simples por armadura: Fuego **1.8** (Rayo), Hielo **3.0**
+(Fuego), Elec **2.25** (Hielo). Peor caso de cada combo: STEAM vs Elec
+46·1.25/27 = **2.13** <= 2.25; PLASMA vs Hielo 42·1.25/25 = **2.10** <= 3.0; FROST-ARC vs
+Fuego 28·1.25/22 = **1.59** <= 1.8. → Ningún combo gana en eficiencia a swapear bien contra
+ninguna armadura; el combo gana en **utilidad/flexibilidad** (AoE, cadena+slow, ráfaga, no
+tener que leer la armadura), nunca en dmg/maná crudo. La antimateria (DD-002) queda
+**excluida** de la mezcla y es la ÚNICA que está por encima del RPS.
+
+### Disparo POTENCIADO de mismo elemento (HIGH-2)
+Mismo elemento en ambos slots + ambos gatillos NO dispara dos proyectiles idénticos: dispara
+**UN solo disparo potenciado** de ese elemento con daño ×`EMPOWERED_MULTIPLIER (1.5)` (vía
+`SpellData.duplicate()`, sin mutar el `.tres` origen) y **suprime el segundo simple**. Paga
+el **coste de ambos manás** y va en la **misma cadencia de combo lenta**, así que mashear el
+mismo elemento NO es un doblador de DPS gratis ni out-ratea el fuego simple normal. Sigue
+DENTRO del RPS (es el multiplicador base del propio elemento).
+
+### Mapeo (función pura) y datos
+- `ComboTable.combo_for(element_a, element_b) -> ComboResult` es **pura, estática y
+  determinista** (espejo de `AimAssist`): sin RNG, sin lookups de nodos, sin estado
+  oculto. Devuelve `KIND_COMBO` (con el `SpellData` mezclado), `KIND_EMPOWERED`
+  (mismo elemento → simple potenciado) o `KIND_NONE` (antimateria/no-mezcla → simple).
+  Clave conmutativa `(min,max)`.
+- **Data-driven** (NO scripts por combo): tres `SpellData .tres` reusando el sistema
+  existente de `ShotType`/proyectil/`ProjectileStyle`:
+  `resources/spells/combo_steam.tres` (STEAM, SINGLE, ráfaga),
+  `combo_plasma.tres` (PLASMA, PIERCE/AoE), `combo_frostarc.tres` (FROSTARC, CHAIN +
+  `applies_slow`). Tres elementos nuevos en `SpellData.Element` (STEAM/PLASMA/FROSTARC)
+  para que el pipeline por-elemento (color/forma/escala) fluya sin código bespoke.
+- El proyectil combo spawnea por el **mismo pool** (TASK-037) y lleva el
+  elemento/shot_type/efecto del combo + su color en `ProjectileStyle`.
+
+### Números provisionales (tunables en playtest)
+- **Re-tuneados para cumplir la invariante dmg/maná (HIGH-1):** STEAM daño **46**, coste
+  .tres 27 (= Fuego 15 + Hielo 12), SINGLE, ráfaga. PLASMA daño **42**, AoE max_targets 3,
+  coste 25 (= Fuego 15 + Rayo 10). FROST-ARC daño **28**, cadena 4, `applies_slow`, coste
+  **22** (= Hielo 12 + Rayo 10).
+- En juego el coste real del combo es la **suma de los dos slots equipados**
+  (`combo_mana_cost`), y la cadencia real es `combo_interval` (más lenta que ambos). El
+  daño se escala en el impacto por el multiplicador **derivado de los dos elementos base**
+  (media), así que el combo está sujeto a resist/weakness como cualquier elemento.
+  `COMBO_WINDOW = 0.12s`, `COMBO_CADENCE_PREMIUM = 1.6`, `EMPOWERED_MULTIPLIER = 1.5`.
+
+### Feature-vetting checklist (re-ejecutable por el revisor)
+
+```
+FEATURE: Dual-cast element mixing / combo (DD-013)
+ONE-LINE: Hold BOTH triggers -> COMBO MODE: ONE blended combo projectile (Fire/Ice/Elec)
+          at a slower cadence + summed mana, in-between singles suppressed (trade, not
+          add); same element -> ONE 1.5x empowered shot. Combos RESPECT armor (mean of
+          their two base elements) so they are inside the RPS, never above it.
+
+--- GATE A: PILLARS (need >=1 "serves") ---
+[x] Jailer-was-protector  : neutral — note: no toca la ficción del Imperio.
+[x] Weapon-chooses-target : serves — note: mezclar elementos es un pequeño ENSAYO de la
+    fantasía antimateria ("todos los elementos a la vez"), la dualidad creación/
+    destrucción del arma; deliberadamente por debajo del ultimate (DD-002).
+[x] Flight=freedom&doom   : neutral — note: es combate, no toca el vuelo ni los gates.
+    >> 1 "serves", 0 "VIOLATES" => PASS.
+
+--- GATE B: CORE-LOOP LAYER (need >=1, steals from none) ---
+[x] Micro  : serves, steals from NONE — note: añade una decisión táctica segundo-a-segundo
+    (¿entro en modo combo por flexibilidad, o sigo swapeando al elemento correcto?). NO
+    roba el swap RPS porque: (1) los combos RESPETAN la armadura — su multiplicador es la
+    MEDIA de sus dos elementos base (tabla: STEAM 0.75/1.00/1.25, PLASMA 1.00/1.25/0.75,
+    FROST-ARC 1.25/0.75/1.00), así que están sujetos a resist/weakness; (2) invariante
+    dmg/maná verificada (test_combo_anti_dominance.gd): para CADA armadura el mejor simple
+    correcto >= el mejor combo (STEAM 2.13<=2.25, PLASMA 2.10<=3.0, FROST-ARC 1.59<=1.8),
+    o sea swapear bien NUNCA es peor que mashear; (3) modo combo SUPRIME los simples
+    intermedios (intercambio, no suma) + ventana + maná sumado + cadencia lenta.
+[x] Minute : serves — note: herramienta extra por UTILIDAD para limpiar grupos/mini-jefes
+    (FROST-ARC cadena+slow; PLASMA AoE; STEAM ráfaga), elegida por flexibilidad, no por
+    eficiencia — no se vuelve dominante.
+[x] Macro  : n/a — note: no cambia progresión permanente ni mapa.
+    >> 2 "serves", 0 "steals" => PASS (anti-dominancia verificada por la invariante dmg/maná).
+
+--- GATE C: CANON CONSISTENCY (need "consistent") ---
+[x] Contradicts GDD?         : no — GDD §3 invita a mezcla/combos "Ice-then-Fire shatter".
+[x] Contradicts LORE-BIBLE?  : no — la antimateria/ultimate sigue siendo el clímax aparte.
+[x] Tone severe/tragic/cosmic: yes — el combo es contenido, costoso y deliberado; no es
+    quippy ni un botón de victoria. La fantasía total/fatal se reserva al Sacrificio.
+    >> Sin contradicciones, tono OK => PASS.
+
+--- GATE D: TEACHES / REWARDS A VERB (need "yes") ---
+[x] Which verb/element: recompensa el SWAP elemental (la mezcla premia conocer los dos
+    slots equipados y leer la armadura — el combo mismo está sujeto al RPS) y ENSAYA la
+    fantasía antimateria.
+[x] If it gates traversal: n/a (no es un gate de traversía).
+[x] If combat: preserve the RPS read (no dominant element)? : yes — los combos están DENTRO
+    del RPS, NO por encima (solo la antimateria/DD-002 está por encima). Cada combo resuelve
+    su daño a través de sus DOS elementos base (MEDIA de multiplicadores), así que es
+    resistido/bonificado como cualquier elemento (ver tabla por armadura). Además cuesta la
+    suma de ambos manás, dispara en cadencia más lenta, y en modo combo suprime los simples
+    intermedios. Invariante verificada: ningún combo gana al mejor simple correcto en
+    dmg/maná contra ninguna armadura (STEAM 2.13<=2.25, PLASMA 2.10<=3.0, FROST-ARC
+    1.59<=1.8). El mismo-elemento es UN disparo potenciado 1.5x (no dos), también dentro del
+    RPS y con el mismo coste/cadencia. Swapear bien nunca es peor que comboear.
+    >> PASS.
+
+--- IMPLEMENTATION HANDOFF (godot-game-dev) ---
+[x] Maps to: SpellData element (STEAM/PLASMA/FROSTARC) + ShotType + ProjectilePool +
+    ProjectileStyle; cadencia/maná en MagicManager; detección dual en player.gd.
+[x] Data-driven where possible (.tres, not bespoke script)? : yes — 3 combo .tres +
+    ComboTable puro; cero scripts por-combo.
+[x] Test plan (GUT pure-logic): mapeo conmutativo/determinista, una sola bala combo (no
+    dos simples), coste de ambos manás, cadencia más lenta, color/efecto del combo,
+    multiplicador combo = media de bases (test_combo_matchup), invariante dmg/maná
+    (test_combo_anti_dominance: mejor simple >= mejor combo por armadura), disparo
+    potenciado mismo-elemento (1 disparo 1.5x, taxado, cadencia combo), modo-combo
+    suprime simples intermedios, no-regresión del disparo simple (TASK-038). Held-axis +
+    InputGate hygiene. SUITE COMPLETA GREEN 631/631 (×2).
+
+VERDICT: SHIP — reason: sirve micro (sin robar el swap) + minuto, no contradice canon,
+tono severo. La anti-dominancia ahora es REAL y VERIFICADA: los combos respetan la armadura
+(media de sus dos bases, dentro del RPS) y la invariante dmg/maná garantiza que swapear bien
+nunca es peor que comboear; el mismo-elemento es un disparo potenciado (no dos); el modo
+combo intercambia fuego simple por el ritmo de combo (no suma). Números PROVISIONALES.
+```
+
+**Estado:** **PROVISIONAL** en números; el **modelo** (dual-cast → un combo mezclado o
+disparo potenciado; mapeo puro conmutativo; combos DENTRO del RPS vía media de sus
+elementos base; anti-dominancia por ventana + maná sumado + cadencia lenta + modo-combo que
+intercambia simples + invariante dmg/maná verificada; antimateria excluida y única por
+encima del RPS) queda como base de M2.1.

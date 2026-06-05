@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SpellData" load_steps=3 format=3 uid="uid://b8magerage0stm"]
+
+[ext_resource type="Script" path="res://scripts/resources/spell_data.gd" id="1_spell"]
+[ext_resource type="PackedScene" uid="uid://b8mageragepr0j" path="res://scenes/projectile.tscn" id="2_proj"]
+
+[resource]
+script = ExtResource("1_spell")
+display_name = "Steam / Thermal Shock"
+element = 4
+damage = 46.0
+speed = 440.0
+mana_cost = 27.0
+projectile = ExtResource("2_proj")
+applies_slow = false
+max_targets = 1
+shot_type = 0
+chain_radius = 160.0
+fire_interval = 0.6
