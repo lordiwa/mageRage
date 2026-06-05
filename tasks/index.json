@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T03:24:55.468Z",
+  "generated_at": "2026-06-05T03:47:34.315Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -215,6 +215,30 @@
       "key": "TASK-036",
       "title": "M2 T4 — Switch main_scene to sector_02 + integration pass",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-037",
+      "title": "M2.1 Combat-feel: fix shooting stutter (pool/reuse projectile, trail, muzzle flash)",
+      "status": "in_progress",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-038",
+      "title": "M2.1 Combat-feel: hold-to-fire + per-element fire rate (Fire fast / Elec med / Ice slow)",
+      "status": "todo",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-039",
+      "title": "M2.1 Combat-feel: trigger-element HUD (show which element is on RT vs LT)",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-040",
+      "title": "M2.1 Combat-feel: dual-cast element MIXING / combo shot (DD-013) — both triggers fire one blended projectile",
+      "status": "todo",
       "priority": "medium"
     }
   ]

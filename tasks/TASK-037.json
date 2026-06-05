@@ -1,0 +1,29 @@
+{
+  "key": "TASK-037",
+  "title": "M2.1 Combat-feel: fix shooting stutter (pool/reuse projectile, trail, muzzle flash)",
+  "description": "Playtest of sector_02: shooting feels stuttery. Investigation (Explore) found the prime suspect is per-shot allocation in the spawn path: magic_manager._spawn() instantiates a fresh projectile (scenes/projectile.tscn) AND a muzzle flash every shot, and projectile.setup()->_apply_visual()->_ensure_trail() allocates a new Line2D + a Curve.new() PER SHOT. Impact spark spawns a CPUParticles2D per hit. At any real fire rate this is a GC/instantiation hitch. Fix the hitch without changing visuals: pool/reuse projectiles + muzzle flashes (or at minimum pre-warm and reuse the Line2D trail + Curve so no per-shot Curve.new()/Line2D allocation), and reuse/pool impact sparks. Keep behavior and look identical; this is a performance/feel fix only. Follow scripts/managers/magic_manager.gd, scripts/combat/projectile.gd, scenes/projectile.tscn, scripts/juice/impact_spark.gd. Honor godot-game-dev skill (object pooling pattern, no per-frame allocation). Tests-first where logic is testable (pool reuse/return, no leak); the visual identity is verified by the existing projectile_visual/style tests staying green.",
+  "acceptance_criteria": [
+    "No per-shot heap allocation of Line2D/Curve in the projectile spawn path: the trail is reused/pooled (no Curve.new() per shot), verified by reading the code and a GUT test asserting reuse or absence of per-shot allocation where feasible.",
+    "Projectiles and muzzle flashes are pooled or otherwise reused (no unbounded per-shot instantiate without recycle), with a test covering pool acquire/release and no node leak.",
+    "Visuals and behavior are unchanged: existing test_projectile_visual / test_projectile_style / test_muzzle_flash / test_projectile_* suites stay green; per-element colors/shapes identical.",
+    "Full GUT suite green exit 0 run multiple times (flake-aware), gdlint clean, no new stderr noise.",
+    "Manual smoke (optional): sustained firing no longer hitches."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "godot",
+    "combat",
+    "performance",
+    "game-feel",
+    "milestone-m2.1"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T03:46:38.001Z",
+  "updated_at": "2026-06-05T03:47:34.315Z",
+  "jira_key": null
+}

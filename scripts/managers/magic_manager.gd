@@ -36,6 +36,14 @@ enum {SLOT_PRIMARY, SLOT_SECONDARY}
 var primary: SpellData
 var secondary: SpellData
 
+## TASK-037 (M2.1 combat-feel) shooting-stutter fix: instead of instantiate()/
+## queue_free() a projectile (and its per-shot Line2D + Curve trail) on EVERY shot,
+## each distinct projectile PackedScene gets a ProjectilePool. Casts acquire a
+## reused instance; on expiry/spend the projectile returns to its pool. Pools are
+## created lazily per scene + parented under the spawn parent so the instances live
+## where the casts spawn them. Visuals/behavior are unchanged — only node lifetime.
+var _pools: Dictionary = {}     # PackedScene -> ProjectilePool
+
 func _ready() -> void:
 	# Default loadout: the first two distinct spells (primary, secondary).
 	if spells.size() >= 1:
@@ -96,15 +104,34 @@ func _spawn(spell: SpellData, origin: Node2D, direction: Vector2) -> bool:
 	var parent := _spawn_parent(origin)
 	if parent == null:
 		return false
-	var p := spell.projectile.instantiate()
+	# TASK-037: acquire a pooled (reused) projectile instead of instantiating one
+	# per shot. The pool resets the instance; setup() re-aims + re-styles it. This
+	# is identical in look/behavior to a fresh spawn, minus the allocation hitch.
+	var pool := _pool_for(spell.projectile, parent)
+	var p := pool.acquire()
+	if p == null:
+		return false
 	p.global_position = origin.global_position
 	if p.has_method("setup"):
 		p.setup(spell, direction)
-	parent.add_child(p)
 	# TASK-014: only flashes on a real cast (this path runs after mana is spent),
 	# so a failed/zero-mana cast — which returns before _spawn — never flashes.
 	_spawn_muzzle_flash(spell, origin, parent)
 	return true
+
+
+## TASK-037: get (or lazily create) the ProjectilePool for a projectile scene. The
+## pool node is parented under the spawn parent so pooled instances live in the same
+## scene the casts spawn into; it persists across casts so instances are reused.
+func _pool_for(scene: PackedScene, parent: Node) -> ProjectilePool:
+	var pool: ProjectilePool = _pools.get(scene)
+	if pool != null and is_instance_valid(pool):
+		return pool
+	pool = ProjectilePool.new()
+	pool.scene = scene
+	parent.add_child(pool)
+	_pools[scene] = pool
+	return pool
 
 ## Where spawned spells/flashes are parented: the current scene, falling back to
 ## the tree root when there is no current scene (headless tests / pre-scene cast).
