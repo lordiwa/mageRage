@@ -1,22 +1,19 @@
-## TASK-045 — VISUAL-ONLY bugfix regression tests for sector_02 / the shared player camera.
+## TASK-045/046/048/051 — VISUAL-ONLY regression tests for sector_02 / the shared player camera.
 ##
-## Two live-playtest bugs, encoded structurally so they would have FAILED before the fix:
+## Covers the live-playtest bugs fixed during the sector_02 art pass:
+##  - BUG-1: a near-black sector `Background` ColorRect occluded the parallax skyline.
+##  - BUG-2: the shared player Camera2D had no limits, so the flying hero's view left the
+##    backdrops into void; each sector now clamps the camera in its _ready (per-level).
+##  - FLOOR: the City TileMapLayer (transparent-topped cap tile + 64px grid snap) left the
+##    hero floating above an invisible gap and the elevated ledges as tall floating towers
+##    ("estoy flotando en el aire" / bugpiso.png). The surfaces are now solid slate SLABS
+##    (Sprite2D children of CityTiles) sized 1:1 to each collision footprint, so the VISIBLE
+##    top == the collision top by construction. These tests pin that.
 ##
-## BUG-1 — a near-black sector-level `Background` ColorRect (z_index = -10) renders IN
-## FRONT of every parallax city layer (FarSky z=-30, MidStructures z=-25, NearPillars
-## z=-20) and paints over the skyline. The fix either removes that ColorRect or pushes it
-## behind ALL parallax layers (z_index strictly less than the minimum layer z) so it only
-## acts as a guaranteed full-bleed backstop fill and never occludes the skyline.
-##
-## BUG-2 — the shared `scenes/player.tscn` Camera2D had NO limits (defaults ±10000000) so
-## the freely-flying hero's view leaves the backdrops into void. The fix clamps the camera
-## to the playable level bounds. These tests assert the limits are finite (NOT the ±1e7
-## default) and equal the chosen level-bound values.
-##
-## SAFETY: VISUAL ONLY. These tests touch z_index and Camera2D.limit_* only — never any
-## collision shape, body position or corridor metric. The corridor-span + boss-reachability
-## tests (test_sector_02.gd / test_sector_boss_reachability.gd) remain the collision truth
-## and must keep passing UNCHANGED. Structure-only, no physics await (cannot poison input).
+## SAFETY: VISUAL ONLY. These tests touch z_index, Camera2D.limit_*, and the slab Sprite
+## transforms only — never any collision shape, body position or corridor metric. The
+## corridor-span + boss-reachability tests (test_sector_02.gd / test_sector_boss_reachability)
+## remain the collision truth and must keep passing UNCHANGED. Structure-only, no physics await.
 extends GutTest
 
 const SECTOR := preload("res://levels/sector_02.tscn")
@@ -33,11 +30,6 @@ const VIEW_HALF := Vector2(576, 324)
 ## (in its _ready), clamping the view to THAT sector's playable bounds. The shared player
 ## scene carries NO limits, so non-sector levels (encounter/arena/test_level) stay
 ## unclamped — the clamp is per-level, not baked into the shared player.
-##   - Horizontal: the corridor inner faces (WallLeft inner x=0; WallRight inner x). The two
-##     sectors differ: sector_02 right=4600, sector_01 right=4200 (its right wall is at
-##     x=4232 → inner x=4200) — so the test asserts each sector's OWN right bound.
-##   - Vertical: the ceiling/floor body centers (y=-320 / y=+360), a band that keeps the
-##     view inside the widened backstop with no void at the extremes (shared by both).
 const CAM_LEFT := 0
 const CAM_TOP := -320
 const CAM_BOTTOM := 360
@@ -56,37 +48,29 @@ func _make_sector() -> Node2D:
 	return level
 
 
-# --- TASK-048: EVERY capped walkable surface's visible lip sits on ITS collision top -
-# Live-playtest bug: collision works (the hero rests at floor_top y=328) but the VISIBLE
-# grey tile floor does NOT reach the feet, so the hero looks airborne ("estoy flotando en
-# el aire"). Root cause: the cap art (Tile_27) is TRANSPARENT for its top ~44.5%, so its
-# VISIBLE grey lip renders ~28.5px BELOW its cell top. And because each capped surface's
-# collision top sits at a DIFFERENT sub-cell offset, a single global TileMapLayer nudge
-# CANNOT seat them all (it fixes the floor but FLOATS the ledge caps — the original
-# rework). The fix seats EACH capped surface independently via a per-cap texture_origin.
+# --- FLOOR/PLATFORM SLABS (TASK-046/048/051 resolved by the slab rewrite) ------
+# The whole floor saga: collision works (the hero rests at floor_top y=328) but the VISIBLE
+# surface didn't reach the feet, so the hero looked airborne, and the elevated ledges painted
+# as tall floating dark towers. Root cause was the City TileMapLayer — a cap tile transparent
+# for its top ~44% plus 64px grid snap, which no per-cell shimming fully tamed. The surfaces
+# are now solid slate SLABS (Sprite2D children of CityTiles) sized 1:1 to each collision
+# footprint, so the VISIBLE top == the collision top by construction. These tests pin that
+# invariant so the floating-hero / tall-tower regressions cannot return.
 #
-# These tests parametrize over EVERY capped walkable surface (floor + LedgeA/B/C +
-# BossStep) and assert the cap's VISIBLE opaque lip lands on THAT surface's OWN collision
-# top. They would FAIL on the global-nudge state for the ledges (their lips would float).
-#
-# SAFETY: VISUAL ONLY. These tests read the TileMapLayer + tile_set (incl. per-cell
-# texture_origin) and each surface's collision shape (to DERIVE the target y, NEVER
+# SAFETY: VISUAL ONLY. The slabs (+ their edge Polygon2Ds) carry NO physics; these tests read
+# the slab Sprite transforms + each surface's collision shape (to DERIVE the target y, never
 # mutating it). The corridor-span + boss-reachability tests remain the collision truth.
 
-## The collision floor top (DD-011 reused metric); the hero's feet rest here.
 const FLOOR_TOP := 328.0
-## The floor-cap row in CityTiles cell space (the walkable TOP surface row).
-const FLOOR_CAP_CELL_Y := 5
-## The cap texture whose opaque lip is the visible ground edge the hero stands ON.
-const CAP_TEXTURE := "Tile_27.png"
-## How close (world px) each cap's visible solid lip must sit to its collision top so the
-## surface reads as solid ground the hero stands ON (sub-pixel + rounding tolerance).
-const LIP_EPS := 2.0
+## How close (world px) each slab's visible top must sit to its collision top.
+const SLAB_EPS := 1.5
+## The camera bottom limit — the floor slab must reach past it so no void shows below.
+const CAM_BOTTOM_Y := 360.0
+## Max visible height (world px) of an ELEVATED platform slab — a thin slab, not a tower.
+const ELEVATED_SLAB_MAX_H := 80.0
 
-## Every CAPPED walkable surface in sector_02 and the COLLISION node whose top its cap
-## must seat on. Each is read live from the scene (collision shape) — never hard-coded —
-## so the test stays true if a designer moves a body.
-const CAPPED_SURFACES := {
+## Every walkable surface and the COLLISION node whose top its slab must seat on.
+const WALKABLE_SURFACES := {
 	"Floor": "Environment/Floor/Col",
 	"LedgeA": "Environment/LedgeA/Col",
 	"LedgeB": "Environment/LedgeB/Col",
@@ -95,108 +79,73 @@ const CAPPED_SURFACES := {
 }
 
 
-## The fraction (0..1) down the cap texture at which its first opaque row appears — the
-## cap art is transparent above this, so the un-shifted visible lip begins here.
-func _cap_opaque_onset_fraction(tiles: TileMapLayer) -> float:
-	for i in range(tiles.tile_set.get_source_count()):
-		var sid := tiles.tile_set.get_source_id(i)
-		var s := tiles.tile_set.get_source(sid) as TileSetAtlasSource
-		if s != null and s.texture != null and s.texture.resource_path.get_file() == CAP_TEXTURE:
-			var img := s.texture.get_image()
-			for y in range(img.get_height()):
-				for x in range(img.get_width()):
-					if img.get_pixel(x, y).a > 0.16:
-						return float(y) / float(img.get_height())
-	return 0.0
-
-
-## The COLLISION top (world y) of a capped surface, read live from its CollisionShape2D.
+## The COLLISION top (world y) of a surface, read live from its CollisionShape2D.
 func _collision_top(level: Node2D, col_path: String) -> float:
 	var col := level.get_node(col_path) as CollisionShape2D
 	var rect := col.shape as RectangleShape2D
 	return col.global_position.y - rect.size.y * 0.5
 
 
-## The cap CELL directly seating a surface: the painted cap cell whose column overlaps the
-## surface and whose row is the one snapping the collision top. Returns Vector2i(cx, cy).
-func _cap_cell_for_surface(level: Node2D, tiles: TileMapLayer, col_path: String) -> Vector2i:
-	var col := level.get_node(col_path) as CollisionShape2D
-	var top := _collision_top(level, col_path)
-	# Probe just BELOW the collision top, at the surface's center x, to land on the cap row.
-	var probe := Vector2(col.global_position.x, top + 1.0)
-	return tiles.local_to_map(tiles.to_local(probe))
+## A surface's visible slab Sprite (a child of the instanced CityTiles node).
+func _slab(level: Node2D, slab_name: String) -> Sprite2D:
+	return level.get_node_or_null("Environment/CityTiles/" + slab_name) as Sprite2D
 
 
-## The world Y of a cap cell's VISIBLE opaque lip, accounting for the per-cell
-## texture_origin shift (the seating mechanism). lip = cell_top + (onset_px - origin_px)
-## * scale, where onset_px/origin_px are in tile (unscaled) pixels.
-func _cap_lip_world_y(tiles: TileMapLayer, cell: Vector2i, onset_frac: float) -> float:
-	var center := tiles.to_global(tiles.map_to_local(cell))
-	var tile_h := float(tiles.tile_set.tile_size.y)
-	var cell_world_h := tile_h * tiles.scale.y
-	var cell_top := center.y - cell_world_h * 0.5
-	var origin_px := 0.0
-	var sid := tiles.get_cell_source_id(cell)
-	if sid >= 0:
-		var src := tiles.tile_set.get_source(sid) as TileSetAtlasSource
-		var atlas := tiles.get_cell_atlas_coords(cell)
-		var alt := tiles.get_cell_alternative_tile(cell)
-		var data := src.get_tile_data(atlas, alt)
-		origin_px = float(data.texture_origin.y)
-	# Positive texture_origin moves the drawn texture UP, so it SUBTRACTS from the lip row.
-	return cell_top + (onset_frac * tile_h - origin_px) * tiles.scale.y
-
-
-func _floor_top(level: Node2D) -> float:
-	return _collision_top(level, "Environment/Floor/Col")
-
-
-func test_every_capped_surface_lip_sits_on_its_own_collision_top() -> void:
-	# THE rework assertion: for EVERY capped walkable surface, the cap's VISIBLE opaque
-	# lip lands on that surface's OWN collision top — so a global nudge (which can only
-	# satisfy one surface) FAILS here for the ledges, while the per-cap seating passes.
+func test_each_walkable_slab_top_sits_on_its_collision_top() -> void:
+	# THE invariant the whole floor saga was about: the VISIBLE surface top lands exactly on
+	# the collision top, so the hero/platform always reads as standing ON solid ground — no
+	# invisible gap above the asset, no floating. True by construction with exact slabs.
 	var level: Node2D = await _make_sector()
-	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
-	var onset := _cap_opaque_onset_fraction(tiles)
-	assert_gt(onset, 0.0, "the cap art has a measurable transparent header (onset > 0)")
-	for name in CAPPED_SURFACES:
-		var col_path: String = CAPPED_SURFACES[name]
-		var top := _collision_top(level, col_path)
-		var cell := _cap_cell_for_surface(level, tiles, col_path)
-		assert_gte(tiles.get_cell_source_id(cell), 0,
-			"%s: a cap tile is actually painted on its surface (cell %s)" % [name, str(cell)])
-		var lip := _cap_lip_world_y(tiles, cell, onset)
-		assert_almost_eq(lip, top, LIP_EPS,
-			"%s: the cap's visible opaque lip (%.1f) sits on ITS collision top (%.1f) — "
-			% [name, lip, top]
-			+ "the hero/platform reads solid, no floating cap strip")
+	for name in WALKABLE_SURFACES:
+		var slab := _slab(level, name)
+		assert_not_null(slab, "%s has a visible slab Sprite under CityTiles" % name)
+		if slab == null:
+			continue
+		var top := _collision_top(level, WALKABLE_SURFACES[name])
+		# centered = false → the Sprite's global_position.y IS its visible top edge.
+		assert_almost_eq(slab.global_position.y, top, SLAB_EPS,
+			"%s slab visible top (%.1f) sits on ITS collision top (%.1f)"
+			% [name, slab.global_position.y, top])
 
 
-func test_floor_cap_lip_is_not_below_the_feet_line() -> void:
-	# Regression guard for the exact symptom ("flotando en el aire"): the floor cap's
-	# visible lip must NOT sit below the feet line — if it does, the feet hover over the
-	# cap's transparent header and the parallax shows through under the hero.
+func test_floor_slab_fills_below_the_camera() -> void:
+	# The floor is the large ground surface: its slab must reach past the camera bottom limit
+	# so it never reads as a thin floating strip with void below (the window-resize complaint).
 	var level: Node2D = await _make_sector()
-	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
-	var onset := _cap_opaque_onset_fraction(tiles)
-	var cell := _cap_cell_for_surface(level, tiles, "Environment/Floor/Col")
-	var lip := _cap_lip_world_y(tiles, cell, onset)
-	assert_lte(lip, _floor_top(level) + LIP_EPS,
-		"the visible floor-cap lip is at/above the feet line (not below it: lip=%.1f)" % lip)
+	var slab := _slab(level, "Floor")
+	assert_not_null(slab, "the floor slab resolves")
+	var bottom := slab.global_position.y + slab.region_rect.size.y * slab.scale.y
+	assert_gt(bottom, CAM_BOTTOM_Y,
+		"the floor slab bottom (%.1f) reaches below the camera bottom (%.1f) — no thin-strip void"
+		% [bottom, CAM_BOTTOM_Y])
 
 
-func test_floor_cap_covers_the_player_spawn_column() -> void:
-	# The visible floor must actually exist under the spawn x — a painted cap cell on the
-	# floor-cap row at the spawn column (so there IS tile floor where the hero lands).
+func test_elevated_slabs_are_thin_not_towers() -> void:
+	# The elevated platforms (ledges, boss step) read as THIN slabs, not the ~130-190px floating
+	# dark towers the old tile painter produced (bugpiso.png). Bound their visible height.
 	var level: Node2D = await _make_sector()
-	var tiles := level.get_node("Environment/CityTiles") as TileMapLayer
-	var spawn := level.get_node("PlayerSpawn") as Node2D
-	var spawn_cell := tiles.local_to_map(tiles.to_local(
-		Vector2(spawn.global_position.x, _floor_top(level) + 1.0)))
-	assert_eq(spawn_cell.y, FLOOR_CAP_CELL_Y,
-		"the cell directly under the spawn feet is the floor-cap row (cy=%d)" % FLOOR_CAP_CELL_Y)
-	assert_gte(tiles.get_cell_source_id(spawn_cell), 0,
-		"a tile is actually painted under the spawn column (the floor exists there)")
+	for name in ["LedgeA", "LedgeB", "LedgeC", "BossStep"]:
+		var slab := _slab(level, name)
+		assert_not_null(slab, "%s slab resolves" % name)
+		if slab == null:
+			continue
+		var h := slab.region_rect.size.y * slab.scale.y
+		assert_lte(h, ELEVATED_SLAB_MAX_H,
+			"%s is a thin slab (height %.0f <= %.0fpx), not a floating tower"
+			% [name, h, ELEVATED_SLAB_MAX_H])
+
+
+func test_surface_slabs_carry_no_physics() -> void:
+	# VISUAL ONLY: the CityTiles slabs are Sprite2D/Polygon2D — no CollisionObject anywhere,
+	# so collision stays solely on the sector StaticBody2D nodes.
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node_or_null("Environment/CityTiles")
+	assert_not_null(tiles, "the CityTiles visual node resolves")
+	if tiles == null:
+		return
+	for child in tiles.get_children():
+		assert_false(child is CollisionObject2D,
+			"CityTiles child %s carries no physics (visual only)" % child.name)
 
 
 # --- BUG-1: the sector-level backstop never occludes the parallax skyline ----
@@ -340,9 +289,6 @@ func test_sector_01_camera_limits_match_its_own_narrower_bounds() -> void:
 
 
 # --- Regression: non-sector levels reusing the shared player stay UNCLAMPED ---
-# The whole reason the clamp is per-level (not baked into player.tscn): encounter, arena
-# and test_level reuse the player and must keep their pre-TASK-045 unclamped camera so we
-# introduce NO far-right void / vertical crop into scenes we are not deciding to ship.
 
 func _assert_level_camera_is_unclamped(level: Node2D, tag: String) -> void:
 	var player := level.get_node_or_null("Player")

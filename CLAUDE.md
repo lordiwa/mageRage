@@ -47,6 +47,20 @@ proceed to RESUME-FIRST.
 7. Update the ticket on a green review, then pause or end the session bundle
    via the lifecycle operations in `state/README.md`.
 
+### Ceremony scales to risk (visual/art tweaks go direct)
+
+The full ceremony above (research → developer tests-first → fresh reviewer →
+PR → green CI → merge) applies to **gameplay, logic, collision, FSM, combat,
+and anything testable** — where a bug breaks the game. It does **NOT** apply to
+**iterative visual/art tweaks** (tile/slab look, colors, sprite sizes/positions,
+parallax, set-dressing) during an active playtest loop. For those, the
+Orchestrator **fixes it directly** (edits the generator/scene itself), then
+regenerates, relaunches the game / shows a screenshot, and asks — skipping the
+subagent chain, tests-first, separate reviewer, and per-tweak PR/CI. Escalate
+back to full ceremony the moment a change touches collision/logic/gameplay (e.g.
+the visual change must keep collision + corridor metrics byte-identical → verify
+that). The crucial-test gate and nightly full suite still protect every push.
+
 ### Repository etiquette
 
 - Conventional Commits (`feat:`, `fix:`, `test:`, `refactor:`, `docs:`,

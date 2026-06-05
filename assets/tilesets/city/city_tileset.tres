@@ -1,18 +1,5 @@
 [gd_resource type="TileSet" format=3]
 
-; City / Industrial TileSet for sector_02. VISUAL ONLY — carries NO physics layer;
-; collision stays on the sector_02 StaticBody2D nodes.
-;   source 0 = Tile_30 (SOLID dark-slate FILL — body/interior/wall/ceiling slab)
-;   source 1 = Tile_27 (SOLID grey-capped slate — walkable TOP-surface lip)
-;   sources 2/3 = Tile_88 / Tile_85 grate ACCENTS (see-through; detail only)
-; Native tile 128x128; the TileMapLayer is scaled 0.5 so each cell = 64 world px.
-;
-; TASK-048: the cap (Tile_27) is transparent for its top ~44.5%, so its visible lip
-; renders ~28.5px below its cell top. Each capped surface seats on a DIFFERENT sub-cell
-; offset, so the cap source carries per-surface ALTERNATIVE tiles whose texture_origin
-; drops the lip exactly onto that surface's collision top (see tools/build_sector_02_tiles.gd,
-; the generator that authors these alternatives). Regenerate via that tool, not by hand.
-
 [ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_30.png" id="1_fill"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_27.png" id="2_cap"]
 [ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_88.png" id="3_grate_body"]
@@ -26,7 +13,7 @@ texture_region_size = Vector2i(128, 128)
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_cap"]
 texture = ExtResource("2_cap")
 texture_region_size = Vector2i(128, 128)
-0:0/next_alternative_id = 6
+0:0/next_alternative_id = 11
 0:0/0 = 0
 0:0/1 = 1
 0:0/1/texture_origin = Vector2i(0, 41)
@@ -38,6 +25,16 @@ texture_region_size = Vector2i(128, 128)
 0:0/4/texture_origin = Vector2i(0, 33)
 0:0/5 = 5
 0:0/5/texture_origin = Vector2i(0, 25)
+0:0/6 = 6
+0:0/6/texture_origin = Vector2i(0, 41)
+0:0/7 = 7
+0:0/7/texture_origin = Vector2i(0, -63)
+0:0/8 = 8
+0:0/8/texture_origin = Vector2i(0, 49)
+0:0/9 = 9
+0:0/9/texture_origin = Vector2i(0, 33)
+0:0/10 = 10
+0:0/10/texture_origin = Vector2i(0, 25)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grate_body"]
 texture = ExtResource("3_grate_body")
