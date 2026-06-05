@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T06:55:01.873Z",
+  "generated_at": "2026-06-05T06:59:52.547Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -262,7 +262,7 @@
     {
       "key": "TASK-044",
       "title": "M2.1 bugfix: projectile pool disables CollisionObject during physics callback (defer it)",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high"
     },
     {

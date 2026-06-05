@@ -8,7 +8,7 @@
     "Tests-first: a real-physics test reproduces the hit-callback despawn path and asserts the disable is deferred (not synchronous) with no double-hit; it would fail against the current synchronous code.",
     "Full GUT suite green exit 0 run 2-3x (physics flake surface); gdlint clean; no new stderr noise; manual: firing in-game logs no such error."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "high",
   "labels": [
     "godot",
@@ -23,6 +23,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-05T06:53:09.095Z",
-  "updated_at": "2026-06-05T06:53:16.166Z",
+  "updated_at": "2026-06-05T06:59:52.547Z",
   "jira_key": null
 }
