@@ -7,8 +7,8 @@
     "Changes are visual only: collision + corridor metrics (-288/+328) + 98px boss gap byte-identical; sector_02 corridor-span + boss-reachability tests pass UNCHANGED.",
     "New assets curated into assets/ (AssetBundles/ gitignored), CREDITS updated, .import committed; full GUT suite green; gdlint clean."
   ],
-  "status": "todo",
-  "priority": "medium",
+  "status": "done",
+  "priority": "high",
   "labels": [
     "godot",
     "art",
@@ -19,8 +19,19 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "at": "2026-06-05T07:20:00.000Z",
+      "author": "orchestrator",
+      "body": "RESOLVED (visual fixes only; original skyline-scale/tile-reads/WallRight/props candidates deferred). BUG-1 occlusion: sector_02 + sector_01 'Background' ColorRect pushed z=-10 -> -50 (behind all parallax) and widened to -700/-700/5300/700 as a full-bleed backstop; skyline now visible. BUG-2 camera void: Camera2D limits are now set PER-LEVEL at runtime (NOT baked into the shared player.tscn, which would have regressed encounter/arena/test_level). scripts/levels/sector_02.gd _ready() -> limits 0/-320/4600/360; scripts/levels/sector_01.gd _ready() -> 0/-320/4200/360 (sector_01's right inner face is x=4200, narrower than sector_02's 4600 -- this is exactly why a single shared clamp void-ed one sector). encounter/arena/test_level stay unclamped (pre-task behavior), pinned by 2 new regression tests. New test test/test_sector_02_visual_bounds.gd (10 tests, instance-the-sector camera assertions + backstop-covers-view + no-baked-limits + encounter/arena unclamped). Reviewer PASS (no HIGH); its MEDIUM (shared-clamp regression) resolved via the per-level refactor it recommended. SAFETY held: collision/body/corridor byte-identical, corridor-span + boss-reachability tests pass unchanged. Full GUT 646/646 green; gdlint clean (orchestrator re-ran). Work on branch task-045-visual-backdrop-camera, committed locally, NOT pushed and NOT merged (awaiting human go on push/playtest)."
+    },
+    {
+      "at": "2026-06-05T07:20:00.000Z",
+      "author": "orchestrator",
+      "body": "RESUME — user gave the specifics (Spanish playtest report): (1) 'un fondo negro tapa la ciudad' and (2) 'la cámara se sale de los fondos, se ve todo mal'. Diagnosis (verified by reading scenes): BUG-1 OCCLUSION — sector_02.tscn 'Background' ColorRect has z_index=-10 (near-black 0.05,0.06,0.09), which renders IN FRONT of every parallax city layer (FarSky z=-30, MidStructures z=-25, NearPillars z=-20) so it paints over the skyline. The parallax scene already ships its own fill ColorRect at z=-40, so the sector-level one is redundant. BUG-2 CAMERA — player.tscn Camera2D has NO limit_left/top/right/bottom; since the hero flies from spawn the camera follows freely past the (small, scale-0.2, vertically-non-tiling) parallax sprites and past level bounds, showing void. No script sets camera limits anywhere; no [display] section so viewport is the Godot default 1152x648. Scope refined to these two visual fixes (the original skyline-scale / tile-reads / WallRight / props candidates are deferred to a later polish ticket)."
+    }
+  ],
   "created_at": "2026-06-05T06:55:01.873Z",
-  "updated_at": "2026-06-05T06:55:01.873Z",
+  "updated_at": "2026-06-05T07:20:00.000Z",
   "jira_key": null
 }
