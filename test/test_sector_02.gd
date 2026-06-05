@@ -270,9 +270,16 @@ func test_city_tileset_visual_skin_is_present() -> void:
 ## The grate tiles that caused the bug — any source backed by one of these is the
 ## see-through art that must NOT skin the walkable floor surface.
 const _GRATE_TEXTURES := ["Tile_88.png", "Tile_85.png"]
+## The CAP texture (the grey-capped slate whose lighter lip reads as a TOP edge). It
+## belongs on UP-facing walkable surfaces only — never on the ceiling underside, where
+## an up-pointing cap lip overhead looks wrong; the ceiling uses the plain FILL slab.
+const _CAP_TEXTURE := "Tile_27.png"
 ## The walkable floor TOP row in CityTiles cell space (scale 0.5 → world_y=320, the
 ## cap row sitting at the collision floor top y=+328). Sampled across the corridor.
 const _FLOOR_TOP_CELL_Y := 5
+## The ceiling slab rows in CityTiles cell space (world_y=-320 / -384, above the play
+## area). The underside must read as a plain solid slab — fill, not an upward cap.
+const _CEILING_CELL_YS := [-5, -6]
 
 
 ## The basename of the Texture2D backing a TileMapLayer cell's atlas source, or "".
@@ -326,6 +333,36 @@ func test_walkable_floor_top_row_uses_a_solid_non_grate_tile() -> void:
 	assert_eq(grate_cells, 0,
 		"no floor-top cell uses a see-through grate tile (%d/%d still grate)"
 		% [grate_cells, floor_top_cells.size()])
+
+
+func test_ceiling_underside_is_a_plain_solid_slab_not_an_upward_cap() -> void:
+	# The ceiling underside must read as a plain SOLID slab overhead: no see-through
+	# grate (the original bug) AND no up-pointing CAP lip (the cap belongs on walkable
+	# floor/ledge TOPS, not the ceiling). So every painted ceiling cell uses a solid,
+	# non-grate, non-cap tile (the plain fill slab).
+	var level: Node2D = await _make_sector()
+	var tiles := level.get_node_or_null("Environment/CityTiles") as TileMapLayer
+	assert_not_null(tiles, "the CityTiles TileMapLayer resolves")
+	var ceiling_cells: Array = []
+	for c in tiles.get_used_cells():
+		if c.y in _CEILING_CELL_YS:
+			ceiling_cells.append(c)
+	assert_gt(ceiling_cells.size(), 0,
+		"the ceiling slab rows (cell y in %s) are painted" % str(_CEILING_CELL_YS))
+	var grate_cells := 0
+	var cap_cells := 0
+	for c in ceiling_cells:
+		var tex := _cell_texture_name(tiles, c)
+		if tex in _GRATE_TEXTURES:
+			grate_cells += 1
+		if tex == _CAP_TEXTURE:
+			cap_cells += 1
+	assert_eq(grate_cells, 0,
+		"no ceiling cell uses a see-through grate tile (%d/%d still grate)"
+		% [grate_cells, ceiling_cells.size()])
+	assert_eq(cap_cells, 0,
+		"no ceiling cell uses the up-pointing CAP tile — the underside is a plain slab "
+		+ "(%d/%d use the cap)" % [cap_cells, ceiling_cells.size()])
 
 
 # ============================================================================
