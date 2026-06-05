@@ -1,31 +1,22 @@
-[gd_resource type="TileSet" load_steps=7 format=3 uid="uid://b8magecitytileset"]
+[gd_resource type="TileSet" format=3]
 
-; City / Industrial TileSet for sector_02 (TASK-043, solid-floor fix TASK-046).
-; VISUAL ONLY — this TileSet carries NO physics layer; collision remains on the
-; sector_02 StaticBody2D nodes (Floor/Ceiling/ledges/BossWall/etc).
+; City / Industrial TileSet for sector_02. VISUAL ONLY — carries NO physics layer;
+; collision stays on the sector_02 StaticBody2D nodes.
+;   source 0 = Tile_30 (SOLID dark-slate FILL — body/interior/wall/ceiling slab)
+;   source 1 = Tile_27 (SOLID grey-capped slate — walkable TOP-surface lip)
+;   sources 2/3 = Tile_88 / Tile_85 grate ACCENTS (see-through; detail only)
+; Native tile 128x128; the TileMapLayer is scaled 0.5 so each cell = 64 world px.
 ;
-; TASK-046 root-cause fix: the floor previously skinned every surface with the two
-; SEE-THROUGH grate tiles, so the dark parallax showed through the holes and the
-; floor never read as solid ground (the hero looked like it stood in mid-air). The
-; walkable surfaces are now skinned with SOLID OPAQUE severe-industrial GREY/SLATE
-; tiles (matching the lore's grey/teal tone); the grates are retained only as
-; optional accent/detail sources.
-;
-; Atlas source map (Franco Giachetti / Simirk "City / Industrial Platform Tileset"):
-;   source 0 = Tile_30 (SOLID dark-slate fill — body/interior/wall, and the ceiling
-;                       underside slab so no cap lip points upward)
-;   source 1 = Tile_27 (SOLID grey-capped slate — walkable TOP surface of
-;                       floor / ledges / boss step; the lighter grey cap band reads
-;                       as the ground edge the hero stands ON, full-bleed opaque)
-;   source 2 = Tile_88 (grate accent — X-brace grate body, see-through; detail only)
-;   source 3 = Tile_85 (grate accent — rail-capped grate, see-through; detail only)
-; Native tile is 128x128; the TileMapLayer is scaled 0.5 so each cell = 64 world px.
-; Texture filtering stays ON (painterly HD art, not pixel art).
+; TASK-048: the cap (Tile_27) is transparent for its top ~44.5%, so its visible lip
+; renders ~28.5px below its cell top. Each capped surface seats on a DIFFERENT sub-cell
+; offset, so the cap source carries per-surface ALTERNATIVE tiles whose texture_origin
+; drops the lip exactly onto that surface's collision top (see tools/build_sector_02_tiles.gd,
+; the generator that authors these alternatives). Regenerate via that tool, not by hand.
 
-[ext_resource type="Texture2D" uid="uid://dw2fi1c7u5vfc" path="res://assets/tilesets/city/Tile_30.png" id="1_fill"]
-[ext_resource type="Texture2D" uid="uid://bxq6ukvkw3d15" path="res://assets/tilesets/city/Tile_27.png" id="2_cap"]
-[ext_resource type="Texture2D" uid="uid://d3c5m7ndhd3dd" path="res://assets/tilesets/city/Tile_88.png" id="3_grate_body"]
-[ext_resource type="Texture2D" uid="uid://bv0vdfgs44gkv" path="res://assets/tilesets/city/Tile_85.png" id="4_grate_cap"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_30.png" id="1_fill"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_27.png" id="2_cap"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_88.png" id="3_grate_body"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_85.png" id="4_grate_cap"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fill"]
 texture = ExtResource("1_fill")
@@ -35,7 +26,18 @@ texture_region_size = Vector2i(128, 128)
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_cap"]
 texture = ExtResource("2_cap")
 texture_region_size = Vector2i(128, 128)
+0:0/next_alternative_id = 6
 0:0/0 = 0
+0:0/1 = 1
+0:0/1/texture_origin = Vector2i(0, 41)
+0:0/2 = 2
+0:0/2/texture_origin = Vector2i(0, -63)
+0:0/3 = 3
+0:0/3/texture_origin = Vector2i(0, 49)
+0:0/4 = 4
+0:0/4/texture_origin = Vector2i(0, 33)
+0:0/5 = 5
+0:0/5/texture_origin = Vector2i(0, 25)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grate_body"]
 texture = ExtResource("3_grate_body")

@@ -1,0 +1,38 @@
+{
+  "key": "TASK-048",
+  "title": "sector_02 floor VISUALLY MISALIGNED — hero floats above the tile floor in live gameplay",
+  "description": "Live-playtest follow-up to TASK-046. After the grate->solid tile fix, the user playtested the ACTUAL running game (not a throwaway render) and reports: 'no hay piso ahora, no me caigo pero estoy flotando en el aire' (there's no floor now; I don't fall, but I'm floating in the air). So collision works (the StaticBody2D floor catches the player) but the VISIBLE tile floor does NOT sit under the player's feet — a vertical alignment gap that TASK-046 did not address (TASK-046 only swapped tile TEXTURES, never positions). IMPORTANT — the TASK-046 throwaway GL renders MISLED us: they appeared to show a solid floor under the hero, but that was almost certainly the PARALLAX NEAR layer (NearPillars: Sprite2D Background_Layer_3 at position (-200,40), scale 0.2, follow_viewport=true in scenes/parallax_background.tscn) reading as ground at the bottom of the frame, NOT the actual TileMapLayer floor. Do NOT trust a throwaway camera render this time. GROUND-TRUTH REQUIRED: run the real main scene (res://levels/sector_02.tscn) with the real Player + Camera2D (which now has per-level limits from TASK-045: sector_02 sets 0/-320/4600/360 in scripts/levels/sector_02.gd _ready), let the player SETTLE on the floor for ~1-2 seconds, then capture a screenshot of what the player actually sees at/after spawn. GEOMETRY to verify against (orchestrator's hypothesis — confirm or refute in-engine): Player spawns (220,288), collision 24x40 -> feet rest on the Floor StaticBody2D top at y=328 (Floor body at y=360, height 64). The CityTiles TileMapLayer (levels/sector_02_tiles.tscn) is scale 0.5 with 128px tiles, so cell (cx,cy) top-left = world (cx*64, cy*64); the floor-cap row is reportedly cell y=5 -> world top y=320, which WOULD align under feet (328) — so if the hero still looks airborne, either that decode is wrong (cap row is actually a LOWER cell, leaving a gap) or the floor tiles are offset/missing at the player's x. FIX: make the VISIBLE tile floor sit directly under the player's feet across the corridor (align the TileMapLayer position and/or repaint the floor rows so the cap top = the collision floor top y=328, and ensure tiles actually cover the player's spawn x and the full walkway). Re-verify with a REAL gameplay screenshot (player settled) that the hero visibly stands ON the tile floor with no gap. SAFETY: VISUAL ONLY — editing TileMapLayer position / tile_map_data is allowed (no physics layer on the tiles); the sector_02 StaticBody2D collision nodes + corridor metrics (-288/+328) + 98px boss gap must stay BYTE-IDENTICAL and the corridor-span + boss-reachability tests must pass UNCHANGED. Capture the screenshot to a known path and report it so the orchestrator can view it.",
+  "acceptance_criteria": [
+    "Diagnosed in the REAL running scene (player settled on the floor, real camera+limits) — identify exactly what is/ isn't under the hero's feet (tile floor vs parallax near-layer) and the exact vertical gap in world px.",
+    "The visible CityTiles floor is aligned so the cap top = the collision floor top (y=328) and covers the player's spawn x + the full walkway; the hero visibly stands ON the tile floor with NO gap/void below the feet.",
+    "Visual only: sector_02 StaticBody2D collision + corridor metrics (-288/+328) + 98px boss gap byte-identical; corridor-span + boss-reachability tests pass UNCHANGED.",
+    "Re-verified with a REAL gameplay screenshot (player settled) that matches what the user sees; screenshot path reported. Full GUT suite green; gdlint clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["godot", "art", "tilemap", "bug", "alignment", "milestone-m2.2"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "at": "2026-06-05T09:05:00.000Z",
+      "author": "orchestrator",
+      "body": "RESOLVED + reviewer RE-REVIEW ACCEPT (no HIGH). Reworked from the blocked global-nudge to PER-SURFACE cap seating: tools/build_sector_02_tiles.gd measures the cap opaque-onset at build time (Tile_27 transparent top 0.4453 -> lip 28.5 world-px below cell top) and bakes a per-surface cap ALTERNATIVE tile in city_tileset.tres whose texture_origin.y shifts the cap art so its visible lip lands on THAT surface's own collision top (origins +41/-63/+49/+33/+25), each backed by a FILL cell so no transparent strip shows; layer position stays (0,0). Reviewer independently recomputed lip-vs-collision-top = +0.00 for all 5 capped surfaces (Floor 328 / LedgeA 188 / LedgeB 68 / LedgeC -52 / BossStep 208), decoded all 433 painted cells = 0 dangling tile refs, confirmed levels/sector_02.tscn byte-identical (collision/corridor untouched), and that the new parametrized test test_every_capped_surface_lip_sits_on_its_own_collision_top genuinely fails the old global-nudge state. Orchestrator viewed the 3 real GL screenshots (floor/ledges/bossstep) = surfaces seated, hero on solid ground (covers the reviewer's MEDIUM that the screenshots aren't in-repo). 652 GUT green x2, gdlint clean, stale Tile_88/85 comments fixed. FOLLOW-UP (LOW, deferred): the generator's ResourceSaver.save() stripped city_tileset.tres's stable uid://b8magecitytileset + ext_resource uid hints (harmless now -- tileset is path-referenced -- but a future uid ref would miss); have the generator preserve the resource uid."
+    },
+    {
+      "at": "2026-06-05T08:35:00.000Z",
+      "author": "orchestrator",
+      "body": "REVIEWER BLOCKED (HIGH). Dev correctly diagnosed the cause (cap Tile_27.png is transparent for its top 44.53%, so the visible lip rendered ~20.5px below the feet) BUT the fix — a single GLOBAL TileMapLayer Y-nudge of -20.5px — only aligns the floor; it WORSENS LedgeA (cap now floats 52px above the 260x24 ledge) and shifts the ceiling slab up ~20px, because each capped surface's collision-top sits at a different sub-cell offset, which one global translate cannot reconcile. The new tests only asserted the FLOOR cap, so they false-greened. REWORK: align caps so EVERY capped walkable surface (floor + LedgeA/B/C + BossStep) reads seated — prefer a ROBUST mechanism (e.g. crop/adjust the cap atlas region so its opaque lip sits at the cell top, or a full-bleed cap tile) over per-surface position hacks; extend the lip-at-collision-top test to ALL capped surfaces. Still VISUAL ONLY; collision byte-identical. NOT merged."
+    },
+    {
+      "at": "2026-06-05T08:20:00.000Z",
+      "author": "orchestrator",
+      "body": "Reopened from live playtest after TASK-046 merged. The grate->solid swap fixed transparency but NOT the vertical alignment — the user still floats. Suspect the TASK-046 renders showed the parallax near-layer as fake ground. This ticket is the alignment fix with a mandatory REAL-gameplay (settled-player) verification, not a throwaway camera render."
+    }
+  ],
+  "created_at": "2026-06-05T08:20:00.000Z",
+  "updated_at": "2026-06-05T08:20:00.000Z",
+  "jira_key": null
+}
