@@ -5,6 +5,12 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  # Nightly full-suite run + on-demand trigger. The cron time is EARLY-MORNING UTC
+  # (low traffic); change the schedule below to retune when the full suite runs.
+  schedule:
+    # 09:00 UTC daily (~01:00-02:00 US Pacific). Configurable — see the note above.
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}
 
 jobs:
   lint:
@@ -25,8 +31,13 @@ jobs:
       - name: Run gdlint
         run: gdlint scripts/ test/
 
-  test:
-    name: GUT tests
+  # FAST push/PR gate: the curated CRUCIAL CORE (< 66 tests) instead of the full
+  # suite. Runs ONLY on push / pull_request (not the nightly cron). The core
+  # concentrates the await-physics held-input flake surface (CRUCIAL-TESTS.md groups
+  # A + G), so it is run 3x to catch any cross-script Input-edge flake before merge.
+  test-crucial:
+    name: GUT crucial core (push/PR gate)
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -43,7 +54,39 @@ jobs:
         timeout-minutes: 10
         run: godot --headless --path "$PWD" --import
 
-      - name: Run GUT test suite
+      - name: Run GUT crucial core (3x for flake)
+        run: |
+          for i in 1 2 3; do
+            echo "::group::Crucial core run $i/3"
+            godot --headless --path "$PWD" \
+              -s res://addons/gut/gut_cmdln.gd \
+              -gconfig=res://.gutconfig.crucial.json -gexit
+            echo "::endgroup::"
+          done
+
+  # NIGHTLY (cron) + manual: the FULL 652+ GUT suite. This is the comprehensive
+  # safety net; it does NOT gate PRs (kept fast above) but its FAILURES must be
+  # visible — a red run here is a real regression to triage, never silently green.
+  test-full:
+    name: Nightly full GUT suite
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.3
+          use-dotnet: false
+          include-templates: false
+
+      - name: Import project (rebuild .godot cache)
+        timeout-minutes: 10
+        run: godot --headless --path "$PWD" --import
+
+      - name: Run full GUT test suite
         run: >-
           godot --headless --path "$PWD"
           -s res://addons/gut/gut_cmdln.gd
