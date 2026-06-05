@@ -1,0 +1,28 @@
+{
+  "key": "TASK-049",
+  "title": "Crucial-test core set (<66) on push/PR + full GUT suite (652) on a nightly GitHub Actions cron",
+  "description": "User directive: the full GUT suite has grown to 652 tests and runs on every push (plus locally each fix). The user wants a curated CRUCIAL CORE of fewer than 66 tests that runs fast on every push/PR, with the FULL suite kept but moved to a scheduled nightly (early-morning) GitHub Actions cron run. The crucial set is to be curated WITH THE REVIEWER (independent perspective on which tests guard real, previously-hit regressions vs redundant structural assertions). NO tests are deleted — full coverage stays; only the CADENCE changes (crucial on every push, full nightly). Plan: (1) Reviewer produces the curated crucial list (<66 test methods/files) grouped by what each protects, with rationale, biased toward the guards that have caught real regressions this project (flight-bypass / gating, corridor + collision metrics, camera per-level limits, floor-cap alignment, projectile-pool physics callback, combat RPS/anti-dominance core, dual-cast combo invariants) and away from trivial 'node exists' structural asserts. (2) Developer implements the run mechanism in GUT (e.g. a .gutconfig for the crucial set listing the crucial scripts/dirs, or a crucial test selection) and rewires .github/workflows/ci.yml so push/PR runs lint + the crucial core, and adds a separate schedule: (cron) job that runs the FULL suite nightly (and on workflow_dispatch). Keep the gdlint job as-is. SAFETY: do not weaken CI gating on PRs in a way that lets a red full-suite slip — the nightly full run must surface failures (badge/notification). VERIFY: crucial set runs green and is <66; full nightly job runs green; both invocations work headless with the project's Godot 4.6.3 + GUT recipe. NOTE: coordinate with TASK-048 (floor alignment) which is adding the per-surface floor-cap guard — include that guard in the crucial core.",
+  "acceptance_criteria": [
+    "Reviewer-curated crucial core of < 66 GUT tests exists, documented (which tests + why), covering the project's real-regression guards (gating/flight-bypass, corridor+collision metrics, camera limits, floor-cap alignment, projectile-pool callback, combat core).",
+    "A repeatable mechanism runs ONLY the crucial core headless (GUT config or selection), green, count < 66.",
+    ".github/workflows/ci.yml: push/PR runs lint + crucial core; a separate scheduled (cron, nightly) + workflow_dispatch job runs the FULL 652-test suite; full-suite failures are visible (not silently green).",
+    "No tests deleted; full suite still passes on the nightly job. gdlint job unchanged and green."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": ["ci", "tests", "gut", "tooling"],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "at": "2026-06-05T09:40:00.000Z",
+      "author": "orchestrator",
+      "body": "DONE + reviewer ACCEPT (no HIGH). Mechanism: GUT 9.4.0 selection is effectively file-granular for an arbitrary multi-method set, so the crucial core lives in a dedicated test/crucial/ dir run via .gutconfig.crucial.json (dirs=res://test/crucial): 3 thin extends-forwarders for the 100%-crucial files + 13 method-copy files for the mixed files (carrying only the curated methods + their setup/teardown, InputGate-clearing teardown preserved). Exactly 61 crucial tests, green 3x (~8.6s). CI rewired: lint + test-crucial (3x, push/PR gate) + test-full (schedule '0 9 * * *' UTC + workflow_dispatch, full 652->713 superset, real gate via -gexit). Separate commit bumped actions/checkout v4->v6 + setup-python v5->v6 (clears the 2026-06-16 Node20 deprecation); setup-godot kept @v2 (latest). Reviewer verified all 55 copied method bodies are CODE-IDENTICAL to originals (no weakened asserts), the crucial gate runs exactly 61, and the nightly surfaces failures. FAST-FOLLOW (MEDIUM, deferred -> TASK-050): the copies duplicate the 61 tests (drift risk if an original is edited and the copy isn't); convert to a no-duplication in-place mechanism using GUT's -gunit_test_name with a shared naming token (e.g. tag the 61 crucial methods), or add a CI guard that the test/crucial copies match their originals. Doc group-F method name corrected to the post-TASK-048 name."
+    }
+  ],
+  "created_at": "2026-06-05T08:35:00.000Z",
+  "updated_at": "2026-06-05T08:35:00.000Z",
+  "jira_key": null
+}
