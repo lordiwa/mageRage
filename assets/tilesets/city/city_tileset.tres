@@ -1,15 +1,29 @@
-[gd_resource type="TileSet" load_steps=5 format=3 uid="uid://b8magecitytileset"]
+[gd_resource type="TileSet" load_steps=7 format=3 uid="uid://b8magecitytileset"]
 
-; City / Industrial TileSet for sector_02 (TASK-043). VISUAL ONLY — this TileSet
-; carries NO physics layer; collision remains on the sector_02 StaticBody2D nodes.
-; Two atlas sources of weathered grey industrial grate tiles (Franco Giachetti /
-; Simirk "City / Industrial Platform Tileset"):
-;   source 0 = Tile_88 (full X-brace grate body — fill for ceiling/wall/interior)
-;   source 1 = Tile_85 (rail-capped grate — top surface of floor/ledges/step)
+; City / Industrial TileSet for sector_02 (TASK-043, solid-floor fix TASK-046).
+; VISUAL ONLY — this TileSet carries NO physics layer; collision remains on the
+; sector_02 StaticBody2D nodes (Floor/Ceiling/ledges/BossWall/etc).
+;
+; TASK-046 root-cause fix: the floor previously skinned every surface with the two
+; SEE-THROUGH grate tiles, so the dark parallax showed through the holes and the
+; floor never read as solid ground (the hero looked like it stood in mid-air). The
+; walkable surfaces are now skinned with SOLID OPAQUE City tiles; the grates are
+; retained only as optional accent/detail sources.
+;
+; Atlas source map (Franco Giachetti / Simirk "City / Industrial Platform Tileset"):
+;   source 0 = Tile_5  (SOLID red-brick fill — body/interior/wall/ceiling)
+;   source 1 = Tile_2  (SOLID teal-capped brick — walkable TOP surface of
+;                       floor / ledges / boss step; the bright sage cap reads as
+;                       the ground edge the hero stands ON, fully opaque)
+;   source 2 = Tile_88 (grate accent — X-brace grate body, see-through; detail only)
+;   source 3 = Tile_85 (grate accent — rail-capped grate, see-through; detail only)
 ; Native tile is 128x128; the TileMapLayer is scaled 0.5 so each cell = 64 world px.
+; Texture filtering stays ON (painterly HD art, not pixel art).
 
-[ext_resource type="Texture2D" uid="uid://d3c5m7ndhd3dd" path="res://assets/tilesets/city/Tile_88.png" id="1_fill"]
-[ext_resource type="Texture2D" uid="uid://bv0vdfgs44gkv" path="res://assets/tilesets/city/Tile_85.png" id="2_cap"]
+[ext_resource type="Texture2D" uid="uid://dx1yrrqoefnw2" path="res://assets/tilesets/city/Tile_5.png" id="1_fill"]
+[ext_resource type="Texture2D" uid="uid://bsbf6xvf1h78i" path="res://assets/tilesets/city/Tile_2.png" id="2_cap"]
+[ext_resource type="Texture2D" uid="uid://d3c5m7ndhd3dd" path="res://assets/tilesets/city/Tile_88.png" id="3_grate_body"]
+[ext_resource type="Texture2D" uid="uid://bv0vdfgs44gkv" path="res://assets/tilesets/city/Tile_85.png" id="4_grate_cap"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_fill"]
 texture = ExtResource("1_fill")
@@ -21,7 +35,19 @@ texture = ExtResource("2_cap")
 texture_region_size = Vector2i(128, 128)
 0:0/0 = 0
 
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grate_body"]
+texture = ExtResource("3_grate_body")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_grate_cap"]
+texture = ExtResource("4_grate_cap")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
 [resource]
 tile_size = Vector2i(128, 128)
 sources/0 = SubResource("TileSetAtlasSource_fill")
 sources/1 = SubResource("TileSetAtlasSource_cap")
+sources/2 = SubResource("TileSetAtlasSource_grate_body")
+sources/3 = SubResource("TileSetAtlasSource_grate_cap")
