@@ -21,6 +21,19 @@ const FILL := 0   # source_id for Tile_88 (full grate body)
 const CAP := 1    # source_id for Tile_85 (rail-capped top surface)
 const ATLAS := Vector2i(0, 0)
 
+## TASK-048 floor-alignment nudge. The CAP texture (Tile_27) is TRANSPARENT for its
+## top ~44.53% — its solid grey lip only begins partway down the tile — so the floor
+## cap cell (whose CELL-top sits at world y=320, the snapped cap row for floor top 328)
+## renders its VISIBLE lip at 320 + 0.4453*64 = 348.5, i.e. ~20px BELOW the hero's feet
+## (the live bug: "estoy flotando en el aire"). We nudge the whole layer UP so that
+## visible lip lands on the collision floor top (y=328). VISUAL ONLY — the layer carries
+## no physics; the StaticBody2D collision is untouched. Derived (not magic) below.
+const CAP_OPAQUE_ONSET := 0.4453   # measured first-opaque row of Tile_27 (256px tall)
+const FLOOR_TOP := 328.0           # collision floor top (reused DD-011 corridor metric)
+const FLOOR_CAP_CELL_TOP := 320.0  # floor cap row cy=5 cell-top at layer position 0
+## Shift so (cap cell-top + opaque header) == the collision floor top: -20.5px.
+const LAYER_Y_NUDGE := FLOOR_TOP - (FLOOR_CAP_CELL_TOP + CAP_OPAQUE_ONSET * CELL)
+
 
 ## World-rect -> inclusive cell range [cx0..cx1] x [cy0..cy1] that COVERS the rect.
 func _cells_for(x0: float, y0: float, x1: float, y1: float) -> Array:
@@ -57,6 +70,8 @@ func _init() -> void:
 	layer.tile_set = tileset
 	layer.scale = Vector2(0.5, 0.5)   # 128px tiles -> 64px world cells
 	layer.z_index = -2                # above the z<-10 parallax, below entities
+	# TASK-048: seat every cap's VISIBLE solid lip on its collision surface (see above).
+	layer.position = Vector2(0.0, LAYER_Y_NUDGE)
 
 	# --- Surfaces, from the EXACT collision footprints in sector_02.tscn ---------
 	# Floor: pos(2300,360) shape 4600x64 -> x[0..4600] y[328..392]; capped top.
