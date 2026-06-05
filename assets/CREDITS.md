@@ -31,6 +31,10 @@ the attribution below is provided as courtesy.
   - attack ← `attack-4f63bc26` east (fighting_pose_while)
   - hurt ← `takedamage-59543786` east (technomagical_elemental_monk_with_human)
 - **Gaps documented:** glide (GlideState) falls back to "fall" frames; death has no anim (holds last hurt frame).
+- **Rendering:** the hero AnimatedSprite2D carries a per-node `texture_filter = 1`
+  (CanvasItem NEAREST) so the pixel-art renders crisp/unblurred. The project-wide
+  `default_texture_filter` is left at Linear so the downscaled (scale 0.2) parallax
+  skyline backgrounds don't alias; the per-node override targets only the hero.
 
 ## Tilesets
 
