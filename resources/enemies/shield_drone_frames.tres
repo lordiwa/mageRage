@@ -1,0 +1,113 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_000.png" id="1_p4xs4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_001.png" id="2_1mibk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_002.png" id="3_2dm1g"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_003.png" id="4_qy2ud"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_004.png" id="5_tb54r"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/attack/frame_005.png" id="6_uaj02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_000.png" id="7_oja2u"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_001.png" id="8_rn1yt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_002.png" id="9_mjikm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_003.png" id="10_8imsd"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_004.png" id="11_rybh5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/hurt/frame_005.png" id="12_e1x00"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/idle/frame_000.png" id="13_fuyff"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/idle/frame_001.png" id="14_segkg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/idle/frame_002.png" id="15_eqhlx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/idle/frame_003.png" id="16_2ir8i"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_000.png" id="17_2r2sw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_001.png" id="18_n41bd"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_002.png" id="19_oxpdc"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_003.png" id="20_5au3g"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_004.png" id="21_nkcyb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone/walk/frame_005.png" id="22_2nnro"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_p4xs4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_1mibk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_2dm1g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_qy2ud")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_tb54r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_uaj02")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_oja2u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_rn1yt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_mjikm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_8imsd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_rybh5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_e1x00")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("13_fuyff")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_segkg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_eqhlx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_2ir8i")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("17_2r2sw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_n41bd")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_oxpdc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_5au3g")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_nkcyb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_2nnro")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]
