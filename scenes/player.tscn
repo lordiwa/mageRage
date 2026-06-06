@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://b8mageragepl0r"]
+[gd_scene load_steps=19 format=3 uid="uid://b8mageragepl0r"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/reticle.gd" id="15_reticle"]
@@ -18,6 +18,7 @@
 [ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="16_flash"]
 [ext_resource type="SpriteFrames" path="res://resources/hero/hero_frames.tres" id="17_heroframes"]
 [ext_resource type="Script" path="res://scripts/player/animation_controller.gd" id="18_animctrl"]
+[ext_resource type="Script" path="res://scripts/fsm/dash_component.gd" id="19_dash"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
@@ -83,6 +84,9 @@ script = ExtResource("8_magic")
 spells = Array[ExtResource("12_spelldata")]([ExtResource("9_fire"), ExtResource("10_ice"), ExtResource("11_elec")])
 mana = NodePath("../Mana")
 muzzle_flash_scene = ExtResource("16_flash")
+
+[node name="DashComponent" type="Node" parent="."]
+script = ExtResource("19_dash")
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("14_health")

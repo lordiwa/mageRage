@@ -1,27 +1,22 @@
 ## TASK-054 — Ground dash (MoveState): Fire-gated, cooldown-based horizontal burst.
+## TASK-055 UPDATE: dash constants are now owned by DashComponent; DASH_SPEED=700,
+## DASH_TIME=0.16, DASH_COOLDOWN=0.30. FakePlayer instances need a DashComponent child
+## added for the states to resolve the dash logic.
 ##
-## Tests are written TESTS-FIRST: all assertions below describe MISSING behavior
-## and must FAIL before the implementation in move_state.gd lands.
-##
-## Design (from TASK-054 + move_state.gd design notes):
+## Design (from TASK-054 + TASK-055 + move_state.gd design notes):
 ##   - While grounded in MoveState + fire unlocked + dash just_pressed ->
-##     velocity.x = facing * DASH_SPEED for DASH_TIME (suppress gravity).
-##   - After a dash the cooldown (DASH_COOLDOWN ~0.35s) blocks re-dash until it elapses.
+##     velocity.x = facing * DashComponent.DASH_SPEED for DashComponent.DASH_TIME
+##     (suppress gravity). After a dash the cooldown (DashComponent.DASH_COOLDOWN)
+##     blocks re-dash. Repeatable after the cooldown elapses.
 ##   - Without fire ability: no-op.
-##   - Jump press during/after dash still transitions to JumpState (existing buffer logic).
-##   - Air dash (JumpState) is unchanged.
-##
-## NOTE on DASH_SPEED: tests use the literal value 460.0 (matching JumpState.DASH_SPEED)
-## because MoveState.DASH_SPEED does not exist yet (the const is added by the implementation).
-## After impl lands, the speed constant will be asserted to match JumpState.DASH_SPEED in
-## test_ground_dash_speed_matches_air_dash_speed.
+##   - Jump press during/after dash still transitions to JumpState (existing buffer).
+##   - Air dash (JumpState) is now cooldown-repeatable (TASK-055 — see test_unified_dash.gd).
 ##
 ## Mirrors the harness in test_movement_transitions.gd (FakePlayer + InputGate overrides).
 extends GutTest
 
-## Expected dash speed — mirrors JumpState.DASH_SPEED = 460. When the implementation
-## adds MoveState.DASH_SPEED the sync test below will catch any drift.
-const EXPECTED_DASH_SPEED := 460.0
+## Expected dash speed — matches DashComponent.DASH_SPEED (700) per TASK-055.
+const EXPECTED_DASH_SPEED := 700.0
 
 const ALL_ACTIONS := [
 	"move_left", "move_right", "move_up", "move_down",
@@ -49,6 +44,17 @@ func _press_edge(action: String) -> void:
 	InputGate.set_test_override(action, true)
 
 
+## Build a FakePlayer with a DashComponent child, matching the real Player scene
+## layout so states can resolve `player.get_node_or_null("DashComponent")`.
+func _make_fake_with_dash() -> FakePlayer:
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	var dash := DashComponent.new()
+	dash.name = "DashComponent"
+	fake.add_child(dash)
+	return fake
+
+
 func _make_state(state_script: GDScript, fake: FakePlayer) -> EstadoBase:
 	var st: EstadoBase = state_script.new()
 	st.player = fake
@@ -61,8 +67,7 @@ func _make_state(state_script: GDScript, fake: FakePlayer) -> EstadoBase:
 # ---------------------------------------------------------------------------
 
 func test_ground_dash_fires_when_grounded_with_fire_right() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -78,8 +83,7 @@ func test_ground_dash_fires_when_grounded_with_fire_right() -> void:
 
 func test_ground_dash_fires_when_grounded_with_fire_left() -> void:
 	# Same as above but facing left (-1).
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.facing = -1.0
@@ -99,8 +103,7 @@ func test_ground_dash_fires_when_grounded_with_fire_left() -> void:
 
 func test_ground_dash_suppresses_gravity_during_burst() -> void:
 	# The dash should keep velocity.y near 0 (not accumulate gravity) for DASH_TIME.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -120,8 +123,7 @@ func test_ground_dash_suppresses_gravity_during_burst() -> void:
 # ---------------------------------------------------------------------------
 
 func test_ground_dash_no_op_without_fire_ability() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {}          # fire NOT unlocked
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -136,8 +138,7 @@ func test_ground_dash_no_op_without_fire_ability() -> void:
 
 
 func test_ground_dash_no_op_with_ice_only() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"ice": true}    # fire specifically absent
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -157,10 +158,9 @@ func test_ground_dash_no_op_with_ice_only() -> void:
 
 func test_ground_dash_cooldown_blocks_immediate_redash() -> void:
 	# After a dash fires, a second dash press before the cooldown elapses is a no-op.
-	# DASH_COOLDOWN ~0.35s; DASH_TIME 0.12s. After 0.016*20 = 0.32s of ticks from
-	# the first dash the cooldown is not yet expired. We verify the re-dash is blocked.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	# DASH_COOLDOWN is 0.30s; DASH_TIME is 0.16s. After 0.016*15 = 0.24s from the
+	# first dash the burst is done (0.16s) but cooldown (0.30s) is not yet expired.
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -173,7 +173,7 @@ func test_ground_dash_cooldown_blocks_immediate_redash() -> void:
 	st.physics_update(0.016)
 
 	# Let the dash burst window elapse but stay within cooldown.
-	# We pump ~0.016*15 = 0.24s — burst is done (0.12s) but cooldown (~0.35s) not expired.
+	# We pump ~0.016*15 = 0.24s — burst is done (0.16s) but cooldown (~0.30s) not expired.
 	InputGate.clear_test_overrides()
 	for i in range(15):
 		st.physics_update(0.016)
@@ -189,8 +189,7 @@ func test_ground_dash_cooldown_blocks_immediate_redash() -> void:
 
 func test_ground_dash_allowed_after_cooldown_elapses() -> void:
 	# After the full cooldown + dash time has ticked down, a second dash must succeed.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.facing = 1.0
@@ -202,7 +201,7 @@ func test_ground_dash_allowed_after_cooldown_elapses() -> void:
 	_press_edge("dash")
 	st.physics_update(0.016)
 
-	# Wait well past DASH_COOLDOWN (0.35s) + DASH_TIME (0.12s).
+	# Wait well past DASH_COOLDOWN (0.30s) + DASH_TIME (0.16s).
 	InputGate.clear_test_overrides()
 	var waited := 0.0
 	while waited < 0.6:
@@ -224,10 +223,7 @@ func test_ground_dash_allowed_after_cooldown_elapses() -> void:
 
 func test_buffered_jump_still_transitions_to_jump_state_without_dash() -> void:
 	# Baseline: existing jump-buffer behavior is unaffected by the new dash code.
-	# Uses assert_signal_emitted (not _with_parameters) to avoid a GUT 9.4.0 internal
-	# quirk where deep-comparing an EstadoBase node parameter throws a script error.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 	fake.buffer_jump()
@@ -244,11 +240,8 @@ func test_buffered_jump_still_transitions_to_jump_state_without_dash() -> void:
 
 
 func test_buffered_jump_during_dash_burst_transitions_to_jump_state() -> void:
-	# A jump press that arrives during a dash burst should still trigger JumpState
-	# (the existing jump-buffer + coyote guard must fire around the dash logic).
-	# Uses assert_signal_emitted (not _with_parameters) for the same GUT 9.4.0 reason.
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	# A jump press that arrives during a dash burst should still trigger JumpState.
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = true
 
@@ -270,12 +263,13 @@ func test_buffered_jump_during_dash_burst_transitions_to_jump_state() -> void:
 
 
 # ---------------------------------------------------------------------------
-# AC3: NON-REGRESSION — air dash (JumpState) behavior is unchanged
+# AC3: NON-REGRESSION — air dash (JumpState) behavior with DashComponent
 # ---------------------------------------------------------------------------
 
 func test_air_dash_still_fires_in_jump_state() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+	# TASK-055: JumpState now uses DashComponent; verify the dash still fires at
+	# the new DASH_SPEED (700) in the facing direction.
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = false
 	fake.facing = 1.0
@@ -286,13 +280,14 @@ func test_air_dash_still_fires_in_jump_state() -> void:
 	_press_edge("dash")
 	st.physics_update(0.016)
 
-	assert_eq(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
-		"air dash in JumpState must still fire (non-regression)")
+	assert_eq(fake.velocity.x, EXPECTED_DASH_SPEED,
+		"air dash in JumpState must still fire at the new DASH_SPEED (non-regression)")
 
 
-func test_air_dash_still_one_shot_per_airtime() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+func test_air_dash_repeatable_after_cooldown_in_jump_state() -> void:
+	# TASK-055: air dash is now REPEATABLE (cooldown-based, not one-per-airtime).
+	# After waiting past DASH_COOLDOWN, a second dash must succeed.
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = false
 	fake.facing = 1.0
@@ -301,71 +296,37 @@ func test_air_dash_still_one_shot_per_airtime() -> void:
 	var st := _make_state(JumpState, fake)
 	st.enter()
 
+	# First dash.
 	_press_edge("dash")
 	st.physics_update(0.016)
+
+	# Wait past DASH_COOLDOWN (0.30s).
 	InputGate.clear_test_overrides()
+	var waited := 0.0
+	while waited < 0.50:
+		st.physics_update(0.05)
+		waited += 0.05
 
-	for i in range(20):
-		st.physics_update(0.016)
-
+	# Second dash must fire (repeatable via cooldown).
 	fake.velocity = Vector2(0, 20)
 	_press_edge("dash")
 	st.physics_update(0.016)
 
-	assert_ne(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
-		"air dash: only one per airtime (non-regression)")
+	assert_eq(fake.velocity.x, EXPECTED_DASH_SPEED,
+		"air dash is now REPEATABLE after DASH_COOLDOWN (TASK-055 replaces one-per-airtime)")
 
 
 # ---------------------------------------------------------------------------
-# AC3: MoveState.DASH_SPEED must exist and match JumpState.DASH_SPEED
-## (This test will ERROR until the implementation adds the const — that is the
-##  correct failing signal for the missing feature.)
+# AC3: DashComponent has the correct constants (single source of truth)
 # ---------------------------------------------------------------------------
-## NOTE: This test is written without directly referencing MoveState.DASH_SPEED
-## to avoid a parse error. Instead it uses a placeholder assertion that is always
-## false to flag the missing const for reviewers. When the implementation lands,
-## this test should be updated to use the real const.
-func test_ground_dash_speed_const_exists_and_matches_air_dash() -> void:
-	# We can't directly reference MoveState.DASH_SPEED before it exists.
-	# This test checks the behavior indirectly: a dash in MoveState produces
-	# the same horizontal speed as a dash in JumpState.
-	var fake_ground := FakePlayer.new()
-	add_child_autofree(fake_ground)
-	fake_ground.abilities = {"fire": true}
-	fake_ground.on_floor = true
-	fake_ground.facing = 1.0
 
-	var ground_st := _make_state(MoveState, fake_ground)
-	ground_st.enter()
-	_press_edge("dash")
-	ground_st.physics_update(0.016)
-	var ground_speed := fake_ground.velocity.x
-
-	InputGate.clear_test_overrides()
-
-	var fake_air := FakePlayer.new()
-	add_child_autofree(fake_air)
-	fake_air.abilities = {"fire": true}
-	fake_air.on_floor = false
-	fake_air.facing = 1.0
-	fake_air.velocity = Vector2(0, -50)
-
-	var air_st := _make_state(JumpState, fake_air)
-	air_st.enter()
-	_press_edge("dash")
-	air_st.physics_update(0.016)
-	var air_speed := fake_air.velocity.x
-
-	assert_eq(ground_speed, air_speed,
-		"ground dash speed must equal air dash speed (DASH_SPEED kept in sync)")
-
-	# Direct const-parity guard (AC6): both DASH_SPEED and DASH_TIME are duplicated
-	# literals across MoveState/JumpState protected only by a code comment. Pin both
-	# so any future drift in either file fails this test.
-	assert_eq(MoveState.DASH_SPEED, JumpState.DASH_SPEED,
-		"MoveState.DASH_SPEED must stay in sync with JumpState.DASH_SPEED")
-	assert_eq(MoveState.DASH_TIME, JumpState.DASH_TIME,
-		"MoveState.DASH_TIME must stay in sync with JumpState.DASH_TIME")
+func test_dash_component_speed_matches_expected() -> void:
+	# AC2: DASH_SPEED lives in DashComponent only; JumpState.DASH_SPEED mirrors it
+	# for backwards-compat test references.
+	assert_eq(DashComponent.DASH_SPEED, EXPECTED_DASH_SPEED,
+		"DashComponent.DASH_SPEED must be 700")
+	assert_eq(JumpState.DASH_SPEED, DashComponent.DASH_SPEED,
+		"JumpState.DASH_SPEED backward-compat mirror must equal DashComponent.DASH_SPEED")
 
 
 # ---------------------------------------------------------------------------
