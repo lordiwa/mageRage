@@ -70,6 +70,43 @@ reinforcing pillar 1's tragic-quarantine tone).
   Drone's up/down shield no longer has a dedicated VISUAL node (block gameplay is
   unchanged) — a later pass could add a shield overlay/anim.
 
+### `assets/sprites/enemies/` — flying drones + Warden boss (TASK-058)
+Three PixelLab assets generated 2026-06-06 to replace the bipedal drone look with
+FLOATING eye-orbs and to skin the Warden boss greybox. EAST-facing frames only
+(flip_h used for left). The old bipedal drone art (`empire_drone/`, `shield_drone/`)
+and its `*_frames.tres` are KEPT on disk for possible reuse as a future
+ground-guardian enemy.
+
+- **Empire Drone (flying)** — `empire_drone_fly/`: idle (9f), walk (9f), attack
+  (9f), hurt (9f). 96x96 canvas. Floating single-eye ELEC drone (teal shell +
+  yellow energy ring). PixelLab OBJECT `4b73afcb`.
+- **Shield Drone (flying)** — `shield_drone_fly/`: idle (9f), walk (9f), attack
+  (9f), hurt (9f). 96x96 canvas. Floating single-eye ICE drone (frost-blue + cyan
+  barrier slab). PixelLab OBJECT `1f8a5ca1`.
+- **The Warden (boss)** — `warden/`: idle (4f), walk (6f), attack (6f), hurt (6f).
+  252x252 source canvas. Hulking armored guardian colossus (side, east-only +
+  flip_h). PixelLab CHARACTER v3 `bf3d2472`.
+
+- **Author:** Generated via [PixelLab](https://www.pixellab.ai/) by the project owner.
+- **Style:** 16-bit McFarlane pixel-art, generated 2026-06-06.
+- **Usage rights:** Project owner generated and holds rights to use these assets.
+- **SpriteFrames:** built reproducibly by `tools/build_enemy_frames.gd` into
+  `resources/enemies/{empire_drone_fly,shield_drone_fly,warden}_frames.tres`
+  (idle/walk loop; attack/hurt one-shot).
+- **Rendering:** each AnimatedSprite2D carries a per-node `texture_filter = 1`
+  (CanvasItem NEAREST) so the pixel-art renders crisp; the project-wide default
+  stays Linear so the downscaled parallax skyline does not alias.
+- **Geometry (documented; fine-tuning is a later DIRECT playtest tweak):**
+  - Flying drones FLOAT — the opaque eye-orb is CENTERED on the unchanged (28,36)
+    collision (no feet-seating). Scale 0.4: Empire ~30x26px @ position (0.2, 0.6);
+    Shield ~32x31px @ position (-1.4, 2.6).
+  - Warden: 252px source >> (72,96) collision so an integer scale is impossible —
+    chose a clean fractional scale **0.4** (big-but-fair) with feet SEATED on the
+    collision bottom (position ~ (1, 23.2)); the opaque idle bbox is 53x123 @
+    (97,65). On-screen size/seat/feel is flagged for a playtest pass.
+- **Gaps documented:** death has no dedicated anim — the dissolve holds whatever
+  frame is showing (typically the last "hurt" frame), matching the hero + drones.
+
 ## Tilesets
 
 ### `assets/tilesets/city/` — industrial City tiles (sector_02 surface skin)

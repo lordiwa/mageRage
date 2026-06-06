@@ -1,0 +1,169 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_000.png" id="1_gndsp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_001.png" id="2_1qlrp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_002.png" id="3_d4gsn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_003.png" id="4_y1w7t"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_004.png" id="5_eg07c"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_005.png" id="6_hrcdx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_006.png" id="7_o3st4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_007.png" id="8_dvqft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/attack/frame_008.png" id="9_17rnb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_000.png" id="10_f33ya"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_001.png" id="11_r4375"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_002.png" id="12_oachi"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_003.png" id="13_pddi1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_004.png" id="14_ivb6r"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_005.png" id="15_on0c2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_006.png" id="16_od5mw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_007.png" id="17_4sp7w"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/hurt/frame_008.png" id="18_e0umr"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_000.png" id="19_lhp1c"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_001.png" id="20_1f1i5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_002.png" id="21_cb7ud"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_003.png" id="22_1pe12"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_004.png" id="23_fy64k"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_005.png" id="24_vukin"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_006.png" id="25_343in"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_007.png" id="26_udkj2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/idle/frame_008.png" id="27_2d5xm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_000.png" id="28_j87re"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_001.png" id="29_hst10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_002.png" id="30_xnhfp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_003.png" id="31_awbuv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_004.png" id="32_6meq5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_005.png" id="33_rw3ce"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_006.png" id="34_onusy"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_007.png" id="35_306je"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/shield_drone_fly/walk/frame_008.png" id="36_i783k"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_gndsp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_1qlrp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_d4gsn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_y1w7t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_eg07c")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_hrcdx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_o3st4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_dvqft")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_17rnb")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_f33ya")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_r4375")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_oachi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_pddi1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_ivb6r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_on0c2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_od5mw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_4sp7w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_e0umr")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("19_lhp1c")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_1f1i5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_cb7ud")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_1pe12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_fy64k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_vukin")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_343in")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_udkj2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_2d5xm")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("28_j87re")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_hst10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_xnhfp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_awbuv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_6meq5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_rw3ce")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_onusy")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_306je")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_i783k")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]

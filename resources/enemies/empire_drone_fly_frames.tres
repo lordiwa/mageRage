@@ -1,0 +1,169 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_000.png" id="1_vp6os"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_001.png" id="2_07u87"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_002.png" id="3_50h7m"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_003.png" id="4_4x7lt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_004.png" id="5_eu54x"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_005.png" id="6_aal30"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_006.png" id="7_luem6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_007.png" id="8_v4pbs"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/attack/frame_008.png" id="9_tj5rc"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_000.png" id="10_mbmkv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_001.png" id="11_3l70x"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_002.png" id="12_oyxaq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_003.png" id="13_q4mfb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_004.png" id="14_jrhb6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_005.png" id="15_vpvcj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_006.png" id="16_40xu8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_007.png" id="17_n3rv7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/hurt/frame_008.png" id="18_8q3dq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_000.png" id="19_wo4dt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_001.png" id="20_v3tmk"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_002.png" id="21_xpf2h"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_003.png" id="22_dggjq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_004.png" id="23_g2ntw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_005.png" id="24_gmuxb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_006.png" id="25_7f8ra"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_007.png" id="26_4haxq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/idle/frame_008.png" id="27_sxo7y"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_000.png" id="28_dve8c"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_001.png" id="29_fdu8o"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_002.png" id="30_5iev3"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_003.png" id="31_qr0d6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_004.png" id="32_x6s3x"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_005.png" id="33_56av8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_006.png" id="34_1wjbi"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_007.png" id="35_ft1j1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/empire_drone_fly/walk/frame_008.png" id="36_oh1ps"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_vp6os")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_07u87")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_50h7m")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_4x7lt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_eu54x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_aal30")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_luem6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_v4pbs")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_tj5rc")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("10_mbmkv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_3l70x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_oyxaq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_q4mfb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_jrhb6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_vpvcj")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_40xu8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_n3rv7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_8q3dq")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("19_wo4dt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_v3tmk")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_xpf2h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_dggjq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_g2ntw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_gmuxb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_7f8ra")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_4haxq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_sxo7y")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("28_dve8c")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_fdu8o")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_5iev3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_qr0d6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_x6s3x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_56av8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_1wjbi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_ft1j1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_oh1ps")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]

@@ -7,13 +7,18 @@ extends SceneTree
 ## re-running produces the same output from the same source PNGs.
 ##
 ## Outputs:
-##   res://resources/enemies/empire_drone_frames.tres
-##   res://resources/enemies/shield_drone_frames.tres
+##   res://resources/enemies/empire_drone_frames.tres        (old bipedal — kept)
+##   res://resources/enemies/shield_drone_frames.tres        (old bipedal — kept)
 ##   res://resources/enemies/charger_frames.tres
+##   res://resources/enemies/empire_drone_fly_frames.tres    (TASK-058 floating orb)
+##   res://resources/enemies/shield_drone_fly_frames.tres    (TASK-058 floating orb)
+##   res://resources/enemies/warden_frames.tres              (TASK-058 boss)
 ##
 ## Per-animation frame counts (from disk):
-##   empire_drone / shield_drone: idle 4, walk 6, attack 6, hurt 6
+##   empire_drone / shield_drone: idle 4, walk 6, attack 6, hurt 6  (old bipedal)
 ##   charger:                     idle 4, walk 6, windup 5, charge 6, hurt 6
+##   *_fly (floating eye-orb):    idle 9, walk 9, attack 9, hurt 9  (TASK-058)
+##   warden (boss):               idle 4, walk 6, attack 6, hurt 6  (TASK-058)
 ##
 ## Loop flags + fps (fps are a sensible first pass; fine-tuning is a later DIRECT
 ## playtest tweak per the ticket):
@@ -43,6 +48,24 @@ const CHARGER_MAP := {
 	"walk": [6, 8.0, true],
 	"windup": [5, 8.0, false],
 	"charge": [6, 10.0, false],
+	"hurt": [6, 10.0, false],
+}
+
+## TASK-058 FLOATING eye-orb drones (object anims, 9 frames each). Same fps/loop
+## conventions as the bipedal drones; the orb hover reads as the idle/walk loop.
+const DRONE_FLY_MAP := {
+	"idle": [9, 6.0, true],
+	"walk": [9, 8.0, true],
+	"attack": [9, 12.0, false],
+	"hurt": [9, 10.0, false],
+}
+
+## TASK-058 Warden boss (idle 4, walk 6, attack 6, hurt 6). Same fps/loop language
+## as the drones so the boss reads with the family's cadence.
+const WARDEN_MAP := {
+	"idle": [4, 6.0, true],
+	"walk": [6, 8.0, true],
+	"attack": [6, 12.0, false],
 	"hurt": [6, 10.0, false],
 }
 
@@ -81,9 +104,12 @@ func _init() -> void:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 
 	var jobs := {
-		"empire_drone": DRONE_MAP,
-		"shield_drone": DRONE_MAP,
+		"empire_drone": DRONE_MAP,        # old bipedal — kept for reuse
+		"shield_drone": DRONE_MAP,        # old bipedal — kept for reuse
 		"charger": CHARGER_MAP,
+		"empire_drone_fly": DRONE_FLY_MAP,  # TASK-058 floating eye-orb
+		"shield_drone_fly": DRONE_FLY_MAP,  # TASK-058 floating eye-orb
+		"warden": WARDEN_MAP,               # TASK-058 boss
 	}
 	for enemy in jobs:
 		var err := _build_one(enemy, jobs[enemy])
