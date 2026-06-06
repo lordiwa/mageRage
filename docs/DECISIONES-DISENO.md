@@ -82,17 +82,37 @@ enemigo debe forzar el cambio.
 - `LORE-BIBLE.md` se mantiene en inglés (es el system-prompt canónico para generación
   de lore; reescribirlo no aporta y rompería referencias).
 
-**Nota TASK-054 — Dash (suelo + aire, botón RB / Shift):**
-El dash opera en dos contextos: **en el aire** (`JumpState`, un único dash por airtime,
-existente desde M1) y **en el suelo** (`MoveState`, TASK-054, repeatable con cooldown).
-Ambos están gateados por Fuego y usan el mismo botón `dash` (RB = botón 10 / Shift).
-- **Dash aéreo:** velocidad 460 px/s, duración 0.12 s, **un único dash por airtime**
-  (se resetea al entrar a JumpState). Inalterable por TASK-054.
-- **Dash terrestre:** velocidad 460 px/s, duración 0.12 s, **cooldown 0.35 s** (PROVISIONAL,
-  tunable en playtest — DD-001) entre dashs consecutivos. Suprime gravedad durante el burst.
-  Un salto (buffered jump) sigue pudiendo cancelar el dash y transicionar a JumpState.
+**Nota TASK-054 — Dash (suelo, botón RB / Shift):**
+El dash terrestre (`MoveState`, TASK-054) opera con cooldown. Gateado por Fuego. Binding
+definitivo: RB (botón 10, right shoulder) / Shift — véase corrección en DD-007.
+
+**Nota TASK-055 — Dash unificado repeatable (todos los estados, PROVISIONAL):**
+El dash se **unificó** en un único `DashComponent` (nodo hijo del Player) que es la fuente
+de verdad de todas las constantes y la lógica de burst/cooldown. Los cuatro estados
+(`MoveState`, `JumpState`, `GlideState`, `FlightState`) delegan en él.
+
+- **Tuning nuevo (PROVISIONAL, DD-001):** `DASH_SPEED` 460 → **700 px/s**, `DASH_TIME`
+  0.12 → **0.16 s** (distancia ≈ 112 px), `DASH_COOLDOWN` 0.35 → **0.30 s**.
+- **Repeatable en todos los estados:** el modelo "uno por airtime" de `JumpState` fue
+  reemplazado por cooldown compartido. Una vez transcurrido `DASH_COOLDOWN` el jugador
+  puede volver a dashes en cualquier estado.
+- **Cooldown compartido entre estados:** el cooldown pertenece al `DashComponent`, no al
+  estado. Un dash en vuelo bloquea el re-dash al aterrizar hasta que el cooldown expire.
+- **Suppresión del dash aéreo en zona anti-magia (DD-011 / TASK-028):** mientras
+  `player.is_flight_suppressed()` es verdadero (zona anti-magia sin purgar), el dash
+  **aéreo** (off-floor) es un no-op. El dash **terrestre** NO está suprimido. Auditoría
+  bypass confirmada: el alcance de 112 px no crea ninguna vía nueva de cruce sin purgar.
+  - Gate FIRE (sector_02): barrera `StaticBody2D` completa — el dash impacta la pared.
+  - Zona anti-magia (~88 px gap superior): dash aéreo suprimido por código; dash terrestre
+    impacta la barrera inferior. Ningún bypass.
+  - Gap jefe (≈98 px vertical): el dash es puramente horizontal (velocity.y = 0); no
+    puede cruzar un gap vertical. Ningún bypass.
+- **Burst:** `velocity.x = facing * DASH_SPEED`; `velocity.y = 0` (no altitud, nunca
+  negativo). Gravedad suprimida durante `DASH_TIME`; luego el control normal del estado
+  continúa. El salto (buffered jump) sigue cancelando el dash terrestre y transicionando
+  a JumpState.
 - **ANIMACIÓN:** no existe sprite dedicado de dash en el set PixelLab (TASK-052). Durante
-  el burst breve (0.12 s) se usa la animación de movimiento vigente (walk/idle). Gap
+  el burst breve (0.16 s) se usa la animación de movimiento vigente (walk/idle). Gap
   documentado; un sprite de dash puede añadirse en el follow-up de TASK-053 si se desea.
 - **Binding definitivo:** RB (botón 10, right shoulder) / Shift — véase corrección en DD-007.
 
@@ -141,6 +161,11 @@ teclado/mouse (additive — ambos activos a la vez). Layout estándar tipo Xbox:
 **Corrección TASK-054:** la fila "Dash" de esta tabla decía originalmente "B (botón 1)"
 que es incorrecto. El binding real (confirmado en DD-008 y en el `InputMap` del proyecto)
 es **RB = botón 10 (right shoulder) / Shift**. La tabla ahora refleja la corrección.
+
+**Actualización TASK-055:** el dash ahora es **repeatable en todos los estados**
+(`MoveState`, `JumpState`, `GlideState`, `FlightState`) mediante cooldown compartido.
+Tuning revisado: DASH_SPEED=700 px/s, DASH_TIME=0.16 s, DASH_COOLDOWN=0.30 s (PROVISIONAL).
+El dash aéreo está suprimido dentro de zonas anti-magia sin purgar (véase DD-005 y DD-011).
 
 **Notas técnicas:** sticks con deadzone ~0.3; `Input.get_axis` da movimiento analógico
 gratis. Gatillos = ejes 4 (LT) / 5 (RT) en Godot; planeo se mapea como *mantener*. El
