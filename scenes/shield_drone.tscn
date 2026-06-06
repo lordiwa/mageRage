@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://b8mageragshdr0"]
+[gd_scene load_steps=13 format=3 uid="uid://b8mageragshdr0"]
 
 [ext_resource type="Script" path="res://scripts/enemies/shield_drone.gd" id="1_drone"]
 [ext_resource type="Script" path="res://scripts/combat/health.gd" id="2_health"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_patrol_state.gd" id="7_patrol"]
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_chase_state.gd" id="8_chase"]
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_attack_state.gd" id="9_attack"]
+[ext_resource type="SpriteFrames" path="res://resources/enemies/shield_drone_frames.tres" id="10_frames"]
+[ext_resource type="Script" path="res://scripts/enemies/enemy_animation_controller.gd" id="11_animctrl"]
 
 [sub_resource type="RectangleShape2D" id="Rect_drone"]
 size = Vector2(28, 36)
@@ -24,19 +26,15 @@ enemy_projectile_scene = ExtResource("5_ep")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("Rect_drone")
 
-[node name="Sprite" type="ColorRect" parent="."]
-offset_left = -14.0
-offset_top = -18.0
-offset_right = 14.0
-offset_bottom = 18.0
-color = Color(0.35, 0.65, 0.95, 1)
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(0, -8)
+sprite_frames = ExtResource("10_frames")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="Shield" type="ColorRect" parent="."]
-offset_left = -4.0
-offset_top = -16.0
-offset_right = 6.0
-offset_bottom = 16.0
-color = Color(0.45, 0.85, 1, 0.9)
+[node name="AnimationController" type="Node" parent="."]
+script = ExtResource("11_animctrl")
 
 [node name="Health" type="Node" parent="."]
 script = ExtResource("2_health")

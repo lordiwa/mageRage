@@ -91,8 +91,18 @@ signal hit(amount: float, effectiveness: float, dir: Vector2)
 
 @onready var _health: Health = get_node_or_null("Health")
 @onready var _label: Label = get_node_or_null("Label")
-@onready var _sprite: ColorRect = get_node_or_null("Sprite")
+## TASK-056: the body sprite is now an AnimatedSprite2D. Typed as CanvasItem so the
+## flash / tint / dissolve drive `modulate` (works on the AnimatedSprite2D and on the
+## bare ColorRect built by unit tests); null-guarded for bare-scene tests.
+@onready var _sprite: CanvasItem = get_node_or_null("Sprite")
+## TASK-056: the directional-shield VISUAL ColorRect was removed from the real scene
+## (the PixelLab body sprite replaces the greybox). The shield BLOCK gameplay is
+## unchanged (it lives in ShieldLogic + the up/down state); this node is now present
+## only in unit tests (which build a bare ColorRect "Shield"), so every access stays
+## null-guarded. The shield up/down VISUAL tell is a documented gap for a later pass.
 @onready var _shield: ColorRect = get_node_or_null("Shield")
+## TASK-056: state-driven animation controller (one-shot attack/hurt + flip_h).
+@onready var _anim_ctrl: Node = get_node_or_null("AnimationController")
 
 const ARMOR_TINT := {
 	SpellData.Element.FIRE: Color(0.85, 0.30, 0.20, 1.0),
@@ -124,7 +134,7 @@ func _ready() -> void:
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	_armor_color = ARMOR_TINT.get(armor_type, Color.WHITE)
 	if _sprite != null:
-		_sprite.color = _armor_color
+		_sprite.modulate = _armor_color
 	if _health != null:
 		_health.health_changed.connect(_on_health_changed)
 		_health.died.connect(_on_died)
@@ -189,6 +199,10 @@ func apply_elemental_hit(element: int, base_damage: float, slow: bool,
 	if slow:
 		_slow.apply()
 	_refresh_label(dmg, _slow.is_active())
+	# TASK-056: play the hurt one-shot only on a REAL landed hit (blocked shots
+	# return early above and never reach here).
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_hurt"):
+		_anim_ctrl.play_hurt()
 	# --- TASK-010 hit feedback ------------------------------------------------
 	_flash()
 	_apply_knockback(hit_dir)
@@ -224,9 +238,9 @@ func _on_blocked(hit_dir: Vector2) -> void:
 func _flash() -> void:
 	if _sprite == null:
 		return
-	_sprite.color = Color.WHITE
+	_sprite.modulate = Color.WHITE
 	var tween := create_tween()
-	tween.tween_property(_sprite, "color", _armor_color, FLASH_TIME)
+	tween.tween_property(_sprite, "modulate", _armor_color, FLASH_TIME)
 
 
 func _apply_knockback(hit_dir: Vector2) -> void:
@@ -340,6 +354,9 @@ func fire_at_player() -> void:
 	var dir := (target.global_position - global_position).normalized()
 	if proj.has_method("setup"):
 		proj.setup(dir, projectile_damage)
+	# TASK-056: play the attack (cast) one-shot when the shot actually fires.
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_attack"):
+		_anim_ctrl.play_attack()
 
 # --- Shield state: readable queries + the wind-up predicate -------------------
 
@@ -365,11 +382,11 @@ func _update_tint() -> void:
 	if _sprite == null:
 		return
 	if _telegraphing:
-		_sprite.color = TELEGRAPH_COLOR
+		_sprite.modulate = TELEGRAPH_COLOR
 	elif _slow.is_active():
-		_sprite.color = SLOW_TINT
+		_sprite.modulate = SLOW_TINT
 	else:
-		_sprite.color = _armor_color
+		_sprite.modulate = _armor_color
 
 
 ## Position/rotate/tint the shield ColorRect so its UP/DOWN state + facing READ:
@@ -431,9 +448,9 @@ func _play_dissolve(seconds: float) -> void:
 		return
 	var tween := create_tween()
 	tween.set_parallel(true)
-	var faded := _sprite.color
+	var faded := _sprite.modulate
 	faded.a = 0.0
-	tween.tween_property(_sprite, "color", faded, seconds)
+	tween.tween_property(_sprite, "modulate", faded, seconds)
 	tween.tween_property(_sprite, "scale", Vector2.ONE * DISSOLVE_END_SCALE, seconds)
 	# Fade the shield out alongside the body.
 	if _shield != null:

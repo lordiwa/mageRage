@@ -69,7 +69,14 @@ signal hit(amount: float, effectiveness: float, dir: Vector2)
 
 @onready var _health: Health = $Health
 @onready var _label: Label = $Label
-@onready var _sprite: ColorRect = $Sprite
+## TASK-056: the sprite is now an AnimatedSprite2D. Typed as CanvasItem so the
+## flash / tint / dissolve drive `modulate` (works on both the AnimatedSprite2D and
+## the bare ColorRect used by unit tests); null-guarded for bare-scene tests.
+@onready var _sprite: CanvasItem = get_node_or_null("Sprite")
+## TASK-056: the state-driven animation controller (one-shot attack/hurt + flip_h).
+## Duck-typed as Node so a bare drone (unit test) without it still runs; calls are
+## has_method-guarded.
+@onready var _anim_ctrl: Node = get_node_or_null("AnimationController")
 
 const ARMOR_TINT := {
 	SpellData.Element.FIRE: Color(0.85, 0.30, 0.20, 1.0),       # warm red
@@ -94,7 +101,7 @@ func _ready() -> void:
 	set_collision_mask_value(1, true)
 	_armor_color = ARMOR_TINT.get(armor_type, Color.WHITE)
 	if _sprite != null:
-		_sprite.color = _armor_color
+		_sprite.modulate = _armor_color
 	if _health != null:
 		_health.health_changed.connect(_on_health_changed)
 		_health.died.connect(_on_died)
@@ -142,6 +149,9 @@ func apply_elemental_hit(element: int, base_damage: float, slow: bool,
 	if slow:
 		_slow.apply()
 	_refresh_label(dmg, _slow.is_active())
+	# TASK-056: play the hurt one-shot on a landed hit (highest-priority anim).
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_hurt"):
+		_anim_ctrl.play_hurt()
 	# --- TASK-010 hit feedback ------------------------------------------------
 	_flash()
 	_apply_knockback(hit_dir)
@@ -156,9 +166,9 @@ func apply_elemental_hit(element: int, base_damage: float, slow: bool,
 func _flash() -> void:
 	if _sprite == null:
 		return
-	_sprite.color = Color.WHITE
+	_sprite.modulate = Color.WHITE
 	var tween := create_tween()
-	tween.tween_property(_sprite, "color", _armor_color, FLASH_TIME)
+	tween.tween_property(_sprite, "modulate", _armor_color, FLASH_TIME)
 
 
 ## Knockback: a short positional punch along the shot's travel direction.
@@ -282,6 +292,9 @@ func fire_at_player() -> void:
 	var dir := (target.global_position - global_position).normalized()
 	if proj.has_method("setup"):
 		proj.setup(dir, projectile_damage)
+	# TASK-056: play the attack (cast) one-shot when the shot actually fires.
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_attack"):
+		_anim_ctrl.play_attack()
 
 ## Sprite tint priority: telegraph flash > Ice slow tint > armor color.
 ## TASK-017: while dying, leave the sprite alone so the per-frame tint tick can't
@@ -292,11 +305,11 @@ func _update_tint() -> void:
 	if _sprite == null:
 		return
 	if _telegraphing:
-		_sprite.color = TELEGRAPH_COLOR
+		_sprite.modulate = TELEGRAPH_COLOR
 	elif _slow.is_active():
-		_sprite.color = SLOW_TINT
+		_sprite.modulate = SLOW_TINT
 	else:
-		_sprite.color = _armor_color
+		_sprite.modulate = _armor_color
 
 func _on_health_changed(_current: float, _maximum: float) -> void:
 	pass   # label refresh is driven from apply_elemental_hit so it can show dmg
@@ -349,9 +362,9 @@ func _play_dissolve(seconds: float) -> void:
 		return
 	var tween := create_tween()
 	tween.set_parallel(true)
-	var faded := _sprite.color
+	var faded := _sprite.modulate
 	faded.a = 0.0
-	tween.tween_property(_sprite, "color", faded, seconds)
+	tween.tween_property(_sprite, "modulate", faded, seconds)
 	tween.tween_property(_sprite, "scale", Vector2.ONE * DISSOLVE_END_SCALE, seconds)
 	tween.chain().tween_callback(queue_free)
 

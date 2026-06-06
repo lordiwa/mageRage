@@ -36,6 +36,40 @@ the attribution below is provided as courtesy.
   `default_texture_filter` is left at Linear so the downscaled (scale 0.2) parallax
   skyline backgrounds don't alias; the per-node override targets only the hero.
 
+## Enemy sprites
+
+### `assets/sprites/enemies/` — sector_02 combat enemies (TASK-056)
+Three PixelLab pixel-art characters (16-bit McFarlane style, side view, humanoid
+template), generated 2026-06-06. EAST-facing frames only (flip_h used for left).
+The create_character template is bipedal, so the two flying drones came out as
+bipedal armored guardian robots (kept + re-themed as "armored Empire guardians",
+reinforcing pillar 1's tragic-quarantine tone).
+
+- **Empire Drone** — `empire_drone/`: idle (4f), walk (6f), attack (6f, cast pose),
+  hurt (6f). 68x68 canvas. Teal/grey armored guardian (ELEC armor; the teal-vs-ELEC-
+  yellow color read is flagged as an optional later DIRECT retry).
+  PixelLab character_id `e70ad1d9-ffaa-45f2-9281-3878bf6196c5`.
+- **Shield Drone** — `shield_drone/`: idle (4f), walk (6f), attack (6f), hurt (6f).
+  68x68 canvas. Frost-blue armored robot (ICE armor).
+  PixelLab character_id `b0aca2f8-efc9-413e-8676-3463293dc867`.
+- **Charger** — `charger/`: idle (4f), walk (6f), windup (5f, telegraph), charge (6f,
+  lunge), hurt (6f). 92x92 canvas. Dark iron + molten-orange automaton (FIRE armor).
+  PixelLab character_id `e09ba82f-b462-4d5b-bf10-a179547a5656`.
+
+- **Author:** Generated via [PixelLab](https://www.pixellab.ai/) by the project owner.
+- **Style:** 16-bit McFarlane pixel-art, generated 2026-06-06.
+- **Usage rights:** Project owner generated and holds rights to use these assets.
+- **SpriteFrames:** built reproducibly by `tools/build_enemy_frames.gd` into
+  `resources/enemies/{empire_drone,shield_drone,charger}_frames.tres`.
+- **Rendering:** each enemy AnimatedSprite2D carries a per-node `texture_filter = 1`
+  (CanvasItem NEAREST) so the pixel-art renders crisp; the project-wide default stays
+  Linear so the downscaled (scale 0.2) parallax skyline does not alias.
+- **Gaps documented:** death has no dedicated anim (the dissolve holds whatever frame
+  is showing, typically the last "hurt" frame — matches the hero); the Charger's
+  Recovery state reuses "idle" (the stagger reads via the EXPOSED tint); the Shield
+  Drone's up/down shield no longer has a dedicated VISUAL node (block gameplay is
+  unchanged) — a later pass could add a shield overlay/anim.
+
 ## Tilesets
 
 ### `assets/tilesets/city/` — industrial City tiles (sector_02 surface skin)
