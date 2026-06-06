@@ -10,15 +10,18 @@
     "Tests-first: real-physics/unit tests cover dash fires + repeats after cooldown in each of the 4 states, no-op without Fire, air-dash suppressed in an anti-magic zone, and the bypass-relevant reachability stays gated; existing suite stays green.",
     "Full GUT + crucial(61) green; gdlint clean; docs/DECISIONES-DISENO.md updated (unified repeatable dash + tuning + air suppression)."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "high",
   "labels": ["gameplay", "movement", "fsm", "dash", "balance", "gating"],
   "assignee": null,
   "depends_on": ["TASK-054"],
-  "linked_commits": [],
+  "linked_commits": ["fce70aa", "7162ef3", "70464a5", "eb47476", "2f0a66a"],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    "DONE, reviewer-ACCEPT, user-confirmed in live playtest ('esta bien'). Unified dash extracted into scripts/fsm/dash_component.gd (Node child of Player; single source of truth for DASH_SPEED=700/DASH_TIME=0.16(~112px)/DASH_COOLDOWN=0.30). Repeatable in all 4 states (Move/Jump/Glide/Flight) via the shared cooldown (replaced JumpState's one-per-airtime _dash_used). Horizontal only (velocity.y forced 0, no altitude). AIR dash suppressed while is_flight_suppressed(); ground dash unaffected. Reviewer did an INDEPENDENT computed flight-bypass audit from the .tscn geometry: NO new bypass — FIRE gate 28px gap is at ceiling (vertical), anti-magic 88px gap is vertical/top-of-corridor and unreachable without altitude the dash can't give, suppression holds at BOTH trigger and FlightState sustain edge (no entry-vs-sustain hole), boss 98px is vertical. No input-map change (A=Jump, dash=RB/Shift); collision byte-identical (player.tscn only adds the DashComponent node). Full GUT 804/804, crucial 61/61, gdlint clean. docs/DECISIONES-DISENO.md updated. KNOWN LOW (non-blocking, user OK'd shipping as-is): JumpState keeps a backward-compat `const DASH_SPEED := 700.0` mirror of DashComponent (drift risk the ticket meant to remove) + the Jump/Glide burst doesn't re-check suppression mid-burst (safe for current geometry since the barrier is full-height below the gap). Candidates for a future cleanup ticket.",
+    "PROCESS NOTE: 'mas largo y rapido + funcione en el aire' was correctly NOT treated as a loose visual tweak — it changed FSM logic + had real gate-bypass risk, so it went through full ceremony (tests-first dev -> reviewer with mandatory computed bypass audit), per CLAUDE.md 'Ceremony scales to risk'."
+  ],
   "created_at": "2026-06-06T15:10:00.000Z",
-  "updated_at": "2026-06-06T15:10:00.000Z",
+  "updated_at": "2026-06-06T15:30:00.000Z",
   "jira_key": null
 }
