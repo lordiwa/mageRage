@@ -9,7 +9,7 @@
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_patrol_state.gd" id="7_patrol"]
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_chase_state.gd" id="8_chase"]
 [ext_resource type="Script" path="res://scripts/enemies/states/drone_attack_state.gd" id="9_attack"]
-[ext_resource type="SpriteFrames" path="res://resources/enemies/shield_drone_frames.tres" id="10_frames"]
+[ext_resource type="SpriteFrames" path="res://resources/enemies/shield_drone_fly_frames.tres" id="10_frames"]
 [ext_resource type="Script" path="res://scripts/enemies/enemy_animation_controller.gd" id="11_animctrl"]
 
 [sub_resource type="RectangleShape2D" id="Rect_drone"]
@@ -28,10 +28,12 @@ shape = SubResource("Rect_drone")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
-position = Vector2(0, -8)
+position = Vector2(-1.4, 2.6)
+scale = Vector2(0.4, 0.4)
 sprite_frames = ExtResource("10_frames")
 animation = &"idle"
 autoplay = "idle"
+metadata/_tasks_geom = "TASK-058: floating eye-orb CENTERED on the (28,36) collision (no feet-seat). 96px source, opaque idle bbox 79x77 @ (12,3); scale 0.4 -> ~32x31px reads over the box; position offsets the opaque center to (0,0)."
 
 [node name="AnimationController" type="Node" parent="."]
 script = ExtResource("11_animctrl")

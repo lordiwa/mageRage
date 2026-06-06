@@ -18,6 +18,9 @@
 ##   ChargerWindUpState       -> "windup"
 ##   ChargerChargeState       -> "charge"
 ##   ChargerRecoveryState     -> "idle"   (no dedicated recovery anim; fallback)
+##   WardenPatrolState        -> "idle"   (TASK-058 boss)
+##   WardenChaseState         -> "walk"   (TASK-058 boss)
+##   WardenAttackState        -> "attack" (TASK-058 boss; one-shot wind-up/fire)
 ##   unknown / future state   -> "idle"   (safe default)
 ##
 ## Facing: the enemies have no `facing` field — they face the direction they move.
@@ -141,11 +144,11 @@ static func select_animation(state_name: String, _velocity: Vector2,
 	if attacking:
 		return "attack"
 	match state_name:
-		"DronePatrolState", "ChargerPatrolState":
+		"DronePatrolState", "ChargerPatrolState", "WardenPatrolState":
 			return "idle"
-		"DroneChaseState", "ChargerChaseState":
+		"DroneChaseState", "ChargerChaseState", "WardenChaseState":
 			return "walk"
-		"DroneAttackState":
+		"DroneAttackState", "WardenAttackState":
 			return "attack"
 		"ChargerWindUpState":
 			return "windup"
