@@ -6,24 +6,29 @@
 ##   - Electricity => DD-008 DOUBLE JUMP: a SECOND jump press in the air ->
 ##     FlightState (the game-changer). No dedicated `fly` action.
 ##   - touching floor -> MoveState
-## Also provides a one-shot air dash (Fire's explosive dash) on the "dash" input.
+##
+## TASK-054: one-shot air dash (Fire's explosive dash) on the "dash" input.
+## TASK-055: dash is now cooldown-REPEATABLE (replaces the one-per-airtime _dash_used
+## model) and shared via DashComponent (child of Player). The air dash is suppressed
+## while player.is_flight_suppressed() per DD-011.
 class_name JumpState extends EstadoBase
 
 const SPEED := 220.0
 const JUMP_VELOCITY := -380.0
-const DASH_SPEED := 460.0
-const DASH_TIME := 0.12
 
-var _dash_used := false
-var _dash_timer := 0.0
+## TASK-055: DASH_SPEED is now owned by DashComponent. This const is KEPT for backwards
+## compatibility with existing tests that reference JumpState.DASH_SPEED. It mirrors
+## DashComponent.DASH_SPEED — both must stay in sync.
+const DASH_SPEED := 700.0
 
 func enter() -> void:
-	_dash_timer = 0.0
 	player.velocity.y = JUMP_VELOCITY  # the leap impulse
-	_dash_used = false
 	# DD-008: register this leap so a subsequent air jump press is the genuine
 	# SECOND jump (-> flight). reset_jumps() runs on landing.
 	player.register_jump()
+	# NOTE: we do NOT reset the DashComponent cooldown on enter. The cooldown
+	# persists across state transitions (shared component on the Player) so a
+	# just-used dash cannot be reset by entering JumpState.
 
 func physics_update(delta: float) -> void:
 	var dir := Input.get_axis("move_left", "move_right")
@@ -31,23 +36,23 @@ func physics_update(delta: float) -> void:
 	if dir != 0.0 and not player.is_aiming():
 		player.facing = signf(dir)
 
-	# One explosive air dash (Fire). During the dash we override horizontal
-	# velocity and suppress gravity briefly for a snappy, deterministic burst.
-	if _dash_timer > 0.0:
-		_dash_timer -= delta
-		player.velocity.x = player.facing * DASH_SPEED
-		player.velocity.y = 0.0
+	# Resolve the shared DashComponent and tick its timers.
+	var dash := player.get_node_or_null("DashComponent") as DashComponent
+	if dash != null:
+		dash.update(delta)
+
+	# --- Active air dash burst ---
+	# During the burst: override velocity (via apply_burst), suppress gravity.
+	if dash != null and dash.is_dashing():
+		dash.apply_burst(player)
 		player.move_and_slide()
 		if player.is_on_floor():
 			transition_to("MoveState")
 		return
 
-	if player.abilities.has("fire") and not _dash_used \
-			and InputGate.just_pressed("dash"):
-		_dash_used = true
-		_dash_timer = DASH_TIME
-		player.velocity.x = player.facing * DASH_SPEED
-		player.velocity.y = 0.0
+	# --- Trigger a new air dash ---
+	# try_air_dash checks: cooldown + fire gate + input edge + suppression (DD-011).
+	if dash != null and dash.try_air_dash(player):
 		player.move_and_slide()
 		return
 

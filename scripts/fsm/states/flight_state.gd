@@ -4,6 +4,13 @@
 ## only reachable through the electricity-gated DOUBLE-JUMP transitions in
 ## JumpState / GlideState, so it needs no "am I unlocked?" flag of its own.
 ## DD-008: there is no toggle-out — flight ends only on landing.
+##
+## TASK-055: an air dash (Fire's horizontal burst) is now available in FlightState
+## via the shared DashComponent on the Player. The burst overrides the free-flight
+## velocity for DASH_TIME (velocity.y=0, horizontal only). Air dash is suppressed
+## while is_flight_suppressed() — but note that FlightState itself already drops to
+## MoveState when suppressed, so the dash-suppression guard in try_air_dash is a
+## belt-and-suspenders safety. The two guards are independent; both must hold.
 class_name FlightState extends EstadoBase
 
 const FLY_SPEED := 260.0
@@ -24,6 +31,28 @@ func physics_update(_delta: float) -> void:
 	# mid-activation; the drop fires on the first physics frame.)
 	if player.is_flight_suppressed():
 		transition_to("MoveState")
+		return
+
+	# Resolve the shared DashComponent and tick its timers.
+	var dash := player.get_node_or_null("DashComponent") as DashComponent
+	if dash != null:
+		dash.update(_delta)
+
+	# --- Active air dash burst (during the burst: override velocity, skip flight physics) ---
+	if dash != null and dash.is_dashing():
+		dash.apply_burst(player)
+		player.move_and_slide()
+		if player.is_on_floor():
+			transition_to("MoveState")
+		return
+
+	# --- Trigger a new air dash ---
+	# try_air_dash checks: cooldown + fire gate + input edge + suppression (DD-011).
+	# Suppression is belt-and-suspenders here: the sustain gate above already drops
+	# FlightState -> MoveState when suppressed, so try_air_dash's check is a
+	# safeguard in case suppression is set mid-frame.
+	if dash != null and dash.try_air_dash(player):
+		player.move_and_slide()
 		return
 
 	var input := Vector2(
