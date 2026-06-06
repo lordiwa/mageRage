@@ -1,0 +1,24 @@
+{
+  "key": "TASK-055",
+  "title": "Movement: unify the dash — repeatable in ALL air states (Jump/Glide/Flight), longer + faster, with anti-magic suppression + flight-bypass audit",
+  "description": "Playtest feedback: the dash should be LONGER and FASTER and should work IN THE AIR too. Current state after TASK-054: ground dash (MoveState) is cooldown-based and repeatable; the AIR dash (JumpState) is ONE-PER-AIRTIME (not repeatable); FlightState and GlideState have NO dash. The user wants a consistent, repeatable dash available while airborne (including flight/glide).\n\nUNIFY THE DASH so the same mechanic works in MoveState, JumpState, GlideState, and FlightState: a horizontal burst at DASH_SPEED in the player's facing for DASH_TIME (velocity.y = 0 during the burst — NO altitude gain), gravity suppressed for the burst, then the state's normal control resumes. Make it repeatable everywhere via a shared DASH_COOLDOWN (replace JumpState's one-per-airtime _dash_used model with the cooldown so air dashes repeat). Fire-gated, on the existing 'dash' input (RB/Shift) — NO input-map change.\n\nSINGLE SOURCE OF TRUTH: extract DASH_SPEED / DASH_TIME / DASH_COOLDOWN and the burst+cooldown logic into ONE shared place (e.g. a small Dash helper/component on the Player, or a shared base in EstadoBase) instead of duplicating across 4 states. This also removes the TASK-054 duplication/drift risk (the two-file mirror).\n\nTUNING (PROVISIONAL, tunable in playtest, DD-001): DASH_SPEED 460 -> 700; DASH_TIME 0.12 -> 0.16 (distance ~55px -> ~112px = longer + faster); DASH_COOLDOWN 0.35 -> 0.30. Keep them all easily tunable (const or @export).\n\nCRITICAL SAFETY — FLIGHT-BYPASS (this project has a history of dash/flight bypassing gates; corridor metrics ceiling-bottom -288 / floor-top +328; intended flight-gaps: FIRE elemental gate 28px/0px, anti-magic zone ~88px, boss ~98px top gap):\n- The AIR dash (while NOT on floor) MUST be SUPPRESSED while player.is_flight_suppressed() is true (inside an un-purged anti-magic zone), exactly like FlightState is suppressed — otherwise a ~112px horizontal air dash could cross the ~88px anti-magic flight-gap WITHOUT purging it (a bypass). The GROUND dash (on floor) is unaffected.\n- The dash gains NO altitude (velocity.y forced to 0, never negative), so it cannot clear a vertical over-a-wall flight-gap (e.g. the 98px boss top gap). The reviewer MUST do a COMPUTED flight-bypass audit with the NEW ~112px reach against every gate (FIRE gate, anti-magic zone, boss) and confirm NO new bypass — if any horizontal gap is now crossable, tighten (suppress near it / cap reach / keep it air-suppressed).\n- A dash must not let the hero leave the corridor or reach the boss room early.\n\nINTERACTIONS to preserve: jump still cancels/overrides a ground dash; landing ends an air dash; double-jump->flight, glide entry, coyote time, jump buffer all intact. Collision byte-identical. No dedicated dash animation exists (documented gap; movement anim used during the burst).\n\nFULL CEREMONY (gameplay/FSM/movement + gate-bypass risk): tests-first developer -> reviewer block-on-HIGH with an explicit computed flight-bypass audit. Update docs/DECISIONES-DISENO.md (Spanish) for the unified repeatable dash + new tuning.",
+  "acceptance_criteria": [
+    "The dash works and is REPEATABLE (after DASH_COOLDOWN) in MoveState, JumpState, GlideState, and FlightState — a horizontal burst in the facing direction with NO altitude gain (velocity.y == 0 during the burst).",
+    "Tuning applied and easily tunable: DASH_SPEED 700, DASH_TIME 0.16 (~112px), DASH_COOLDOWN 0.30 (provisional). Constants live in ONE shared place (no per-state duplication).",
+    "AIR dash (off floor) is SUPPRESSED while is_flight_suppressed() (un-purged anti-magic zone); ground dash unaffected. A computed flight-bypass audit confirms the ~112px reach creates NO new way to cross the FIRE gate, anti-magic zone, or boss gap, or to leave the corridor / reach the boss early.",
+    "Fire-gated; no input-map change (A stays Jump, dash stays RB/Shift); collision byte-identical; jump still cancels a ground dash; double-jump->flight / glide / coyote / jump-buffer all unchanged.",
+    "Tests-first: real-physics/unit tests cover dash fires + repeats after cooldown in each of the 4 states, no-op without Fire, air-dash suppressed in an anti-magic zone, and the bypass-relevant reachability stays gated; existing suite stays green.",
+    "Full GUT + crucial(61) green; gdlint clean; docs/DECISIONES-DISENO.md updated (unified repeatable dash + tuning + air suppression)."
+  ],
+  "status": "todo",
+  "priority": "high",
+  "labels": ["gameplay", "movement", "fsm", "dash", "balance", "gating"],
+  "assignee": null,
+  "depends_on": ["TASK-054"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-06T15:10:00.000Z",
+  "updated_at": "2026-06-06T15:10:00.000Z",
+  "jira_key": null
+}
