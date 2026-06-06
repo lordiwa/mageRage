@@ -47,6 +47,33 @@ func test_drone_attack_state_maps_to_attack() -> void:
 		"DroneAttackState -> attack (the cast pose)")
 
 
+## ---- warden (boss) states (TASK-058) ----------------------------------------
+
+func test_warden_patrol_maps_to_idle() -> void:
+	assert_eq(_sel("WardenPatrolState", Vector2.ZERO, false, false), "idle",
+		"WardenPatrolState -> idle (loop)")
+
+
+func test_warden_chase_maps_to_walk() -> void:
+	assert_eq(_sel("WardenChaseState", Vector2(60.0, 0.0), false, false), "walk",
+		"WardenChaseState -> walk (loop)")
+
+
+func test_warden_attack_state_maps_to_attack() -> void:
+	assert_eq(_sel("WardenAttackState", Vector2.ZERO, false, false), "attack",
+		"WardenAttackState -> attack (one-shot wind-up/fire pose)")
+
+
+func test_warden_hurt_overrides_state() -> void:
+	assert_eq(_sel("WardenChaseState", Vector2(60.0, 0.0), false, true), "hurt",
+		"hurt overrides the warden movement state -> hurt (a landed hit is loudest)")
+
+
+func test_warden_attacking_flag_overrides_movement() -> void:
+	assert_eq(_sel("WardenChaseState", Vector2(60.0, 0.0), true, false), "attack",
+		"the attacking one-shot flag overrides walk -> attack for the warden too")
+
+
 ## ---- charger states ---------------------------------------------------------
 
 func test_charger_patrol_maps_to_idle() -> void:

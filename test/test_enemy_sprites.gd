@@ -111,11 +111,59 @@ func _assert_feet_seated(node: CharacterBody2D, half_height: float) -> void:
 		"measured opaque feet seat on the collision bottom (~%.0f local y)" % half_height)
 
 
+## TASK-058: the FLOATING drones center their opaque bbox on the collision box
+## center (no feet-seating). Asserts the idle frame's opaque center maps near the
+## collision center (0,0) within tolerance.
+func _assert_centered(node: CharacterBody2D) -> void:
+	var sprite := node.get_node_or_null("Sprite") as AnimatedSprite2D
+	if sprite == null or sprite.sprite_frames == null:
+		pending("Sprite not yet AnimatedSprite2D — IMPL step pending")
+		return
+	if not sprite.sprite_frames.has_animation("idle"):
+		pending("idle animation not yet defined — IMPL step pending")
+		return
+	var tex := sprite.sprite_frames.get_frame_texture("idle", 0)
+	assert_not_null(tex, "idle frame 0 has a texture")
+	var img := tex.get_image()
+	var used := img.get_used_rect()
+	var frame_w := float(img.get_width())
+	var frame_h := float(img.get_height())
+	assert_true(sprite.centered, "the AnimatedSprite2D is centered (offset math assumes it)")
+	# Opaque bbox center in frame-local centered coords, then placed by scale+position.
+	var ocx := (float(used.position.x) + float(used.size.x) * 0.5) - frame_w * 0.5
+	var ocy := (float(used.position.y) + float(used.size.y) * 0.5) - frame_h * 0.5
+	var local_cx := ocx * sprite.scale.x + sprite.position.x
+	var local_cy := ocy * sprite.scale.y + sprite.position.y
+	assert_almost_eq(local_cx, 0.0, 2.0, "floating drone opaque center sits ~on collision center x")
+	assert_almost_eq(local_cy, 0.0, 2.0, "floating drone opaque center sits ~on collision center y")
+
+
+## TASK-058: assert the drone idle anim carries the 9-frame FLYING (eye-orb) set
+## from *_fly_frames.tres (the old bipedal builds were 4-frame idle).
+func _assert_fly_frames(node: CharacterBody2D) -> void:
+	var sprite := node.get_node_or_null("Sprite") as AnimatedSprite2D
+	if sprite == null or sprite.sprite_frames == null:
+		pending("Sprite not yet AnimatedSprite2D — IMPL step pending")
+		return
+	assert_eq(sprite.sprite_frames.get_frame_count("idle"), 9,
+		"the floating drone idle anim has 9 frames (the *_fly_frames.tres eye-orb set)")
+
+
 ## --- empire_drone ------------------------------------------------------------
 
 func test_empire_drone_sprite_is_animated() -> void:
 	var node: CharacterBody2D = await _make(EMPIRE_SCENE)
 	_assert_sprite(node, DRONE_ANIMS)
+
+
+func test_empire_drone_uses_fly_frames() -> void:
+	var node: CharacterBody2D = await _make(EMPIRE_SCENE)
+	_assert_fly_frames(node)
+
+
+func test_empire_drone_centered() -> void:
+	var node: CharacterBody2D = await _make(EMPIRE_SCENE)
+	_assert_centered(node)
 
 
 func test_empire_drone_collision_byte_identical() -> void:
@@ -127,16 +175,21 @@ func test_empire_drone_collision_byte_identical() -> void:
 	assert_eq(rect.size, DRONE_BODY_SIZE, "empire_drone collision is byte-identical (28, 36)")
 
 
-func test_empire_drone_feet_seated() -> void:
-	var node: CharacterBody2D = await _make(EMPIRE_SCENE)
-	_assert_feet_seated(node, DRONE_BODY_SIZE.y * 0.5)
-
-
 ## --- shield_drone ------------------------------------------------------------
 
 func test_shield_drone_sprite_is_animated() -> void:
 	var node: CharacterBody2D = await _make(SHIELD_SCENE)
 	_assert_sprite(node, DRONE_ANIMS)
+
+
+func test_shield_drone_uses_fly_frames() -> void:
+	var node: CharacterBody2D = await _make(SHIELD_SCENE)
+	_assert_fly_frames(node)
+
+
+func test_shield_drone_centered() -> void:
+	var node: CharacterBody2D = await _make(SHIELD_SCENE)
+	_assert_centered(node)
 
 
 func test_shield_drone_shield_color_rect_removed() -> void:
@@ -152,11 +205,6 @@ func test_shield_drone_collision_byte_identical() -> void:
 	var rect := col.shape as RectangleShape2D
 	assert_not_null(rect, "the collision shape is a RectangleShape2D")
 	assert_eq(rect.size, DRONE_BODY_SIZE, "shield_drone collision is byte-identical (28, 36)")
-
-
-func test_shield_drone_feet_seated() -> void:
-	var node: CharacterBody2D = await _make(SHIELD_SCENE)
-	_assert_feet_seated(node, DRONE_BODY_SIZE.y * 0.5)
 
 
 ## --- charger -----------------------------------------------------------------
