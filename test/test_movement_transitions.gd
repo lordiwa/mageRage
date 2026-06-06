@@ -365,11 +365,21 @@ func test_move_resets_jump_count_on_floor() -> void:
 		"being grounded resets the double-jump counter")
 
 
-# --- JumpState: air dash (AC5) --------------------------------------------
+# --- JumpState: air dash (AC5, TASK-055 updated) ---------------------------
+# TASK-055: JumpState now uses DashComponent for the dash. FakePlayer needs a
+# DashComponent child so the state can resolve it. DASH_SPEED is now 700.
 
-func test_jump_air_dash_bursts_in_facing_direction() -> void:
+func _make_fake_with_dash() -> FakePlayer:
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
+	var dash := DashComponent.new()
+	dash.name = "DashComponent"
+	fake.add_child(dash)
+	return fake
+
+
+func test_jump_air_dash_bursts_in_facing_direction() -> void:
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = false
 	fake.facing = 1.0
@@ -381,12 +391,13 @@ func test_jump_air_dash_bursts_in_facing_direction() -> void:
 	st.physics_update(0.016)
 
 	assert_eq(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
-		"air dash should burst horizontally in the facing direction")
+		"air dash should burst horizontally in the facing direction (DASH_SPEED=700)")
 
 
-func test_jump_air_dash_is_one_shot_per_airtime() -> void:
-	var fake := FakePlayer.new()
-	add_child_autofree(fake)
+func test_jump_air_dash_repeatable_after_cooldown() -> void:
+	# TASK-055: air dash is now REPEATABLE after DASH_COOLDOWN (replaces one-per-airtime).
+	# After waiting past the cooldown, a second dash must succeed.
+	var fake := _make_fake_with_dash()
 	fake.abilities = {"fire": true}
 	fake.on_floor = false
 	fake.facing = 1.0
@@ -395,19 +406,21 @@ func test_jump_air_dash_is_one_shot_per_airtime() -> void:
 	var st := _make_state(JumpState, fake)
 	st.enter()
 
-	# First dash consumes the single air dash.
+	# First dash fires.
 	_press_edge("dash")
 	st.physics_update(0.016)
-	Input.action_release("dash")
+	InputGate.clear_test_overrides()
 
-	# Let the dash window elapse so we are back to normal air control.
-	for i in range(20):
-		st.physics_update(0.016)
+	# Wait past DASH_COOLDOWN (0.30s).
+	var waited := 0.0
+	while waited < 0.50:
+		st.physics_update(0.05)
+		waited += 0.05
 
-	# A second dash press must NOT produce another burst.
+	# Second dash must succeed (cooldown elapsed).
 	fake.velocity = Vector2(0, 20)
 	_press_edge("dash")
 	st.physics_update(0.016)
 
-	assert_ne(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
-		"only one air dash is allowed per airtime")
+	assert_eq(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
+		"air dash is now REPEATABLE after DASH_COOLDOWN (TASK-055 replaces one-per-airtime)")

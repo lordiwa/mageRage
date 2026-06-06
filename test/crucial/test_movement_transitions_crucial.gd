@@ -152,9 +152,16 @@ func test_flight_to_move_when_on_floor() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-func test_jump_air_dash_is_one_shot_per_airtime() -> void:
+func test_jump_air_dash_cooldown_blocks_immediate_redash() -> void:
+	# TASK-055: air dash is now cooldown-repeatable. Verify the cooldown still BLOCKS
+	# an immediate re-dash (within DASH_COOLDOWN), then allows after cooldown elapses.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
+	# Attach a DashComponent so JumpState can resolve it (TASK-055 architecture).
+	var dash_comp := DashComponent.new()
+	dash_comp.name = "DashComponent"
+	fake.add_child(dash_comp)
+
 	fake.abilities = {"fire": true}
 	fake.on_floor = false
 	fake.facing = 1.0
@@ -163,19 +170,21 @@ func test_jump_air_dash_is_one_shot_per_airtime() -> void:
 	var st := _make_state(JumpState, fake)
 	st.enter()
 
-	# First dash consumes the single air dash.
+	# First dash fires.
 	_press_edge("dash")
 	st.physics_update(0.016)
-	Input.action_release("dash")
+	InputGate.clear_test_overrides()
 
-	# Let the dash window elapse so we are back to normal air control.
-	for i in range(20):
+	# Let the burst window elapse (~0.20s), staying within DASH_COOLDOWN (0.30s).
+	var waited := 0.0
+	while waited < 0.20:
 		st.physics_update(0.016)
+		waited += 0.016
 
-	# A second dash press must NOT produce another burst.
+	# Immediate re-dash must be BLOCKED (cooldown not yet elapsed).
 	fake.velocity = Vector2(0, 20)
 	_press_edge("dash")
 	st.physics_update(0.016)
 
 	assert_ne(fake.velocity.x, fake.facing * JumpState.DASH_SPEED,
-		"only one air dash is allowed per airtime")
+		"re-dash within DASH_COOLDOWN must be blocked (cooldown-repeatable model)")

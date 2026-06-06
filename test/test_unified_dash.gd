@@ -464,19 +464,28 @@ func test_cooldown_is_shared_across_states() -> void:
 	jump_st.physics_update(0.016)
 	InputGate.clear_test_overrides()
 
-	# Simulate landing: switch to MoveState WITHOUT waiting for cooldown.
+	# Verify the DashComponent is reachable on the fake player.
 	var dash_comp := fake.get_node_or_null("DashComponent") as DashComponent
 	assert_not_null(dash_comp, "DashComponent must exist on FakePlayer")
 
-	# Tick a short time (< DASH_COOLDOWN).
-	for _i in range(5):
+	# Tick past DASH_TIME (0.16s) so the burst expires, but stay well within
+	# DASH_COOLDOWN (0.30s). We pump ~0.20s total (burst done, cooldown still running).
+	var ticked := 0.016  # the initial physics_update already ticked once
+	while ticked < 0.22:
 		jump_st.physics_update(0.016)
+		ticked += 0.016
 
-	# Now switch perspective: MoveState on the same fake player.
+	# Now switch perspective: MoveState on the same fake player (same DashComponent).
 	fake.on_floor = true
 	var move_st := _make_state(MoveState, fake)
 	move_st.enter()
 
+	# Direct check: the DashComponent's cooldown must still be > 0.
+	# This asserts the shared-cooldown invariant directly.
+	assert_gt(dash_comp._dash_cooldown, 0.0,
+		"DashComponent._dash_cooldown must still be > 0 after 0.22s (DASH_COOLDOWN=0.30s)")
+
+	# Also verify try_ground_dash is blocked (the actual game behavior).
 	fake.velocity = Vector2.ZERO
 	_press_edge("dash")
 	move_st.physics_update(0.016)
