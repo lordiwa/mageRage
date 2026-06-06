@@ -82,6 +82,20 @@ enemigo debe forzar el cambio.
 - `LORE-BIBLE.md` se mantiene en inglés (es el system-prompt canónico para generación
   de lore; reescribirlo no aporta y rompería referencias).
 
+**Nota TASK-054 — Dash (suelo + aire, botón RB / Shift):**
+El dash opera en dos contextos: **en el aire** (`JumpState`, un único dash por airtime,
+existente desde M1) y **en el suelo** (`MoveState`, TASK-054, repeatable con cooldown).
+Ambos están gateados por Fuego y usan el mismo botón `dash` (RB = botón 10 / Shift).
+- **Dash aéreo:** velocidad 460 px/s, duración 0.12 s, **un único dash por airtime**
+  (se resetea al entrar a JumpState). Inalterable por TASK-054.
+- **Dash terrestre:** velocidad 460 px/s, duración 0.12 s, **cooldown 0.35 s** (PROVISIONAL,
+  tunable en playtest — DD-001) entre dashs consecutivos. Suprime gravedad durante el burst.
+  Un salto (buffered jump) sigue pudiendo cancelar el dash y transicionar a JumpState.
+- **ANIMACIÓN:** no existe sprite dedicado de dash en el set PixelLab (TASK-052). Durante
+  el burst breve (0.12 s) se usa la animación de movimiento vigente (walk/idle). Gap
+  documentado; un sprite de dash puede añadirse en el follow-up de TASK-053 si se desea.
+- **Binding definitivo:** RB (botón 10, right shoulder) / Shift — véase corrección en DD-007.
+
 ---
 
 ## DD-006 — Matchup elemento vs. armadura (RPS de combate)  ·  **PROVISIONAL**
@@ -117,12 +131,16 @@ teclado/mouse (additive — ambos activos a la vez). Layout estándar tipo Xbox:
 |---|---|---|
 | Mover / vertical (vuelo) | Stick izq (analógico) + D-pad | A/D o ←/→ ; W/S o ↑/↓ |
 | Salto | **A** (botón 0) | Espacio |
-| Dash | **B** (botón 1) | Shift |
+| Dash | ~~B (botón 1)~~ → **RB (botón 10)** | Shift |
 | Planeo (mantener) | **LT** / gatillo izq (mantener) | Alt |
 | Vuelo (toggle) | **Y** (botón 3) | F |
 | Lanzar hechizo | **RT** / gatillo der | E / clic izq |
 | Elemento directo (Fuego/Hielo/Elec) | **D-pad** ← / ↑ / → | 1 / 2 / 3 |
 | Ciclar elemento | **RB** sig / **LB** ant (botones 5/4) | Q |
+
+**Corrección TASK-054:** la fila "Dash" de esta tabla decía originalmente "B (botón 1)"
+que es incorrecto. El binding real (confirmado en DD-008 y en el `InputMap` del proyecto)
+es **RB = botón 10 (right shoulder) / Shift**. La tabla ahora refleja la corrección.
 
 **Notas técnicas:** sticks con deadzone ~0.3; `Input.get_axis` da movimiento analógico
 gratis. Gatillos = ejes 4 (LT) / 5 (RT) en Godot; planeo se mapea como *mantener*. El
@@ -131,6 +149,7 @@ queda como mejora futura. Layout afinable en playtest.
 
 > **Revisado por DD-008** — el layout de arriba (vuelo en Y, gatillos = planeo/cast,
 > un solo cast, element_cycle) queda reemplazado por el esquema de DD-008.
+> **Dash binding corregido por TASK-054:** B→RB (botón 10) en línea con DD-008 y el InputMap real.
 
 ---
 

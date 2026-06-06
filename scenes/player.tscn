@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://b8mageragepl0r"]
+[gd_scene load_steps=18 format=3 uid="uid://b8mageragepl0r"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/reticle.gd" id="15_reticle"]
@@ -16,6 +16,8 @@
 [ext_resource type="Resource" uid="uid://b8magerage00el" path="res://resources/spells/lightning.tres" id="11_elec"]
 [ext_resource type="Script" path="res://scripts/juice/screen_shake.gd" id="13_shake"]
 [ext_resource type="PackedScene" uid="uid://b8mageragesp01" path="res://scenes/impact_spark.tscn" id="16_flash"]
+[ext_resource type="SpriteFrames" path="res://resources/hero/hero_frames.tres" id="17_heroframes"]
+[ext_resource type="Script" path="res://scripts/player/animation_controller.gd" id="18_animctrl"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(24, 40)
@@ -26,19 +28,15 @@ script = ExtResource("1_player")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_1")
 
-[node name="Sprite" type="ColorRect" parent="."]
-offset_left = -12.0
-offset_top = -20.0
-offset_right = 12.0
-offset_bottom = 20.0
-color = Color(0.35, 0.85, 0.95, 1)
+[node name="Sprite" type="AnimatedSprite2D" parent="."]
+texture_filter = 1
+position = Vector2(2, -2)
+sprite_frames = ExtResource("17_heroframes")
+animation = &"idle"
+autoplay = "idle"
 
-[node name="FacingMark" type="ColorRect" parent="."]
-offset_left = 4.0
-offset_top = -6.0
-offset_right = 12.0
-offset_bottom = 6.0
-color = Color(1, 0.85, 0.3, 1)
+[node name="AnimationController" type="Node" parent="."]
+script = ExtResource("18_animctrl")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true

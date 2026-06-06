@@ -1,0 +1,23 @@
+{
+  "key": "TASK-053",
+  "title": "Hero art follow-up: PixelLab-generate dedicated GLIDE and DEATH animations to fill the TASK-052 gaps",
+  "description": "TASK-052 integrated the PixelLab hero but the export shipped NO dedicated animation for two states, so both currently use a fallback:\n- GlideState -> reuses the 'fall' (descending Two-Footed Jump) frames.\n- Death (respawn) -> holds the last frame of the 'hurt' (takedamage) animation.\n\nGenerate the two missing animations in PixelLab for the SAME hero ('technomagical elemental monk with human features in pixel art 16 bit mcfarlane style', 92x92, side view, 8 directions, mannequin template) so the visual matches the established style:\n- GLIDE: a sustained, controlled descent / wing-or-aura-spread hover-glide pose (loop), distinct from the limp 'fall'. Echo the cyan-energy aura used in the flight 'fighting_pose' set.\n- DEATH: a defeat/collapse sequence (one-shot, hold last frame) — distinct from the brief 'hurt' recoil.\n\nThen wire them: export east frames into assets/sprites/hero/ (gitignored bundle stays out), extend tools/build_hero_frames.gd to add 'glide' and 'death' animations to resources/hero/hero_frames.tres, and update scripts/player/animation_controller.gd select_animation() so GlideState -> 'glide' and the death path plays 'death' (reset the controller's death/hurt flag appropriately on respawn). Keep flip_h + nearest-filter conventions. Collision and movement behavior stay unchanged.\n\nDEPENDS on TASK-052. This is mostly art generation + a small wiring change (the select_animation mapping is already pure + unit-tested, so add the two new branches with tests). Full ceremony applies (the mapping is testable), but the bulk is the PixelLab generation step which the human drives.",
+  "acceptance_criteria": [
+    "A dedicated GLIDE animation (loop) and DEATH animation (one-shot) for the hero exist under assets/sprites/hero/ with PixelLab credit in assets/CREDITS.md.",
+    "tools/build_hero_frames.gd builds 'glide' and 'death' into hero_frames.tres reproducibly; both have correct loop flags (glide loops, death does not).",
+    "select_animation() maps GlideState -> 'glide' and the death path -> 'death'; the two new branches are unit-tested; the prior fallbacks are removed.",
+    "On respawn the controller cleanly returns to movement animation (no stuck death frame); collision + movement behavior unchanged.",
+    "Full GUT + crucial(61) green; gdlint clean."
+  ],
+  "status": "todo",
+  "priority": "low",
+  "labels": ["art", "hero", "sprites", "pixellab", "animation", "follow-up"],
+  "assignee": null,
+  "depends_on": ["TASK-052"],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-05T16:25:00.000Z",
+  "updated_at": "2026-06-05T16:25:00.000Z",
+  "jira_key": null
+}

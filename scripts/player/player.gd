@@ -78,7 +78,14 @@ var _flight_suppressed := false
 ## brief i-frames (no control stun); death respawns at the recorded start.
 ## Optional so movement-only fakes without a Health child still run.
 @onready var _health: Health = get_node_or_null("Health")
-@onready var _sprite: ColorRect = get_node_or_null("Sprite")
+## TASK-052: the sprite is now an AnimatedSprite2D. Typed as CanvasItem so
+## `.visible` still works for the i-frame blink, and null-guard remains so the
+## headless minimal-Player tests (no Sprite child) keep running unchanged.
+@onready var _sprite: CanvasItem = get_node_or_null("Sprite")
+## TASK-052: the animation controller drives FSM-state -> animation + flip_h.
+## Typed as Node (duck-typed) so headless tests without an AnimationController
+## child still pass; play_attack / play_hurt are called via has_method guard.
+@onready var _anim_ctrl: Node = get_node_or_null("AnimationController")
 var _iframes := Invulnerability.new()
 var _spawn_position := Vector2.ZERO
 var _blink_accum := 0.0
@@ -122,6 +129,9 @@ func take_player_damage(amount: float, hit_dir: Vector2 = Vector2.ZERO) -> void:
 	_health.take_damage(amount)
 	_iframes.trigger()
 	_emit_hit_feedback(amount, hit_dir)
+	# TASK-052: play the hurt animation on a landed hit.
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_hurt"):
+		_anim_ctrl.play_hurt()
 	if _health.is_dead():
 		respawn()
 
@@ -380,8 +390,14 @@ func _drive_held_casts(primary_held: bool, secondary_held: bool, delta: float) -
 	# In combo mode, mute both singles this frame; otherwise singles run as TASK-038.
 	var fire_primary := primary_held and not suppress_singles
 	var fire_secondary := secondary_held and not suppress_singles
-	mgr.try_cast_primary_held(origin, aim, fire_primary, delta)
-	mgr.try_cast_secondary_held(origin, aim, fire_secondary, delta)
+	# TASK-052: track whether any shot fires this frame so we can trigger the
+	# attack animation. try_cast_*_held returns bool via an untyped (Node) manager,
+	# so capture into Variant then coerce to bool to satisfy the type checker.
+	var _primary_result = mgr.try_cast_primary_held(origin, aim, fire_primary, delta)
+	var _secondary_result = mgr.try_cast_secondary_held(origin, aim, fire_secondary, delta)
+	var shot_fired_this_frame: bool = bool(_primary_result) or bool(_secondary_result)
+	if shot_fired_this_frame and _anim_ctrl != null and _anim_ctrl.has_method("play_attack"):
+		_anim_ctrl.play_attack()
 
 ## Read-only accessors for the HUD (decoupled: the HUD polls, the player exposes).
 func current_mana() -> float:

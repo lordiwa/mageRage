@@ -13,6 +13,29 @@ the attribution below is provided as courtesy.
 - **Use:** the three authored horizontal-parallax layers (far / mid / near) skinning
   the sector_02 `Parallax2D` backdrop (`scenes/parallax_background.tscn`).
 
+## Hero sprites
+
+### `assets/sprites/hero/` — technomagical elemental monk hero (player character)
+- **Files:** `idle/` (9f), `walk/` (4f), `jump/` (7f), `flight/` (9f), `attack/` (9f), `hurt/` (9f)
+  — all EAST-facing frames only (flip_h used for left-facing; west sets not imported).
+- **Author:** Generated via [PixelLab](https://www.pixellab.ai/) by the project owner.
+- **Character prompt:** "technomagical elemental monk with human features in pixel art 16 bit mcfarlane style"
+- **Size:** 92x92 px per frame, side-view, 8-direction mannequin template.
+- **PixelLab group_id:** `2d846152-f61f-44f5-b0e0-16cc081e4697`
+- **Usage rights:** Project owner generated and holds rights to use these assets.
+- **Animation sources (from metadata.json):**
+  - idle ← `The_character_shifts_their_weight_slightly_drawing-9493b1eb` east (technomagical_elemental_monk_with_human)
+  - walk ← `Walking-9b229e6c` east (technomagical_elemental_monk_with_human)
+  - jump/fall ← `Two-Footed_Jump-719410fa` east — rising frames = jump, descending = fall
+  - flight ← `The_bald_fighter_suspended_in_mid-air_with_a_glowi-5f192d39` east (fighting_pose_while)
+  - attack ← `attack-4f63bc26` east (fighting_pose_while)
+  - hurt ← `takedamage-59543786` east (technomagical_elemental_monk_with_human)
+- **Gaps documented:** glide (GlideState) falls back to "fall" frames; death has no anim (holds last hurt frame).
+- **Rendering:** the hero AnimatedSprite2D carries a per-node `texture_filter = 1`
+  (CanvasItem NEAREST) so the pixel-art renders crisp/unblurred. The project-wide
+  `default_texture_filter` is left at Linear so the downscaled (scale 0.2) parallax
+  skyline backgrounds don't alias; the per-node override targets only the hero.
+
 ## Tilesets
 
 ### `assets/tilesets/city/` — industrial City tiles (sector_02 surface skin)
