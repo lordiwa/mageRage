@@ -65,10 +65,13 @@ func test_warden_exposes_project_gravity_vector() -> void:
 	var boss := _make_warden()
 	assert_true(boss.has_method("gravity_vector"),
 		"the Warden exposes gravity_vector() for the FSM states to apply")
-	# Reuse the project convention (get_gravity, like the player/charger) — a real
-	# downward pull, not an invented value.
-	assert_eq(boss.gravity_vector(), boss.get_gravity(),
-		"gravity_vector() reuses the project gravity convention (get_gravity)")
+	# Reuse the project convention (get_gravity / the documented project default), not
+	# an invented value: the boss is pulled DOWN by the project default gravity.
+	var mag := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
+	var dir: Vector2 = ProjectSettings.get_setting(
+		"physics/2d/default_gravity_vector", Vector2.DOWN)
+	assert_eq(boss.gravity_vector(), dir * mag,
+		"gravity_vector() reuses the project gravity convention (default_gravity * vector)")
 	assert_gt(boss.gravity_vector().y, 0.0,
 		"the project gravity pulls the boss DOWN (positive y)")
 
@@ -79,6 +82,7 @@ func test_chase_applies_gravity_downward() -> void:
 	var boss := _make_warden()
 	boss.global_position = Vector2.ZERO
 	_set_target(boss, Vector2(500, 0))   # to the right, in aggro range, far enough to chase
+	boss.mark_attacked()                 # cooldown not ready -> stay in Chase (don't dive to Attack)
 	boss.velocity = Vector2.ZERO
 	var chase := _make_state(
 		"res://scripts/enemies/states/warden_chase_state.gd", boss, "WardenChaseState")
@@ -107,6 +111,7 @@ func test_chase_pursues_horizontally_toward_target() -> void:
 	var boss := _make_warden()
 	boss.global_position = Vector2.ZERO
 	_set_target(boss, Vector2(500, -500))   # up-right: only the x sign should drive pursuit
+	boss.mark_attacked()                     # stay in Chase (cooldown not ready)
 	boss.velocity = Vector2.ZERO
 	var chase := _make_state(
 		"res://scripts/enemies/states/warden_chase_state.gd", boss, "WardenChaseState")
@@ -122,6 +127,7 @@ func test_chase_horizontal_speed_honors_ice_slow() -> void:
 	boss.global_position = Vector2.ZERO
 	_set_target(boss, Vector2(500, 0))
 	boss.apply_elemental_hit(FIRE, 0.0, true)   # set the DD-009 slow flag (no damage)
+	boss.mark_attacked()                        # stay in Chase (cooldown not ready)
 	boss.velocity = Vector2.ZERO
 	var chase := _make_state(
 		"res://scripts/enemies/states/warden_chase_state.gd", boss, "WardenChaseState")
