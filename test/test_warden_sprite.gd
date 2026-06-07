@@ -127,5 +127,25 @@ func test_warden_feet_seated() -> void:
 	var collision_bottom_y := WARDEN_BODY_SIZE.y * 0.5   # shape center at (0,0)
 	# Tolerance a touch looser than the drones: the big-but-fair boss scale is a
 	# documented playtest tweak, but feet should still land near the floor.
+	# TASK-059: scale bumped 0.4 -> 0.85 (HUGE tank read; opaque idle ~104px tall,
+	# >= the 96px collision height — a touch of hitbox overhang is fine for a boss),
+	# feet re-seated on the (72,96) collision bottom (+48) via Sprite position.y.
 	assert_almost_eq(local_feet_y, collision_bottom_y, 3.0,
 		"measured opaque feet seat on the boss collision bottom (~%.0f local y)" % collision_bottom_y)
+
+
+## TASK-059: assert the boss reads BIG — the opaque idle sprite height (at the scene
+## scale) is at least the 96px collision height, so the boss is a "huge tank" on screen.
+func test_warden_reads_large() -> void:
+	var node: CharacterBody2D = await _make()
+	var sprite := node.get_node_or_null("Sprite") as AnimatedSprite2D
+	if sprite == null or sprite.sprite_frames == null \
+			or not sprite.sprite_frames.has_animation("idle"):
+		pending("idle animation not yet defined — IMPL step pending")
+		return
+	var tex := sprite.sprite_frames.get_frame_texture("idle", 0)
+	var img := tex.get_image()
+	var used := img.get_used_rect()
+	var opaque_h := float(used.size.y) * sprite.scale.y
+	assert_gte(opaque_h, WARDEN_BODY_SIZE.y,
+		"the boss opaque sprite height (%.0fpx) reads BIG: >= the 96px collision height" % opaque_h)
