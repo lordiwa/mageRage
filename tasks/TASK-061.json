@@ -1,0 +1,29 @@
+{
+  "key": "TASK-061",
+  "title": "sector_02 backdrop: swap city skyline for an ice-cavern wall + fix parallax level-wide coverage",
+  "description": "Playtest feedback after the dark-ice terrain re-skin (TASK-060): the city skyline backdrop no longer fits the theme. Swapped it for the ice-cavern wall art (matches the dark-ice floors), sector_02-only (parallax_background.tscn is instanced only by sector_02; sector_01 untouched). VISUAL-ONLY.\n\nAlso fixes a parallax COVERAGE bug found in the first attempt: with a small repeat_size the Parallax2D layers ran out past the first screen ('se queda en la primera parte del nivel, pasas mas alla y no sirve'). Root cause: Parallax2D draws only ~repeat_size of tiled content around the camera, so repeat_size must be a multiple of the texture tile AND wider than the viewport.\n\nScope:\n- assets/parallax/ice_cave/ (cave_far.png, cave_near.png — 512x256 tileable ice-cave walls, copied from the gitignored super_pixel_ice_cavern style_A pack) + CREDITS attribution; the old assets/parallax/sector_02/ skyline kept on disk (now unreferenced).\n- scenes/parallax_background.tscn: the 3 Parallax2D layers (unchanged structure: scroll 0.15/0.45/0.80, y=1, z behind playfield, fill ColorRect z=-40) now tile the cave-wall textures across a 2048px region with repeat_size=(2048,0) (4x the 512 tile, > viewport) so the backdrop covers the whole clamped level; per-depth modulate (far opaque, mid/near semi-transparent) for layered depth; NEAREST.\n- levels/sector_02.tscn: softened the Backdrop instance modulate (the old value was tuned for the bright city skyline).\n- .claude/skills/parallax2d/SKILL.md: corrected the stale repeat_size=(0,0) guidance and added the COVERAGE RULE (repeat_size.x > 0, multiple of the tile, wider than the viewport).\n\nGreen: full GUT 858/858 (incl. the repeat_size.x>0 structure test), gdlint clean. Coverage verified with screenshots at level start/middle/far-right. NOTE: parallax MOTION can only be confirmed in a live playtest (headless/static stills show coverage, not scroll) — config matches the proven city pattern so motion is expected to work.",
+  "acceptance_criteria": [
+    "sector_02's backdrop is the ice-cavern wall art (not the city skyline), matching the dark-ice terrain; sector_01 is unaffected.",
+    "The backdrop covers the ENTIRE camera-clamped level (start, middle, and far-right boss area) with no void past the first screen.",
+    "The 3-layer Parallax2D structure is preserved (scroll 0.15/0.45/0.80, y=1, z behind playfield, fill at z=-40) and all parallax/visual-bounds structure tests pass, including repeat_size.x>0.",
+    "Full GUT suite green, gdlint clean; committed art under assets/ with CREDITS attribution; parallax2d SKILL updated with the coverage rule."
+  ],
+  "status": "in_review",
+  "priority": "medium",
+  "labels": [
+    "art",
+    "sector_02",
+    "parallax",
+    "background",
+    "bugfix",
+    "follow-up"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-07T02:55:13.932Z",
+  "updated_at": "2026-06-07T02:55:18.572Z",
+  "jira_key": null
+}

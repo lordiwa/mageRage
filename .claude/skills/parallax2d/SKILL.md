@@ -64,7 +64,7 @@ are negative so the playfield (player, tiles, enemies) always draws in front.
 |---|---|---|---|---|
 | `scroll_scale` | Vector2 | (1, 1) | Speed multiplier vs. camera. <1 = farther/slower, >1 = closer/faster | **x = 0.15 / 0.45 / 0.80** (far/mid/near); **y = 1.0** |
 | `scroll_offset` | Vector2 | (0, 0) | Manual offset of the node's contents | (0, 0) default |
-| `repeat_size` | Vector2 | (0, 0) | Repeats children every N px for an infinite-scroll loop; (0,0) = no repeat | **(0, 0)** — finite greybox, no looping |
+| `repeat_size` | Vector2 | (0, 0) | Repeats children every N px for an infinite-scroll loop; (0,0) = no repeat | **x > 0** (real art, since TASK-042) — see the COVERAGE rule below; y = 0 |
 | `autoscroll` | Vector2 | (0, 0) | Constant auto-scroll velocity (px/s), independent of camera | **(0, 0) — OFF** for deterministic tests |
 | `follow_viewport` | bool | true | When true, the node is offset by the active camera's position (this is what makes parallax track the camera) | **true** |
 
@@ -135,8 +135,16 @@ func test_three_parallax_layers_with_increasing_scroll() -> void:
   `CanvasLayer`-based pair, and our levels are all `Node2D`.
 - **Do** keep `scroll_scale.x` strictly increasing far → near (0.15 < 0.45 < 0.80) and Y
   at 1.0 — *because* lower = farther, and we only parallax horizontally.
-- **Do** leave `autoscroll` off and `repeat_size = (0,0)` — *because* a deterministic,
-  finite backdrop is what GUT can assert.
+- **Do** leave `autoscroll` off — *because* a deterministic backdrop is what GUT can assert.
+- **COVERAGE RULE (real art, since TASK-042):** each layer must TILE so the backdrop
+  covers the WHOLE camera-clamped level, not just the start. Set `repeat_size.x > 0`
+  (there is a test enforcing this) AND make it **(a) a multiple of the texture's tiled
+  width** so the wrap is seamless, and **(b) WIDER THAN THE VIEWPORT** (~1152px). Parallax2D
+  draws only ~`repeat_size` worth of content around the camera; if `repeat_size` is small
+  (e.g. 512) the layer runs out as the camera travels and you get a void past the first
+  screen. The ice-cave backdrop uses a 512px tile tiled across a 2048px region with
+  `repeat_size = (2048, 0)` (4 tiles, > viewport). Keep `repeat_size.y = 0` (no vertical
+  tiling; the sprite's region just needs to be tall enough for the clamped vertical view).
 - **Do** rely on `follow_viewport = true` for camera tracking — *because* it auto-reads
   the active `Player/Camera2D` with zero camera-script changes.
 - **Don't** assert parallax motion/position in headless tests — *because* there is no
