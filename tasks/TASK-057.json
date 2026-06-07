@@ -8,7 +8,7 @@
     "Block gameplay, collision shapes (28x36), and AI behavior are byte-identical to post-TASK-056; existing shield/block + drone tests stay green.",
     "GUT crucial(61) + full suites green; gdlint clean."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "art",
@@ -27,9 +27,14 @@
       "author": "orchestrator",
       "at": "2026-06-07T00:55:53.195Z",
       "body": "DONE local on branch task-057-shield-tell (commit 5e5c248), NOT pushed (human go required per repo etiquette).\n\nApproach: VISUAL-ONLY direct fix (lighter-process rule — pure visual node bound to existing, already-unit-tested wiring; no logic/collision touched, so no separate reviewer chain). TASK-056 had removed the directional \"Shield\" ColorRect from scenes/shield_drone.tscn but LEFT all the shield-visual wiring in shield_drone.gd intact and null-guarded (_refresh_shield_visual / _on_blocked clink / _play_dissolve fade, plus SHIELD_UP_COLOR cyan a=0.9 vs SHIELD_DOWN_COLOR cyan a=0.12). Fix = re-add the \"Shield\" ColorRect node (restored to the exact pre-TASK-056 proven values: 10x32 cyan bar, offset 22px in front), placed AFTER the Sprite so it draws on top of the pixel-art orb. The existing code now drives it: bright cyan UP / faint ghost DOWN, tracks facing, white clink flash on block, fades on death. Cyan=ICE armor language kept.\n\nSafety gate HELD: collision (28,36) byte-identical (test_shield_drone_collision_byte_identical green), block logic + AI + ShieldLogic untouched (no .gd change). Flipped the TASK-056 structural test test_shield_drone_shield_color_rect_removed -> test_shield_drone_has_shield_tell (asserts node present + reads brighter UP than DOWN via set_shield_for_test). Crucial set has no copy of it (verified).\n\nGREEN: full GUT 856/856, crucial 61/61, gdlint clean, headless --import OK.\n\nREMAINING (human): (a) live playtest sector_02 to confirm the bar reads at-a-glance over the 0.4-scaled ICE orb (size/offset are DIRECT tweaks if it reads small); (b) on go: push + PR + CI + merge."
+    },
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T01:05:57.129Z",
+      "body": "MERGED to master via PR #9 (merge commit 53687c5), CI GREEN (gdlint pass + GUT crucial core 61 pass; nightly skipped). Branch task-057-shield-tell pushed, PR merged, remote + local branch deleted, local master synced to 53687c5. The Shield Drone shield UP/DOWN tell is LIVE on master. Closing as done. Remaining is the optional live-playtest DIRECT tweak of the cyan bar size/offset over the 0.4-scaled ICE orb if it reads small."
     }
   ],
   "created_at": "2026-06-06T22:20:23.302Z",
-  "updated_at": "2026-06-07T00:55:55.559Z",
+  "updated_at": "2026-06-07T01:05:57.600Z",
   "jira_key": null
 }
