@@ -121,7 +121,11 @@ func _ready() -> void:
 	collision_mask = 0
 	set_collision_layer_value(3, true)
 	set_collision_mask_value(1, true)
-	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	# TASK-059: a GROUNDED heavy tank (gravity ON), not a FLOATING flier. The FSM
+	# states apply gravity_vector() each physics step + call move_and_slide so the
+	# boss falls to / rests on the floor and pursues the hero horizontally only
+	# (it no longer flies diagonally/vertically). Mirrors the Charger ground idiom.
+	motion_mode = CharacterBody2D.MOTION_MODE_GROUNDED
 	if _health != null:
 		_health.max_health = max_health
 		_health.current_health = max_health
@@ -290,6 +294,30 @@ func steer_toward_player() -> Vector2:
 	if target == null:
 		return Vector2.ZERO
 	return DroneAi.steer_direction(global_position, target.global_position)
+
+## TASK-059: HORIZONTAL pursuit sign toward the hero (-1 left / +1 right / 0 none).
+## The grounded tank chases along x only; gravity owns velocity.y, so this drops any
+## vertical component (no flight). Pure + testable; null-target -> 0 (holds still).
+func horizontal_steer_sign() -> float:
+	if target == null:
+		return 0.0
+	return signf(target.global_position.x - global_position.x)
+
+## TASK-059: the project gravity for the FSM states to apply each step (mirrors how
+## the player MoveState + the Charger read get_gravity()). Grounded heavy tank, so
+## this is the project default down-vector — no invented value. In-game get_gravity()
+## is authoritative (it respects gravity areas); when the physics state hasn't yet
+## populated it (e.g. a freshly-added body, headless unit tests) we fall back to the
+## documented project convention (ProjectSettings physics/2d/default_gravity), so the
+## boss is reliably pulled DOWN either way.
+func gravity_vector() -> Vector2:
+	var g := get_gravity()
+	if g != Vector2.ZERO:
+		return g
+	var mag := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
+	var dir: Vector2 = ProjectSettings.get_setting(
+		"physics/2d/default_gravity_vector", Vector2.DOWN)
+	return dir * mag
 
 ## DD-009 Ice control multiplier (0.5 while slowed, 1.0 otherwise) — move + attack.
 func speed_multiplier() -> float:

@@ -5,6 +5,10 @@
 ## wind-up) it fires the phase pattern (aimed / fan / sweep), resets its cooldown,
 ## and returns to Chase. The wind-up honors the DD-009 Ice SLOW (a slowed boss winds
 ## up more slowly), so freezing it truly buys the player time.
+##
+## TASK-059: GROUNDED heavy tank — during the telegraph hold the boss holds still
+## HORIZONTALLY (velocity.x = 0) but gravity is still applied + move_and_slide called
+## each step so it stays seated on the floor while winding up (it never floats).
 extends EstadoBase
 
 var _telegraph := 0.0
@@ -24,6 +28,10 @@ func physics_update(delta: float) -> void:
 		boss.end_telegraph()
 		transition_to("WardenPatrolState")
 		return
+	# Hold horizontally still during the wind-up; gravity still settles it on the floor.
+	boss.velocity.x = 0.0
+	boss.velocity += boss.gravity_vector() * delta
+	boss.move_and_slide()
 	# A slowed boss winds up more slowly (Ice control identity, DD-009).
 	_telegraph += delta * boss.speed_multiplier()
 	if DroneAi.telegraph_elapsed(_telegraph, boss.phase_windup()):
