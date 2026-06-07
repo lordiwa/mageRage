@@ -6,12 +6,26 @@ the attribution below is provided as courtesy.
 
 ## Parallax backgrounds
 
-### `assets/parallax/sector_02/` — industrial skyline (sector_02 backdrop)
+### `assets/parallax/ice_cave/` — ice-cavern wall backdrop (sector_02, current)
+- **Files:** `cave_far.png`, `cave_near.png` (512x256 tileable ice-cave wall textures).
+- **Pack:** "Super Pixel" ice-cavern terrain set, **style_A** (`bg_cave_far` / `bg_cave_near`).
+- **Author / source:** `AssetBundles/newTerrain/.../super_pixel_ice_cavern` (gitignored
+  raw pack; only the used PNGs are committed here).
+- **Usage rights:** Project owner holds rights to use and commit these assets.
+- **Use:** replaces the old city skyline so the backdrop matches the dark-ice terrain
+  re-skin. The 3 `Parallax2D` layers (`scenes/parallax_background.tscn`, scroll
+  0.15/0.45/0.80) each tile a cave-wall Sprite2D across a 2048px region with
+  `repeat_size.x = 2048` (a multiple of the 512 tile, wider than the viewport, so it
+  covers the whole clamped level — not just the start) and per-depth `modulate` (far
+  opaque, mid/near semi-transparent) for layered depth. Dimmed further by the sector_02
+  Backdrop instance `modulate`. NEAREST-filtered.
+
+### `assets/parallax/sector_02/` — industrial skyline (legacy; kept for reuse)
 - **Files:** `Background_Layer_1.png`, `Background_Layer_2.png`, `Background_Layer_3.png`
 - **Author:** Franco Giachetti / Simirk
 - **Pack:** "City / Industrial Platform Tileset"
-- **Use:** the three authored horizontal-parallax layers (far / mid / near) skinning
-  the sector_02 `Parallax2D` backdrop (`scenes/parallax_background.tscn`).
+- **Use:** the original three horizontal-parallax skyline layers (far / mid / near). No
+  longer referenced after the ice-cave backdrop swap; kept on disk for possible reuse.
 
 ## Hero sprites
 

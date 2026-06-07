@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T02:28:02.197Z",
+  "generated_at": "2026-06-07T02:55:18.572Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -353,6 +353,12 @@
       "key": "TASK-060",
       "title": "sector_02 DARK re-skin: dark-ice terrain (floors/walls/gates) + dim skyline + Warden HP bar moved to top & encounter-only (TASK-030)",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-061",
+      "title": "sector_02 backdrop: swap city skyline for an ice-cavern wall + fix parallax level-wide coverage",
+      "status": "in_review",
       "priority": "medium"
     }
   ]

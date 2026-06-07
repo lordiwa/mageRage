@@ -1,59 +1,67 @@
 [gd_scene load_steps=5 format=3 uid="uid://b8mageparallaxbg"]
 
 [ext_resource type="Script" path="res://scripts/levels/parallax_background.gd" id="1_backdrop"]
-[ext_resource type="Texture2D" uid="uid://kqapcdxjgv7k" path="res://assets/parallax/sector_02/Background_Layer_1.png" id="2_far"]
-[ext_resource type="Texture2D" uid="uid://b5v1q1xcktu1w" path="res://assets/parallax/sector_02/Background_Layer_2.png" id="3_mid"]
-[ext_resource type="Texture2D" uid="uid://k1sshbsypvsu" path="res://assets/parallax/sector_02/Background_Layer_3.png" id="4_near"]
+[ext_resource type="Texture2D" path="res://assets/parallax/ice_cave/cave_far.png" id="2_far"]
+[ext_resource type="Texture2D" path="res://assets/parallax/ice_cave/cave_near.png" id="3_near"]
 
 [node name="ParallaxBackground" type="Node2D"]
 script = ExtResource("1_backdrop")
 
 [node name="Background" type="ColorRect" parent="."]
 z_index = -40
-offset_left = -200.0
-offset_top = -600.0
-offset_right = 4400.0
-offset_bottom = 600.0
-color = Color(0.05, 0.06, 0.1, 1)
+offset_left = -1200.0
+offset_top = -800.0
+offset_right = 5600.0
+offset_bottom = 800.0
+color = Color(0.04, 0.05, 0.09, 1)
 
 [node name="FarSky" type="Parallax2D" parent="."]
 z_index = -30
 scroll_scale = Vector2(0.15, 1)
-repeat_size = Vector2(900, 0)
+repeat_size = Vector2(2048, 0)
 autoscroll = Vector2(0, 0)
 follow_viewport = true
 
 [node name="Skyline" type="Sprite2D" parent="FarSky"]
+texture_filter = 1
 texture_repeat = 2
-position = Vector2(-200, -380)
-scale = Vector2(0.2, 0.2)
+position = Vector2(-1024, -800)
 texture = ExtResource("2_far")
 centered = false
+modulate = Color(0.62, 0.68, 0.8, 1)
+region_enabled = true
+region_rect = Rect2(0, 0, 2048, 1600)
 
 [node name="MidStructures" type="Parallax2D" parent="."]
 z_index = -25
 scroll_scale = Vector2(0.45, 1)
-repeat_size = Vector2(900, 0)
+repeat_size = Vector2(2048, 0)
 autoscroll = Vector2(0, 0)
 follow_viewport = true
 
 [node name="Skyline" type="Sprite2D" parent="MidStructures"]
+texture_filter = 1
 texture_repeat = 2
-position = Vector2(-200, -340)
-scale = Vector2(0.2, 0.2)
-texture = ExtResource("3_mid")
+position = Vector2(-1024, -800)
+texture = ExtResource("3_near")
 centered = false
+modulate = Color(0.5, 0.56, 0.68, 0.5)
+region_enabled = true
+region_rect = Rect2(0, 0, 2048, 1600)
 
 [node name="NearPillars" type="Parallax2D" parent="."]
 z_index = -20
 scroll_scale = Vector2(0.8, 1)
-repeat_size = Vector2(900, 0)
+repeat_size = Vector2(2048, 0)
 autoscroll = Vector2(0, 0)
 follow_viewport = true
 
 [node name="Skyline" type="Sprite2D" parent="NearPillars"]
+texture_filter = 1
 texture_repeat = 2
-position = Vector2(-200, 40)
-scale = Vector2(0.2, 0.2)
-texture = ExtResource("4_near")
+position = Vector2(-1024, -800)
+texture = ExtResource("3_near")
 centered = false
+modulate = Color(0.55, 0.6, 0.72, 0.3)
+region_enabled = true
+region_rect = Rect2(0, 0, 2048, 1600)
