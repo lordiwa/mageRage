@@ -7,7 +7,7 @@
     "Arena.tscn boss HUD behavior is unchanged (the arena boss is awake from the start, so its HUD should still show as before).",
     "Full GUT suite stays green exit 0 (run multiple times, flake-aware), gdlint clean, no new stderr noise."
   ],
-  "status": "todo",
+  "status": "done",
   "priority": "low",
   "labels": [
     "godot",
@@ -19,8 +19,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T02:28:02.043Z",
+      "body": "RESOLVED as part of TASK-060 / PR #10 (merge commit 3321246), CI green. Implemented generically in the shared scripts/ui/boss_hud.gd: the bar (track+fill+label) is hidden while the boss reports is_dormant() (un-triggered traversal) or is_defeated(), and appears once the Warden is activated at the encounter — covering sector_01 AND sector_02 with one change. Arena's always-awake boss reports not-dormant so its HUD still shows from the start (criterion 2 held). Used dormant/defeated polling (boss_hud already polls each frame) instead of wiring encounter_started, but the visible-on-encounter result is identical. Also moved the bar to the top so it no longer blocks gameplay (playtest ask). Deterministic tests added in test_sector_02.gd; crucial 61/61 + sector/gate/zone suites green, gdlint clean. Closing done."
+    }
+  ],
   "created_at": "2026-06-04T20:43:40.952Z",
-  "updated_at": "2026-06-04T20:43:40.952Z",
+  "updated_at": "2026-06-07T02:28:02.197Z",
   "jira_key": null
 }

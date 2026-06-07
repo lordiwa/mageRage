@@ -9,7 +9,7 @@
     "The Warden HP bar sits at the top (clear of the player HUD) and only appears during the encounter (hidden while dormant/defeated); arena's always-awake boss still shows its bar.",
     "GUT crucial(61) + sector_02/gate/zone suites green; gdlint clean; committed art under assets/ with CREDITS attribution."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "art",
@@ -23,8 +23,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T02:27:30.706Z",
+      "body": "MERGED to master via PR #10 (merge commit 3321246), CI GREEN (gdlint + GUT crucial 61; nightly skipped). Branch task-060-dark-reskin deleted (origin). Dark-ice re-skin of sector_02 (floors/walls/ledges + both gates framed in dark ice keeping DD-003 telegraphs + dimmed skyline) and the Warden HP bar (moved top-right, encounter-only via boss_hud visibility — also resolves TASK-030's bar-at-spawn concern) are LIVE on master. Theme chosen by human (ice darkened). Style/tile swappable as a DIRECT tweak. Closing done."
+    }
+  ],
   "created_at": "2026-06-07T02:23:23.308Z",
-  "updated_at": "2026-06-07T02:24:17.899Z",
+  "updated_at": "2026-06-07T02:27:31.045Z",
   "jira_key": null
 }

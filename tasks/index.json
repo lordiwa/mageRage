@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T02:24:17.899Z",
+  "generated_at": "2026-06-07T02:28:02.197Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -178,7 +178,7 @@
     {
       "key": "TASK-030",
       "title": "Polish: gate boss HP HUD visibility on encounter start (don't show the Warden bar during traversal)",
-      "status": "todo",
+      "status": "done",
       "priority": "low"
     },
     {
@@ -352,7 +352,7 @@
     {
       "key": "TASK-060",
       "title": "sector_02 DARK re-skin: dark-ice terrain (floors/walls/gates) + dim skyline + Warden HP bar moved to top & encounter-only (TASK-030)",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     }
   ]
