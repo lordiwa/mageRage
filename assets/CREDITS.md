@@ -109,6 +109,29 @@ ground-guardian enemy.
 
 ## Tilesets
 
+### `assets/tilesets/ice/` — dark-ice crystalline terrain (sector_02 DARKER surface re-skin)
+- **Files:** `ice_fill_A.png` (16x16 crystalline interior fill), `ice_top_A.png` (16x16
+  icy capped top edge, tiles seamlessly horizontally), `ice_pillar_A.png` (16x16 bolted
+  pillar column tile used as the elemental-gate / anti-magic-barrier door jambs). All
+  16x16, native ice-cavern palette.
+- **Pack:** "Super Pixel" ice-cavern terrain set, **style_A**.
+- **Author / source:** `AssetBundles/newTerrain/.../super_pixel_ice_cavern` (gitignored
+  raw pack; only the used PNGs are committed here).
+- **Usage rights:** Project owner holds rights to use and commit these assets.
+- **Use:** re-skins the sector_02 surfaces DARKER ("ice oscurecido"). The bright ice
+  palette is TINTED DOWN per-node via `modulate` so the map reads dark/moody while
+  keeping the crystal texture. `tools/build_sector_02_tiles.gd` tiles `ice_fill_A` across
+  each collision footprint as the dark crystal body and lays a thin `ice_top_A` cap strip
+  flush with the collision top of every WALKABLE surface (floor / ledges / boss step) so
+  platforms still read at a glance. The same fill + pillar pieces frame the
+  `elemental_gate` and `anti_magic_zone` doors (dark crystal jambs with the element-color
+  energy seam kept as the DD-003 telegraph). Replaces the old grey `city/Tile_30` slate
+  slabs. VISUAL ONLY — the slabs/frames carry no physics; collision stays on the
+  `StaticBody2D` nodes (byte-identical).
+- **Rendering:** each slab/frame Sprite2D carries a per-node `texture_filter = 1`
+  (CanvasItem NEAREST) so the 16px tiles stay crisp; the project default stays Linear for
+  the downscaled parallax.
+
 ### `assets/tilesets/city/` — industrial City tiles (sector_02 surface skin)
 - **Files:** `Tile_27.png`, `Tile_30.png` (SOLID opaque GREY/SLATE ground — TASK-046),
   and `Tile_85.png`, `Tile_88.png` (grate accents); all curated from the pack's 128px

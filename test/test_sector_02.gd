@@ -393,6 +393,33 @@ func test_entering_the_trigger_starts_the_encounter_and_activates_the_warden() -
 	assert_false(boss.is_dormant(), "starting the encounter wakes the Warden")
 
 
+func test_boss_bar_is_hidden_while_the_warden_is_dormant() -> void:
+	# TASK-030: the Warden HP bar must NOT clutter the screen before the fight. While the
+	# placed Warden is still dormant (un-triggered) the bar (track + fill + label) is hidden.
+	var level: Node2D = await _make_sector()
+	var hud := level.get_node_or_null("BossHUD")
+	assert_not_null(hud, "the BossHUD resolves")
+	var fill := hud.get_node_or_null("BarFill") as ColorRect
+	var track := hud.get_node_or_null("BarTrack") as ColorRect
+	var label := hud.get_node_or_null("BarLabel") as Label
+	assert_true((level as Sector02).warden().is_dormant(), "the Warden starts dormant")
+	assert_false(fill.visible, "the boss bar fill is hidden before the encounter (TASK-030)")
+	assert_false(track.visible, "the boss bar track is hidden before the encounter")
+	assert_false(label.visible, "the boss bar label is hidden before the encounter")
+
+
+func test_boss_bar_shows_once_the_warden_is_activated() -> void:
+	# TASK-030: starting the encounter (waking the Warden) reveals the HP bar.
+	var level: Node2D = await _make_sector()
+	var hud := level.get_node_or_null("BossHUD")
+	var fill := hud.get_node_or_null("BarFill") as ColorRect
+	var label := hud.get_node_or_null("BarLabel") as Label
+	((level as Sector02).warden() as Warden).activate()
+	hud._refresh()
+	assert_true(fill.visible, "the boss bar fill appears once the Warden is activated (TASK-030)")
+	assert_true(label.visible, "the boss bar label appears once the Warden is activated")
+
+
 func test_sector_victory_fires_when_the_warden_is_defeated() -> void:
 	# Mirror sector_01: defeating the Warden (its DD-010 `defeated` signal) latches the
 	# SECTOR victory state and emits `sector_victory`.

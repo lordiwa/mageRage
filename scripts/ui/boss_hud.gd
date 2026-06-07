@@ -25,6 +25,7 @@ const _ELEMENT_NAMES := ["FIRE", "ICE", "ELECTRICITY", "ANTIMATTER"]
 var _boss: Node
 var _fill: ColorRect
 var _label: Label
+var _track: ColorRect
 var _victory: Label
 var _full_width := 0.0
 
@@ -32,6 +33,9 @@ func _ready() -> void:
 	_boss = get_node_or_null(boss_path)
 	_fill = get_node_or_null(bar_fill_path) as ColorRect
 	_label = get_node_or_null(bar_label_path) as Label
+	# The track is a fixed sibling (same name in every scene); not exported, looked up by
+	# name so it hides/shows together with the fill+label (TASK-030).
+	_track = get_node_or_null("BarTrack") as ColorRect
 	_victory = get_node_or_null(victory_label_path) as Label
 	if _fill != null:
 		_full_width = _fill.size.x
@@ -56,9 +60,34 @@ func _on_defeated() -> void:
 		_victory.visible = true
 	_refresh()
 
+## TASK-030: the boss bar only belongs on-screen DURING the encounter — hidden while the
+## boss is still dormant (un-triggered) and once it is defeated (the VICTORY label takes
+## over). An always-awake boss (arena) reports not-dormant, so its bar shows from the
+## start. Missing accessors default to "show" so a bare/stub boss is never accidentally
+## hidden.
+func _bar_should_show() -> bool:
+	if _boss == null:
+		return false
+	if _boss.has_method("is_dormant") and _boss.is_dormant():
+		return false
+	if _boss.has_method("is_defeated") and _boss.is_defeated():
+		return false
+	return true
+
+
+func _set_bar_visible(v: bool) -> void:
+	if _fill != null:
+		_fill.visible = v
+	if _label != null:
+		_label.visible = v
+	if _track != null:
+		_track.visible = v
+
+
 func _refresh() -> void:
 	if _boss == null:
 		return
+	_set_bar_visible(_bar_should_show())
 	var hp := 0.0
 	var maxhp := 1.0
 	# Poll via the boss accessors (decoupled): phase, armor, and HP through Health.

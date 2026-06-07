@@ -1,90 +1,137 @@
 [gd_scene format=3]
 
-[ext_resource type="Texture2D" path="res://assets/tilesets/city/Tile_30.png" id="1_h35jq"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/ice/ice_fill_A.png" id="1_iwi3s"]
+[ext_resource type="Texture2D" path="res://assets/tilesets/ice/ice_top_A.png" id="2_xmjm6"]
 
-[node name="CityTiles" type="Node2D" unique_id=1735102448]
+[node name="CityTiles" type="Node2D" unique_id=112465752]
 z_index = -2
 
-[node name="Floor" type="Sprite2D" parent="." unique_id=1094880431]
+[node name="Floor" type="Sprite2D" parent="." unique_id=771071276]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(0, 328)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 4600, 372)
 
-[node name="FloorEdge" type="Polygon2D" parent="." unique_id=1594156816]
-color = Color(0.42, 0.47, 0.55, 1)
-polygon = PackedVector2Array(0, 328, 4600, 328, 4600, 334, 0, 334)
+[node name="FloorCap" type="Sprite2D" parent="." unique_id=285571565]
+modulate = Color(0.6, 0.64, 0.76, 1)
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(0, 328)
+texture = ExtResource("2_xmjm6")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 4600, 16)
 
-[node name="Ceiling" type="Sprite2D" parent="." unique_id=891942563]
+[node name="Ceiling" type="Sprite2D" parent="." unique_id=1472488226]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(0, -700)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 4600, 412)
 
-[node name="WallLeft" type="Sprite2D" parent="." unique_id=1330236392]
+[node name="WallLeft" type="Sprite2D" parent="." unique_id=2140841670]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(-64, -700)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 64, 1400)
 
-[node name="LedgeA" type="Sprite2D" parent="." unique_id=1449951856]
+[node name="LedgeA" type="Sprite2D" parent="." unique_id=1312352711]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(430, 188)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 260, 48)
 
-[node name="LedgeAEdge" type="Polygon2D" parent="." unique_id=2052172735]
-color = Color(0.42, 0.47, 0.55, 1)
-polygon = PackedVector2Array(430, 188, 690, 188, 690, 194, 430, 194)
+[node name="LedgeACap" type="Sprite2D" parent="." unique_id=1828546692]
+modulate = Color(0.6, 0.64, 0.76, 1)
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(430, 188)
+texture = ExtResource("2_xmjm6")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 260, 16)
 
-[node name="LedgeB" type="Sprite2D" parent="." unique_id=152526971]
+[node name="LedgeB" type="Sprite2D" parent="." unique_id=432688808]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(770, 68)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 260, 48)
 
-[node name="LedgeBEdge" type="Polygon2D" parent="." unique_id=38274329]
-color = Color(0.42, 0.47, 0.55, 1)
-polygon = PackedVector2Array(770, 68, 1030, 68, 1030, 74, 770, 74)
+[node name="LedgeBCap" type="Sprite2D" parent="." unique_id=873522306]
+modulate = Color(0.6, 0.64, 0.76, 1)
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(770, 68)
+texture = ExtResource("2_xmjm6")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 260, 16)
 
-[node name="LedgeC" type="Sprite2D" parent="." unique_id=491399796]
+[node name="LedgeC" type="Sprite2D" parent="." unique_id=85038360]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(1110, -52)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 260, 48)
 
-[node name="LedgeCEdge" type="Polygon2D" parent="." unique_id=1290784039]
-color = Color(0.42, 0.47, 0.55, 1)
-polygon = PackedVector2Array(1110, -52, 1370, -52, 1370, -46, 1110, -46)
+[node name="LedgeCCap" type="Sprite2D" parent="." unique_id=1102823363]
+modulate = Color(0.6, 0.64, 0.76, 1)
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(1110, -52)
+texture = ExtResource("2_xmjm6")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 260, 16)
 
-[node name="BossWall" type="Sprite2D" parent="." unique_id=1228778638]
+[node name="BossWall" type="Sprite2D" parent="." unique_id=506586988]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(3876, -190)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 48, 890)
 
-[node name="BossStep" type="Sprite2D" parent="." unique_id=1889305087]
+[node name="BossStep" type="Sprite2D" parent="." unique_id=643786486]
+modulate = Color(0.46, 0.44, 0.56, 1)
+texture_filter = 1
 texture_repeat = 2
 position = Vector2(3950, 208)
-texture = ExtResource("1_h35jq")
+texture = ExtResource("1_iwi3s")
 centered = false
 region_enabled = true
 region_rect = Rect2(0, 0, 300, 48)
 
-[node name="BossStepEdge" type="Polygon2D" parent="." unique_id=971919012]
-color = Color(0.42, 0.47, 0.55, 1)
-polygon = PackedVector2Array(3950, 208, 4250, 208, 4250, 214, 3950, 214)
+[node name="BossStepCap" type="Sprite2D" parent="." unique_id=278448975]
+modulate = Color(0.6, 0.64, 0.76, 1)
+texture_filter = 1
+texture_repeat = 2
+position = Vector2(3950, 208)
+texture = ExtResource("2_xmjm6")
+centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 300, 16)

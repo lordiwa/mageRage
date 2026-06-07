@@ -1,0 +1,30 @@
+{
+  "key": "TASK-060",
+  "title": "sector_02 DARK re-skin: dark-ice terrain (floors/walls/gates) + dim skyline + Warden HP bar moved to top & encounter-only (TASK-030)",
+  "description": "Playtest feedback: make the map style darker. Re-skinned sector_02 with the ice-cavern style_A terrain TINTED DOWN (\"ice oscurecido\") so it reads dark/moody while keeping crystal texture. VISUAL-ONLY for the terrain (collision byte-identical); the boss-HUD visibility piece touches boss_hud.gd (logic) and is covered by tests.\n\nScope:\n- tools/build_sector_02_tiles.gd: body = assets/tilesets/ice/ice_fill_A.png, walkable cap = ice_top_A.png, both per-node texture_filter NEAREST and modulate-darkened (BODY_TINT/CAP_TINT). Regenerated levels/sector_02_tiles.tscn (8 bodies + 5 walkable caps).\n- scenes/elemental_gate.tscn + scenes/anti_magic_zone.tscn: the \"doors that block\" framed with dark ice fill + bolted pillar jambs (ice_pillar_A); KEPT the element-color energy seam as the DD-003 telegraph (FIRE red / ELEC yellow, sealed-vs-open alphas). NO script/collision change (Blocker/Barrier/Hitbox/Emitter byte-identical).\n- levels/sector_02.tscn: Backdrop parallax dimmed via per-instance modulate (sector_01 unaffected); WallRight/Vis darkened.\n- assets/tilesets/ice/ (5 committed PNGs) + assets/CREDITS.md attribution.\n- TASK-030: Warden HP bar moved to top-right (clear of the top-left player HUD) AND now only visible DURING the encounter (boss_hud.gd hides the track+fill+label while the boss is dormant or defeated; an always-awake arena boss still shows immediately). Two deterministic tests added to test_sector_02.gd.\n\nGreen: full sector_02 + gate/zone tests, crucial 61/61, gdlint clean. Theme chosen by the human (ice darkened over lab/amber). Style/tile is swappable (other styles B/C/D or other bundles) as a DIRECT tweak.",
+  "acceptance_criteria": [
+    "sector_02 floors/walls/ledges/boss-step read DARK using the dark-ice terrain (ice_fill body + ice cap), crisp (NEAREST), tinted down.",
+    "The FIRE gate and anti-magic barrier are framed with dark ice terrain while keeping their DD-003 element-color telegraph (sealed vs open) intact; gate/zone scripts and all collision shapes are byte-identical.",
+    "The skyline parallax is dimmed in sector_02 only (sector_01 unchanged).",
+    "The Warden HP bar sits at the top (clear of the player HUD) and only appears during the encounter (hidden while dormant/defeated); arena's always-awake boss still shows its bar.",
+    "GUT crucial(61) + sector_02/gate/zone suites green; gdlint clean; committed art under assets/ with CREDITS attribution."
+  ],
+  "status": "in_review",
+  "priority": "medium",
+  "labels": [
+    "art",
+    "sector_02",
+    "readability",
+    "terrain",
+    "boss-hud",
+    "follow-up"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-07T02:23:23.308Z",
+  "updated_at": "2026-06-07T02:24:17.899Z",
+  "jira_key": null
+}
