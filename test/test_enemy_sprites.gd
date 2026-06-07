@@ -2,7 +2,8 @@
 ##
 ## Loads each of the 3 sector_02 combat enemy scenes headless and asserts:
 ##   1. The "Sprite" node is an AnimatedSprite2D (greybox ColorRect removed).
-##   2. The shield_drone's extra "Shield" ColorRect is removed.
+##   2. TASK-057: the shield_drone carries a "Shield" visual tell that reads UP vs
+##      DOWN (the at-a-glance block cue restored after the TASK-056 art swap).
 ##   3. The SpriteFrames carries the expected per-enemy animation names + loop flags.
 ##   4. The AnimatedSprite2D carries a non-null SpriteFrames resource.
 ##   5. The AnimatedSprite2D resolves to NEAREST texture filtering (crisp pixel-art).
@@ -192,10 +193,23 @@ func test_shield_drone_centered() -> void:
 	_assert_centered(node)
 
 
-func test_shield_drone_shield_color_rect_removed() -> void:
+## TASK-057: the at-a-glance shield UP/DOWN tell is restored. The "Shield" node is
+## present again (a VISUAL-ONLY CanvasItem the existing wiring drives) and its color
+## reads brighter when UP than when DOWN, so the punish window is visible at a glance.
+func test_shield_drone_has_shield_tell() -> void:
 	var node: CharacterBody2D = await _make(SHIELD_SCENE)
-	assert_null(node.get_node_or_null("Shield"),
-		"the greybox Shield ColorRect has been removed from shield_drone.tscn")
+	var shield := node.get_node_or_null("Shield") as CanvasItem
+	assert_not_null(shield,
+		"the Shield visual tell is restored on shield_drone.tscn (TASK-057)")
+	if shield == null:
+		return
+	# Driven by the existing, unit-tested shield wiring: UP must read brighter than DOWN.
+	node.set_shield_for_test(Vector2.RIGHT, true)
+	var up_alpha: float = (shield as ColorRect).color.a
+	node.set_shield_for_test(Vector2.RIGHT, false)
+	var down_alpha: float = (shield as ColorRect).color.a
+	assert_gt(up_alpha, down_alpha,
+		"the shield reads brighter when UP than when DOWN (the punish window is visible)")
 
 
 func test_shield_drone_collision_byte_identical() -> void:

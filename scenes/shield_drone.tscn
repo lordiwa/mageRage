@@ -35,6 +35,14 @@ animation = &"idle"
 autoplay = "idle"
 metadata/_tasks_geom = "TASK-058: floating eye-orb CENTERED on the (28,36) collision (no feet-seat). 96px source, opaque idle bbox 79x77 @ (12,3); scale 0.4 -> ~32x31px reads over the box; position offsets the opaque center to (0,0)."
 
+[node name="Shield" type="ColorRect" parent="."]
+offset_left = -4.0
+offset_top = -16.0
+offset_right = 6.0
+offset_bottom = 16.0
+color = Color(0.45, 0.85, 1, 0.9)
+metadata/_tasks_geom = "TASK-057: restore the at-a-glance shield UP/DOWN tell removed in TASK-056. VISUAL-ONLY ColorRect driven entirely by the existing (unit-tested) shield wiring in shield_drone.gd: _refresh_shield_visual() sets position=facing*22 + rotation + SHIELD_UP/DOWN_COLOR (bright cyan up, faint ghost down); _on_blocked() flashes it white (clink); _play_dissolve() fades it on death. Drawn after Sprite so it reads on top of the pixel-art orb. Cyan=ICE armor language kept. Collision (28x36) + block logic + AI untouched."
+
 [node name="AnimationController" type="Node" parent="."]
 script = ExtResource("11_animctrl")
 

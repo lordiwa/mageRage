@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T00:30:00.747Z",
+  "generated_at": "2026-06-07T00:47:47.251Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -334,7 +334,7 @@
     {
       "key": "TASK-057",
       "title": "Shield Drone: restore an at-a-glance VISUAL shield/block tell (up/down cue) lost in the TASK-056 art swap",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

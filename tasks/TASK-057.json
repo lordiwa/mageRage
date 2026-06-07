@@ -8,7 +8,7 @@
     "Block gameplay, collision shapes (28x36), and AI behavior are byte-identical to post-TASK-056; existing shield/block + drone tests stay green.",
     "GUT crucial(61) + full suites green; gdlint clean."
   ],
-  "status": "todo",
+  "status": "in_progress",
   "priority": "medium",
   "labels": [
     "art",
@@ -24,6 +24,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-06T22:20:23.302Z",
-  "updated_at": "2026-06-06T22:20:23.302Z",
+  "updated_at": "2026-06-07T00:47:47.251Z",
   "jira_key": null
 }
