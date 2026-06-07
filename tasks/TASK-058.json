@@ -1,0 +1,41 @@
+{
+  "key": "TASK-058",
+  "title": "Boss + flying drones art: integrate the Warden boss sprite and swap the two drones to the new FLYING (floating eye-orb) PixelLab art; keep the old bipedal art on disk for reuse",
+  "description": "Follow-on to TASK-056 (which built scripts/enemies/enemy_animation_controller.gd + tools/build_enemy_frames.gd + the AnimatedSprite2D swap pattern). Two parts, both mirroring that pipeline. Branch OFF task-056-enemy-sprites (it carries the controller + builder this depends on); do NOT delete any existing art.\\n\\nART ALREADY DOWNLOADED (committed; AssetBundles/ stays gitignored), all east/side frames named frame_NNN.png:\\n- assets/sprites/enemies/empire_drone_fly/ : idle9 walk9 attack9 hurt9 (PixelLab OBJECT 4b73afcb, 96x96, floating single-eye ELEC drone, teal shell + yellow energy ring)\\n- assets/sprites/enemies/shield_drone_fly/ : idle9 walk9 attack9 hurt9 (PixelLab OBJECT 1f8a5ca1, 96x96, floating single-eye ICE drone, frost-blue + cyan barrier slab)\\n- assets/sprites/enemies/warden/ : idle4 walk6 attack6 hurt6 (PixelLab CHARACTER v3 bf3d2472, 252x252 source, hulking armored guardian colossus, side, east-only + flip_h)\\nThe OLD bipedal drone art (assets/sprites/enemies/empire_drone/ + shield_drone/) and the old resources/enemies/empire_drone_frames.tres + shield_drone_frames.tres MUST be kept on disk for possible reuse as a future ground-guardian enemy (the human asked not to delete them).\\n\\nPART A - FLYING DRONES (replace the bipedal look on the EXISTING in-game drones):\\nThe in-game empire_drone/shield_drone FLY per their FSM (DronePatrolState/Chase/Attack) but TASK-056 gave them bipedal robot art. Swap to the new floating eye-orb art so they read as flying.\\n- Extend tools/build_enemy_frames.gd to build NEW resources/enemies/empire_drone_fly_frames.tres + shield_drone_fly_frames.tres from the *_fly/ folders (idle/walk loop=true; attack/hurt loop=false; reuse the existing fps conventions; object anims are 9f). Leave the old bipedal *_frames.tres builders in place (kept for reuse).\\n- Repoint scenes/empire_drone.tscn + scenes/shield_drone.tscn AnimatedSprite2D 'Sprite' to the *_fly_frames.tres. Since these are FLOATING enemies, CENTER the sprite on the collision box (no feet-seating); measure the opaque bbox and pick an integer scale + offset that reads at the right size over the UNCHANGED (28,36) collision. Keep per-node texture_filter=1 (nearest). The drone FSM uses idle/walk/attack/hurt which the existing enemy_animation_controller already maps - no controller change needed for the drones.\\n\\nPART B - WARDEN BOSS (replace greybox in scenes/warden.tscn):\\n- Build resources/enemies/warden_frames.tres from assets/sprites/enemies/warden/ (idle loop; walk loop; attack/hurt one-shot).\\n- scenes/warden.tscn: replace the 'Sprite' ColorRect with an AnimatedSprite2D 'Sprite' using warden_frames.tres, per-node texture_filter=1. Keep the HP Label, StateMachine, Health, and all boss wiring EXACTLY. The 252x252 source is much larger than the (72,96) collision, so an integer scale is not possible - pick a clean scale (likely ~0.4) so the boss reads big-but-fair with feet seated on the collision bottom; document the chosen scale (fine-tuning is a later DIRECT playtest tweak). flip_h from facing (east frames; flip when facing left).\\n- Extend scripts/enemies/enemy_animation_controller.gd select_animation() to map the WARDEN states: WardenPatrolState->idle, WardenChaseState->walk, WardenAttackState->attack (one-shot), hurt on a landed hit, death->hold hurt (documented gap). Keep it a pure unit-tested function; add the warden branches with tests. Wire warden.gd to fire the attack/hurt one-shots + flip_h, like the other enemies.\\n\\nSAFETY GATE (full ceremony - gameplay): ALL collisions byte-identical - drones (28,36), charger untouched, warden body (72,96). AI/combat/projectile behavior, the sector_02 corridor metrics, and the boss-reachability/boss-encounter tests must stay GREEN. Only visual node swaps + the warden controller-mapping addition.\\n\\nTESTS-FIRST: unit-test the new warden select_animation branches; assert warden.tscn + both drone scenes load headless with an AnimatedSprite2D whose SpriteFrames have the expected anim names/loop flags; assert collisions byte-identical. Then implement to green without breaking existing tests. GUT crucial(61) + full green; gdlint clean. Conventional Commits referencing TASK-058; do NOT push (human go).\\n\\nOUT OF SCOPE: Swarmling (still greybox); TASK-057 shield-tell; Empire-Drone color (the flying one now has a yellow ring - re-evaluate at playtest); the pre-existing WardenHUD-shows-at-spawn item (TASK-030).",
+  "acceptance_criteria": [
+    "scenes/empire_drone.tscn + shield_drone.tscn render the NEW floating eye-orb art via AnimatedSprite2D (built into resources/enemies/*_fly_frames.tres), centered on the unchanged (28,36) collision, nearest filter; the OLD bipedal art + *_frames.tres remain on disk untouched for reuse.",
+    "scenes/warden.tscn renders the PixelLab boss via AnimatedSprite2D from resources/enemies/warden_frames.tres (greybox ColorRect removed), nearest filter, with a documented scale so the 252px source reads correctly seated on the unchanged (72,96) collision.",
+    "enemy_animation_controller.select_animation() maps WardenPatrolState/ChaseState/AttackState -> idle/walk/attack plus hurt/attack one-shot priority; the new branches are unit-tested; drones still map correctly with no controller change.",
+    "All enemy/boss collisions are byte-identical (drones 28x36, charger unchanged, warden 72x96); AI/combat/projectile + sector_02 corridor + boss-reachability behavior unchanged.",
+    "tools/build_enemy_frames.gd reproducibly builds the new *_fly_frames.tres + warden_frames.tres with correct loop flags; PixelLab credit appended to assets/CREDITS.md for the 3 new assets.",
+    "All three scenes load headless; GUT crucial(61) + full suites green; gdlint clean. death = documented hold-hurt gap; Swarmling out of scope."
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": [
+    "art",
+    "enemies",
+    "boss",
+    "warden",
+    "drones",
+    "pixellab",
+    "animation",
+    "sector_02"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-056"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-06T23:57:29.909Z",
+      "body": "DONE (local, NOT pushed — awaiting human go). Tests-first developer -> independent reviewer ACCEPT (no HIGH, no MEDIUM). Branch task-058-boss-flying-drones off task-056-enemy-sprites, 4 commits (7637eeb/a226f24/f5d8275/24404b3). PART A: swapped empire_drone/shield_drone to NEW floating eye-orb art (PixelLab OBJECTS 4b73afcb ELEC / 1f8a5ca1 ICE, 96px, idle/walk/attack/hurt 9f) via resources/enemies/*_fly_frames.tres; scenes centered scale 0.4 on the unchanged (28,36) box; OLD bipedal art + *_frames.tres KEPT untouched on disk for reuse. PART B: Warden boss skinned (PixelLab CHARACTER v3 bf3d2472, 252px, idle4/walk6/attack6/hurt6) -> warden_frames.tres, ColorRect->AnimatedSprite2D scale 0.4 feet-seated +48 on the unchanged (72,96) box; enemy_animation_controller.select_animation extended with WardenPatrol/Chase/Attack->idle/walk/attack (pure, unit-tested); warden.gd color->modulate + play_attack/play_hurt. Per-node texture_filter=1. SAFETY GATE HELD (reviewer-verified diff + tests): all collisions byte-identical, charger/FSM/AI/projectiles/boss-phases/sector_02 corridor + boss-reachability untouched. GREEN independently: full GUT 847/847, crucial 61/61 (x2), gdlint clean. PLAYTEST/DIRECT-tweak item (reviewer LOW): Warden scale 0.4 reads small/thin (opaque content ~21x49 over 72x96) — likely wants a larger scale; tune live. Also playtest: flying-orb size/centering/float read, Empire-drone yellow-ring vs ELEC, fps feel. death = documented hold-frame gap. Swarmling still greybox (out of scope)."
+    }
+  ],
+  "created_at": "2026-06-06T23:31:38.533Z",
+  "updated_at": "2026-06-06T23:57:30.404Z",
+  "jira_key": null
+}

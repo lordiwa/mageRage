@@ -1,0 +1,119 @@
+@tool
+extends SceneTree
+
+## TASK-056: Build the SpriteFrames resources for the 3 sector_02 combat enemies
+## from the committed assets/sprites/enemies/ PNGs (EAST frames only; west via
+## flip_h at runtime, mirroring the hero pipeline TASK-052). Reproducible:
+## re-running produces the same output from the same source PNGs.
+##
+## Outputs:
+##   res://resources/enemies/empire_drone_frames.tres        (old bipedal — kept)
+##   res://resources/enemies/shield_drone_frames.tres        (old bipedal — kept)
+##   res://resources/enemies/charger_frames.tres
+##   res://resources/enemies/empire_drone_fly_frames.tres    (TASK-058 floating orb)
+##   res://resources/enemies/shield_drone_fly_frames.tres    (TASK-058 floating orb)
+##   res://resources/enemies/warden_frames.tres              (TASK-058 boss)
+##
+## Per-animation frame counts (from disk):
+##   empire_drone / shield_drone: idle 4, walk 6, attack 6, hurt 6  (old bipedal)
+##   charger:                     idle 4, walk 6, windup 5, charge 6, hurt 6
+##   *_fly (floating eye-orb):    idle 9, walk 9, attack 9, hurt 9  (TASK-058)
+##   warden (boss):               idle 4, walk 6, attack 6, hurt 6  (TASK-058)
+##
+## Loop flags + fps (fps are a sensible first pass; fine-tuning is a later DIRECT
+## playtest tweak per the ticket):
+##   idle   — loop, 6 fps   (ambient breathing)
+##   walk   — loop, 8 fps   (locomotion)
+##   attack — one-shot, 12 fps  (drone cast pose)
+##   hurt   — one-shot, 10 fps  (taking-punch reaction)
+##   windup — one-shot, 8 fps   (charger telegraph tell)
+##   charge — one-shot, 10 fps  (charger lunge)
+##
+## Run headless:
+##   Godot --headless --path <repo> -s res://tools/build_enemy_frames.gd
+
+const OUT_DIR := "res://resources/enemies"
+const BASE := "res://assets/sprites/enemies"
+
+## anim -> [frame_count, fps, loop]
+const DRONE_MAP := {
+	"idle": [4, 6.0, true],
+	"walk": [6, 8.0, true],
+	"attack": [6, 12.0, false],
+	"hurt": [6, 10.0, false],
+}
+
+const CHARGER_MAP := {
+	"idle": [4, 6.0, true],
+	"walk": [6, 8.0, true],
+	"windup": [5, 8.0, false],
+	"charge": [6, 10.0, false],
+	"hurt": [6, 10.0, false],
+}
+
+## TASK-058 FLOATING eye-orb drones (object anims, 9 frames each). Same fps/loop
+## conventions as the bipedal drones; the orb hover reads as the idle/walk loop.
+const DRONE_FLY_MAP := {
+	"idle": [9, 6.0, true],
+	"walk": [9, 8.0, true],
+	"attack": [9, 12.0, false],
+	"hurt": [9, 10.0, false],
+}
+
+## TASK-058 Warden boss (idle 4, walk 6, attack 6, hurt 6). Same fps/loop language
+## as the drones so the boss reads with the family's cadence.
+const WARDEN_MAP := {
+	"idle": [4, 6.0, true],
+	"walk": [6, 8.0, true],
+	"attack": [6, 12.0, false],
+	"hurt": [6, 10.0, false],
+}
+
+
+func _build_one(enemy: String, anim_map: Dictionary) -> int:
+	var sf := SpriteFrames.new()
+	if sf.has_animation("default"):
+		sf.remove_animation("default")
+	for anim in anim_map:
+		var spec: Array = anim_map[anim]
+		var count: int = spec[0]
+		var fps: float = spec[1]
+		var loop: bool = spec[2]
+		sf.add_animation(anim)
+		sf.set_animation_speed(anim, fps)
+		sf.set_animation_loop(anim, loop)
+		for i in range(count):
+			var path := "%s/%s/%s/frame_%s.png" % [BASE, enemy, anim, str(i).pad_zeros(3)]
+			var tex: Texture2D = load(path)
+			if tex == null:
+				push_error("Missing texture: %s" % path)
+				return ERR_FILE_NOT_FOUND
+			sf.add_frame(anim, tex)
+	var out_path := "%s/%s_frames.tres" % [OUT_DIR, enemy]
+	var err := ResourceSaver.save(sf, out_path)
+	if err != OK:
+		push_error("ResourceSaver.save() failed for %s: %d" % [out_path, err])
+		return err
+	print("BUILT %s with animations: %s" % [out_path, ", ".join(sf.get_animation_names())])
+	return OK
+
+
+func _init() -> void:
+	# Ensure the output directory exists.
+	if not DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(OUT_DIR)):
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
+
+	var jobs := {
+		"empire_drone": DRONE_MAP,        # old bipedal — kept for reuse
+		"shield_drone": DRONE_MAP,        # old bipedal — kept for reuse
+		"charger": CHARGER_MAP,
+		"empire_drone_fly": DRONE_FLY_MAP,  # TASK-058 floating eye-orb
+		"shield_drone_fly": DRONE_FLY_MAP,  # TASK-058 floating eye-orb
+		"warden": WARDEN_MAP,               # TASK-058 boss
+	}
+	for enemy in jobs:
+		var err := _build_one(enemy, jobs[enemy])
+		if err != OK:
+			quit(1)
+			return
+	quit(0)

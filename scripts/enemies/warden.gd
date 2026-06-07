@@ -102,8 +102,16 @@ signal phase_changed(new_phase: int)
 signal defeated
 
 @onready var _health: Health = $Health
-@onready var _sprite: ColorRect = get_node_or_null("Sprite")
+## TASK-058: the boss greybox ColorRect is now an AnimatedSprite2D. Typed as
+## CanvasItem so the telegraph/slow/armor tint + the death dissolve drive `modulate`
+## (works on both the AnimatedSprite2D and a bare ColorRect used by unit tests);
+## null-guarded for bare-scene tests.
+@onready var _sprite: CanvasItem = get_node_or_null("Sprite")
 @onready var _label: Label = get_node_or_null("Label")
+## TASK-058: the state-driven animation controller (one-shot attack/hurt + flip_h),
+## mirroring the drones/charger. Duck-typed as Node so a bare boss (unit test)
+## without it still runs; calls are has_method-guarded.
+@onready var _anim_ctrl: Node = get_node_or_null("AnimationController")
 
 var _armor_color := Color.WHITE
 
@@ -113,7 +121,11 @@ func _ready() -> void:
 	collision_mask = 0
 	set_collision_layer_value(3, true)
 	set_collision_mask_value(1, true)
-	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
+	# TASK-059: a GROUNDED heavy tank (gravity ON), not a FLOATING flier. The FSM
+	# states apply gravity_vector() each physics step + call move_and_slide so the
+	# boss falls to / rests on the floor and pursues the hero horizontally only
+	# (it no longer flies diagonally/vertically). Mirrors the Charger ground idiom.
+	motion_mode = CharacterBody2D.MOTION_MODE_GROUNDED
 	if _health != null:
 		_health.max_health = max_health
 		_health.current_health = max_health
@@ -201,6 +213,10 @@ func apply_elemental_hit(element: int, base_damage: float, slow: bool,
 	if slow:
 		_slow.apply()
 	_refresh_label()
+	# TASK-058: play the hurt one-shot on a landed hit (highest-priority anim),
+	# mirroring the drones/charger. Skip once defeated so the death dissolve owns it.
+	if not _won and _anim_ctrl != null and _anim_ctrl.has_method("play_hurt"):
+		_anim_ctrl.play_hurt()
 
 ## Re-evaluate the phase from current HP; if it advanced, swap armor + fire the beat.
 func _on_health_changed(current: float, maximum: float) -> void:
@@ -279,6 +295,30 @@ func steer_toward_player() -> Vector2:
 		return Vector2.ZERO
 	return DroneAi.steer_direction(global_position, target.global_position)
 
+## TASK-059: HORIZONTAL pursuit sign toward the hero (-1 left / +1 right / 0 none).
+## The grounded tank chases along x only; gravity owns velocity.y, so this drops any
+## vertical component (no flight). Pure + testable; null-target -> 0 (holds still).
+func horizontal_steer_sign() -> float:
+	if target == null:
+		return 0.0
+	return signf(target.global_position.x - global_position.x)
+
+## TASK-059: the project gravity for the FSM states to apply each step (mirrors how
+## the player MoveState + the Charger read get_gravity()). Grounded heavy tank, so
+## this is the project default down-vector — no invented value. In-game get_gravity()
+## is authoritative (it respects gravity areas); when the physics state hasn't yet
+## populated it (e.g. a freshly-added body, headless unit tests) we fall back to the
+## documented project convention (ProjectSettings physics/2d/default_gravity), so the
+## boss is reliably pulled DOWN either way.
+func gravity_vector() -> Vector2:
+	var g := get_gravity()
+	if g != Vector2.ZERO:
+		return g
+	var mag := float(ProjectSettings.get_setting("physics/2d/default_gravity", 980.0))
+	var dir: Vector2 = ProjectSettings.get_setting(
+		"physics/2d/default_gravity_vector", Vector2.DOWN)
+	return dir * mag
+
 ## DD-009 Ice control multiplier (0.5 while slowed, 1.0 otherwise) — move + attack.
 func speed_multiplier() -> float:
 	return _slow.multiplier()
@@ -331,6 +371,10 @@ func fire_pattern() -> void:
 		proj.global_position = global_position
 		if proj.has_method("setup"):
 			proj.setup(dir, phase_damage())
+	# TASK-058: play the attack (wind-up/fire) one-shot when the volley actually
+	# fires, mirroring the drones' cast one-shot.
+	if _anim_ctrl != null and _anim_ctrl.has_method("play_attack"):
+		_anim_ctrl.play_attack()
 
 ## The set of projectile directions for the current pattern — pure-ish (delegates
 ## to WardenPhases.fan_directions) so the per-phase shape is testable.
@@ -352,17 +396,20 @@ func _update_tint() -> void:
 	if _sprite == null:
 		return
 	if _telegraphing:
-		_sprite.color = TELEGRAPH_COLOR
+		_sprite.modulate = TELEGRAPH_COLOR
 	elif _slow.is_active():
-		_sprite.color = SLOW_TINT
+		_sprite.modulate = SLOW_TINT
 	else:
-		_sprite.color = _armor_color
+		_sprite.modulate = _armor_color
 
 ## DD-010 victory: at 0 HP the boss is defeated exactly once — freeze movement and
 ## emit `defeated` so the arena enters its victory state (freeze + label). TASK-017
 ## layers the LOUDER shared death beat (element-tinted dissolve + burst) ON TOP of
 ## the existing flow WITHOUT freeing the boss — the victory state keeps it on screen.
 ## The `_won` latch makes the whole path single-trigger (overkill / re-emitted died).
+## TASK-058 documented gap: there is no dedicated death animation — the dissolve runs
+## on whatever frame is showing (typically the last "hurt" frame, since a landed hit
+## precedes the kill), matching the hero's + drones' documented death fallback.
 func _on_died() -> void:
 	if _won:
 		return
@@ -408,10 +455,10 @@ func _play_dissolve(seconds: float) -> void:
 		return
 	var tween := create_tween()
 	tween.set_parallel(true)
-	var faded := _sprite.color
+	var faded := _sprite.modulate
 	faded.a = 0.0
-	tween.tween_property(_sprite, "color", faded, seconds)
-	tween.tween_property(_sprite, "scale", Vector2.ONE * DISSOLVE_END_SCALE, seconds)
+	tween.tween_property(_sprite, "modulate", faded, seconds)
+	tween.tween_property(_sprite, "scale", _sprite.scale * DISSOLVE_END_SCALE, seconds)
 
 func _refresh_label() -> void:
 	if _label == null:

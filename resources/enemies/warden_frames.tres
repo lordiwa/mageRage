@@ -1,0 +1,113 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_000.png" id="1_fy1vu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_001.png" id="2_kuenq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_002.png" id="3_d78oo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_003.png" id="4_rg6s2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_004.png" id="5_ptmer"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/attack/frame_005.png" id="6_kbw6p"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_000.png" id="7_84yj1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_001.png" id="8_42x6l"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_002.png" id="9_lkhwi"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_003.png" id="10_guey6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_004.png" id="11_12byt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/hurt/frame_005.png" id="12_ce1n1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/idle/frame_000.png" id="13_3kyvm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/idle/frame_001.png" id="14_h3m3j"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/idle/frame_002.png" id="15_y612a"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/idle/frame_003.png" id="16_36ipj"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_000.png" id="17_4csas"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_001.png" id="18_bd4wt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_002.png" id="19_6awrm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_003.png" id="20_x7y6q"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_004.png" id="21_uhlbw"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/warden/walk/frame_005.png" id="22_e7ml5"]
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_fy1vu")
+}, {
+"duration": 1.0,
+"texture": ExtResource("2_kuenq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_d78oo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_rg6s2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_ptmer")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_kbw6p")
+}],
+"loop": false,
+"name": &"attack",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("7_84yj1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_42x6l")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_lkhwi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_guey6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_12byt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_ce1n1")
+}],
+"loop": false,
+"name": &"hurt",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("13_3kyvm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_h3m3j")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_y612a")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_36ipj")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("17_4csas")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_bd4wt")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_6awrm")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_x7y6q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_uhlbw")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_e7ml5")
+}],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}]

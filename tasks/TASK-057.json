@@ -1,0 +1,29 @@
+{
+  "key": "TASK-057",
+  "title": "Shield Drone: restore an at-a-glance VISUAL shield/block tell (up/down cue) lost in the TASK-056 art swap",
+  "description": "TASK-056 replaced the Shield Drone greybox with a PixelLab AnimatedSprite2D and, in doing so, REMOVED the dedicated 'Shield' ColorRect visual node from scenes/shield_drone.tscn. The block GAMEPLAY is fully intact (ShieldLogic + _shield_up + _shield_facing + _on_blocked are untouched, all _shield node accesses null-guarded), but the player can no longer SEE when the shield is up vs down — i.e. the punish/opening window is invisible. This violates the game-design doctrine 'armor/shield state must read at a glance' (readability is the core of the elemental RPS read) and the reviewer flagged it as a MEDIUM to resolve before sector_02 ships to playtest.\\n\\nRestore a clear visual shield tell that tracks the existing ShieldLogic state (up vs down, and ideally which side it faces via _shield_facing), as a VISUAL-ONLY overlay that does NOT alter the block logic, collision, or AI. Options: (a) a small dedicated overlay node (Sprite2D/ColorRect/Polygon2D) toggled by the shield state, mirroring the old cue; (b) a PixelLab 'shield-up' pose/animation or a barrier overlay; (c) a modulate/aura change on the drone while shielded. Keep the cyan=ICE armor color language. Per the lighter-process rule this is iterative visual work, but it touches the shield-state wiring so verify the block logic + collision stay byte-identical (developer tests-first if the wiring is non-trivial; DIRECT if it's a pure visual toggle bound to an existing signal).",
+  "acceptance_criteria": [
+    "A clear visual indicator shows the Shield Drone's shield UP vs DOWN state at a glance during play, driven by the existing ShieldLogic state (no new logic source).",
+    "The cue reflects the shield's facing side where feasible (_shield_facing) and keeps the cyan=ICE color language.",
+    "Block gameplay, collision shapes (28x36), and AI behavior are byte-identical to post-TASK-056; existing shield/block + drone tests stay green.",
+    "GUT crucial(61) + full suites green; gdlint clean."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "art",
+    "enemies",
+    "shield-drone",
+    "readability",
+    "follow-up",
+    "sector_02"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-06T22:20:23.302Z",
+  "updated_at": "2026-06-06T22:20:23.302Z",
+  "jira_key": null
+}

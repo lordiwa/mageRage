@@ -142,25 +142,27 @@ func test_re_emitting_died_does_not_double_run() -> void:
 
 # --- The fade is PRESERVED: the per-frame tint tick no longer clobbers alpha ---
 # Deterministic regression guard for the MEDIUM finding: _update_tint() (run every
-# physics frame) used to rewrite the sprite color at alpha 1.0, negating the fade
+# physics frame) used to rewrite the sprite tint at alpha 1.0, negating the fade
 # half of the dissolve. We trigger death (sets the `_dying` latch), then SIMULATE the
 # dissolve tween mid-fade by hand (alpha 0.4) and tick _physics_process several times.
 # If the guard works the alpha stays < 1.0; without it the tick would reset it to 1.0.
 # No wall-clock await / no tween / no HitStop dependence -> zero timing flakiness.
+# TASK-056: flash/tint/dissolve now drive `modulate` (so they work uniformly on the
+# AnimatedSprite2D body sprite), so this guard reads `modulate.a`.
 
 func test_tint_tick_preserves_dissolve_alpha_while_dying() -> void:
 	var drone := _make_drone(FIRE, 60.0)
-	var sprite := drone.get_node("Sprite") as ColorRect
+	var sprite := drone.get_node("Sprite") as CanvasItem
 	drone.apply_elemental_hit(ICE, 1000.0, false)   # lethal -> _dying latch set
 	assert_true(drone.is_dying(), "the death path has started (dissolve in progress)")
 	# Stand in for the dissolve tween having faded the sprite partway.
-	sprite.color.a = 0.4
-	# The per-frame tint tick that used to overwrite the color at full alpha.
+	sprite.modulate.a = 0.4
+	# The per-frame tint tick that used to overwrite the modulate at full alpha.
 	for _i in range(5):
 		drone._physics_process(0.016)
-	assert_lt(sprite.color.a, 1.0,
+	assert_lt(sprite.modulate.a, 1.0,
 		"the tint tick does NOT reset the faded alpha while dying (the fade survives)")
-	assert_almost_eq(sprite.color.a, 0.4, 0.001,
+	assert_almost_eq(sprite.modulate.a, 0.4, 0.001,
 		"the dissolve alpha is left exactly as the tween set it")
 
 

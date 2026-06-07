@@ -1,0 +1,39 @@
+{
+  "key": "TASK-059",
+  "title": "Warden boss feel: make it a grounded HEAVY TANK (gravity + horizontal-only pursuit, no flight) and render it LARGER",
+  "description": "Playtest feedback on the TASK-058 boss: 'warden should be larger and shouldn't fly like a huge tank'. Today the Warden is a CharacterBody2D in MOTION_MODE_FLOATING with NO gravity, and WardenChaseState sets velocity = steer_toward_player() * CHASE_SPEED where steer_toward_player() is a full 2D direction -> the boss FLIES diagonally/vertically toward the hero. The human wants a grounded, heavy, tank-like boss that stays on the floor, plus a bigger on-screen read. Branch OFF task-058-boss-flying-drones (stacked). FULL ceremony (this changes movement = gameplay).\\n\\nPART 1 - GROUNDED HEAVY TANK (no flight):\\n- Apply GRAVITY so the Warden rests on / falls to the floor and stays grounded (reuse the project's gravity convention — check ProjectSettings physics/2d/default_gravity or the player's gravity constant; do not invent a new value). The boss should sit on the ground via move_and_slide + is_on_floor, like a heavy ground unit.\\n- WardenChaseState must pursue HORIZONTALLY ONLY: move along x toward the hero (sign of dx * CHASE_SPEED), never add a vertical/upward component. Keep CHASE_SPEED heavy/slow (it's a lumbering tank); honor the DD-009 Ice slow multiplier as today.\\n- WardenPatrolState is already horizontal (keep), but make sure gravity is applied there too (and during the WardenAttackState telegraph hold) so the boss never floats while idle/winding up.\\n- Decide the cleanest implementation: either keep MOTION_MODE_FLOATING and add gravity to velocity.y manually each frame (states/_physics_process), or switch to MOTION_MODE_GROUNDED. Whichever keeps the FSM idiom + tests clean. Keep dormant/activate, the 3 phases, telegraph, slow, fire patterns, and death exactly.\\n- Keep collision_layer/mask as-is (Enemy layer 3, collides with Environment layer 1) so walls + floor stop it.\\n\\nPART 2 - LARGER:\\n- Bump scenes/warden.tscn Sprite scale up from the current 0.4 (which reads ~21x49px, too small) so the boss reads BIG ('huge tank') — target roughly the opaque sprite height >= the (72,96) collision height (the 252px source opaque idle bbox is ~53x123, so a scale around ~0.78 makes it ~96px tall; go a touch bigger if it reads better as 'huge', overhang of the hitbox is acceptable for a boss). Keep per-node texture_filter=1. Re-seat the feet on the collision bottom (+48) at the new scale and UPDATE test_warden_feet_seated + the scene metadata note accordingly.\\n\\nSAFETY GATE: the (72,96) RectangleShape2D collision stays BYTE-IDENTICAL (this is a visual-size + movement-behavior change, NOT a hitbox change — if a bigger hitbox is wanted that's a separate balance ticket). Phases/armor/telegraph/fire-pattern/slow/death/dormant logic unchanged. The sector_02 boss-reachability + boss-encounter tests must stay GREEN (a grounded boss must still engage the hero in the arena/boss room — update those tests ONLY if the grounding legitimately changes engagement, with justification, and keep them meaningful).\\n\\nTESTS-FIRST: add/adjust tests asserting (a) under gravity the Warden gains downward velocity / ends on the floor rather than hovering; (b) WardenChaseState produces NO upward/vertical pursuit velocity (horizontal-only) toward a target above it; (c) feet seated at the new scale; (d) existing boss phase/fire/telegraph/dormant + boss-reachability tests stay green. Then implement to green. GUT crucial(61) + full green; gdlint clean. Conventional Commits referencing TASK-059; do NOT push (human go).",
+  "acceptance_criteria": [
+    "The Warden is grounded: gravity keeps it on the floor (move_and_slide + is_on_floor); it no longer floats in patrol, chase, or the attack telegraph.",
+    "WardenChaseState pursues the hero HORIZONTALLY ONLY (no vertical/upward flight component); CHASE_SPEED stays heavy/slow and honors the DD-009 Ice slow.",
+    "scenes/warden.tscn Sprite scale is increased so the boss reads BIG (opaque height >= the 96px collision height), feet seated on the (72,96) collision bottom, nearest filter; test_warden_feet_seated updated to the new scale.",
+    "The (72,96) collision is byte-identical; phases/armor/telegraph/fire-pattern/slow/death/dormant behavior unchanged; sector_02 boss-reachability + boss-encounter tests stay green.",
+    "New tests encode grounded gravity + horizontal-only chase; GUT crucial(61) + full suites green; gdlint clean."
+  ],
+  "status": "done",
+  "priority": "medium",
+  "labels": [
+    "boss",
+    "warden",
+    "movement",
+    "gameplay",
+    "feel",
+    "sector_02",
+    "art"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-058"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T00:29:59.910Z",
+      "body": "DONE (local, NOT pushed). Tests-first developer -> reviewer ACCEPT (no HIGH/MEDIUM). Branch task-059-warden-tank off task-058-boss-flying-drones, 4 commits (128ccee/cf9c2f6/90ad7fb/bae0115). From playtest feedback 'warden should be larger and shouldn't fly like a huge tank': (1) GROUNDED the boss — MOTION_MODE_FLOATING->GROUNDED, gravity via get_gravity() (same idiom as Charger/player; ProjectSettings physics/2d/default_gravity (0,980) fallback for headless/fresh bodies), applied in patrol/chase/attack-telegraph so it never floats; WardenChaseState now horizontal-only (horizontal_steer_sign()=signf(dx)*CHASE_SPEED*slow, gravity owns velocity.y), DD-009 slow honored; (2) LARGER — scenes/warden.tscn Sprite scale 0.4->0.85 (opaque ~105px >= 96 collision height, boss overhang OK), feet re-seated +48 (position.y 23.2->-4.7), texture_filter=1 kept. SAFETY GATE HELD (reviewer-verified): (72,96) collision byte-identical, layer/mask (Enemy3/Env1) + phases/armor/telegraph/fire-pattern/slow/death/dormant unchanged; engagement not regressed (aggro/attack_range 9999 arena duel). New test_warden_grounded.gd (8) + updated test_warden_sprite.gd. GREEN: full GUT 856/856, crucial 61/61 (incl boss-reachability), gdlint clean. Reviewer LOW: gravity_vector() fallback diverges slightly from Charger's get_gravity() one-liner (more correct; optional backport to charger.gd later). PLAYTEST/DIRECT: live size/feel at 0.85, real-floor flush seating, chase pacing/not snagging on geometry."
+    }
+  ],
+  "created_at": "2026-06-07T00:07:42.969Z",
+  "updated_at": "2026-06-07T00:30:00.747Z",
+  "jira_key": null
+}
