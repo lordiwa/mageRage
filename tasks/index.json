@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T01:05:57.600Z",
+  "generated_at": "2026-06-07T02:24:17.899Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -347,6 +347,12 @@
       "key": "TASK-059",
       "title": "Warden boss feel: make it a grounded HEAVY TANK (gravity + horizontal-only pursuit, no flight) and render it LARGER",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-060",
+      "title": "sector_02 DARK re-skin: dark-ice terrain (floors/walls/gates) + dim skyline + Warden HP bar moved to top & encounter-only (TASK-030)",
+      "status": "in_review",
       "priority": "medium"
     }
   ]

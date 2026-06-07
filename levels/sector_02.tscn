@@ -39,6 +39,7 @@ size = Vector2(520, 600)
 script = ExtResource("2_sector")
 
 [node name="Backdrop" parent="." instance=ExtResource("3_backdrop")]
+modulate = Color(0.3, 0.33, 0.42, 1)
 
 [node name="Background" type="ColorRect" parent="."]
 z_index = -50
@@ -81,7 +82,7 @@ offset_left = -32.0
 offset_top = -384.0
 offset_right = 32.0
 offset_bottom = 384.0
-color = Color(0.15, 0.15, 0.22, 1)
+color = Color(0.09, 0.07, 0.1, 1)
 
 [node name="LedgeA" type="StaticBody2D" parent="Environment"]
 position = Vector2(560, 200)
@@ -199,25 +200,26 @@ bar_label_path = NodePath("BarLabel")
 victory_label_path = NodePath("VictoryLabel")
 
 [node name="BarTrack" type="ColorRect" parent="BossHUD"]
-offset_left = 240.0
-offset_top = 540.0
-offset_right = 880.0
-offset_bottom = 560.0
+offset_left = 470.0
+offset_top = 38.0
+offset_right = 1070.0
+offset_bottom = 56.0
 color = Color(0.05, 0.05, 0.08, 0.7)
 
 [node name="BarFill" type="ColorRect" parent="BossHUD"]
-offset_left = 240.0
-offset_top = 540.0
-offset_right = 880.0
-offset_bottom = 560.0
+offset_left = 470.0
+offset_top = 38.0
+offset_right = 1070.0
+offset_bottom = 56.0
 color = Color(0.85, 0.3, 0.2, 1)
 
 [node name="BarLabel" type="Label" parent="BossHUD"]
-offset_left = 240.0
-offset_top = 514.0
-offset_right = 900.0
-offset_bottom = 538.0
+offset_left = 470.0
+offset_top = 12.0
+offset_right = 1070.0
+offset_bottom = 36.0
 theme_override_colors/font_color = Color(1, 0.95, 0.9, 1)
+horizontal_alignment = 1
 text = "THE WARDEN"
 
 [node name="VictoryLabel" type="Label" parent="BossHUD"]
