@@ -8,7 +8,7 @@
     "The 3-layer Parallax2D structure is preserved (scroll 0.15/0.45/0.80, y=1, z behind playfield, fill at z=-40) and all parallax/visual-bounds structure tests pass, including repeat_size.x>0.",
     "Full GUT suite green, gdlint clean; committed art under assets/ with CREDITS attribution; parallax2d SKILL updated with the coverage rule."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "art",
@@ -22,8 +22,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-07T02:57:28.088Z",
+      "body": "MERGED to master via PR #11 (merge commit e7d30f7), CI GREEN (gdlint + crucial 61; nightly skipped). Branch deleted. sector_02 backdrop is now the ice-cavern wall (city skyline retired, kept on disk); parallax coverage fixed (repeat_size=(2048,0), 4x the 512 tile + > viewport) so it covers the whole clamped level — verified at start/middle/far-right. parallax2d SKILL updated with the coverage rule. Full GUT 858/858, gdlint clean. Closing done. REMAINING (live): eyeball parallax MOTION in a real playtest (stills only prove coverage)."
+    }
+  ],
   "created_at": "2026-06-07T02:55:13.932Z",
-  "updated_at": "2026-06-07T02:55:18.572Z",
+  "updated_at": "2026-06-07T02:57:28.310Z",
   "jira_key": null
 }

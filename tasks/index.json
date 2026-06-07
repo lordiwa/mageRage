@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T02:55:18.572Z",
+  "generated_at": "2026-06-07T02:57:28.310Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -358,7 +358,7 @@
     {
       "key": "TASK-061",
       "title": "sector_02 backdrop: swap city skyline for an ice-cavern wall + fix parallax level-wide coverage",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     }
   ]
