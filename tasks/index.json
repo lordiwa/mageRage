@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-05T06:59:52.547Z",
+  "generated_at": "2026-06-07T00:30:00.747Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -268,7 +268,85 @@
     {
       "key": "TASK-045",
       "title": "M2.2 Art polish — sector_02 skyline placement/scale, tile reads, skin WallRight (pending playtest specifics)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-046",
+      "title": "sector_02 floor/surfaces read SOLID — fix grate transparency making the hero look airborne",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-048",
+      "title": "sector_02 floor VISUALLY MISALIGNED — hero floats above the tile floor in live gameplay",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-049",
+      "title": "Crucial-test core set (<66) on push/PR + full GUT suite (652) on a nightly GitHub Actions cron",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-050",
+      "title": "De-duplicate the crucial-core: run the 61 in place (no test/crucial copies) to remove drift risk",
       "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-051",
+      "title": "sector_02 elevated platforms render as tall floating dark blocks — make ledges/boss-step read as thin slabs",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-052",
+      "title": "Hero art: integrate the PixelLab pixel-art hero sprites (AnimatedSprite2D + state-driven AnimationController), replacing the greybox ColorRect",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-053",
+      "title": "Hero art follow-up: PixelLab-generate dedicated GLIDE and DEATH animations to fill the TASK-052 gaps",
+      "status": "todo",
+      "priority": "low"
+    },
+    {
+      "key": "TASK-054",
+      "title": "Movement: add a GROUND dash (MoveState) mirroring the existing air-dash — Fire-gated, on the existing 'dash' input (RB / Shift)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-055",
+      "title": "Movement: unify the dash — repeatable in ALL air states (Jump/Glide/Flight), longer + faster, with anti-magic suppression + flight-bypass audit",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-056",
+      "title": "Enemy art: integrate PixelLab pixel-art enemy sprites (AnimatedSprite2D + state-driven enemy AnimationController) for the 3 sector_02 combat enemies, replacing the greybox ColorRects",
+      "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-057",
+      "title": "Shield Drone: restore an at-a-glance VISUAL shield/block tell (up/down cue) lost in the TASK-056 art swap",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-058",
+      "title": "Boss + flying drones art: integrate the Warden boss sprite and swap the two drones to the new FLYING (floating eye-orb) PixelLab art; keep the old bipedal art on disk for reuse",
+      "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-059",
+      "title": "Warden boss feel: make it a grounded HEAVY TANK (gravity + horizontal-only pursuit, no flight) and render it LARGER",
+      "status": "done",
       "priority": "medium"
     }
   ]
