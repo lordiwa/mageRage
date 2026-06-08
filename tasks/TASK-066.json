@@ -9,7 +9,7 @@
     "Sector_01/02 enemy behavior is unchanged (shmup-only); their tests stay green/byte-identical.",
     "Tests-first GUT coverage (spawn count over time, entry position/pattern, despawn/pooling) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green."
   ],
-  "status": "todo",
+  "status": "in_progress",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -25,6 +25,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-08T01:48:16.439Z",
-  "updated_at": "2026-06-08T01:48:16.439Z",
+  "updated_at": "2026-06-08T03:04:55.037Z",
   "jira_key": null
 }

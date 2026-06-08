@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T02:39:38.417Z",
+  "generated_at": "2026-06-08T03:04:55.037Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -382,13 +382,13 @@
     {
       "key": "TASK-065",
       "title": "Shmup foundation: auto-scroll camera + viewport clamp + per-level flight grant + level skeleton",
-      "status": "in_progress",
+      "status": "done",
       "priority": "high"
     },
     {
       "key": "TASK-066",
       "title": "Shmup enemy streaming: spawn flying drones from the right edge in waves",
-      "status": "todo",
+      "status": "in_progress",
       "priority": "medium"
     },
     {

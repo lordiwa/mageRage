@@ -9,7 +9,7 @@
     "In shmup_01 the hero is always flying (flight pre-granted, gravity off) and the TASK-062 double-tap-stop-flight exit + landing exit are suppressed via a per-level flag; the flag DEFAULTS OFF so sector_01/02 FlightState enter/exit/double-tap/suppression/landing behavior is byte-identical and all those tests stay green.",
     "level_select.select_index now guards with ResourceLoader.exists() before change_scene_to_file (TASK-063 reviewer LOW folded in). Full GUT suite green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged with CI green."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "high",
   "labels": [
     "gameplay",
@@ -25,8 +25,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T03:04:54.917Z",
+      "body": "DONE + MERGED to master via PR #15 (merge commit 6028900), CI GREEN (gdlint + crucial 62; nightly skipped). Reconciled against the TASK-068 flight fix first (merge 20a8724 — TASK-068 detector preserved byte-for-byte, wrapped in the shmup skip; reviewer verified no weakening). Foundation LIVE: levels/shmup_01.tscn (auto-scroll camera SCROLL_SPEED=180, viewport clamp, always-fly via per-level Player.shmup_mode default FALSE), shmup_scroller.gd, shmup_01.gd, level_select 3rd entry + ResourceLoader.exists guard (TASK-063 LOW folded in), DD-014. Full GUT 899/899, crucial 62/62 x2, gdlint clean. master HEAD 6028900. NEXT: TASK-066 (enemy streaming), then TASK-067 (tuning + win/lose). Reviewer LOWs (informational, not blocking): level_select.select_path_for_test() test-seam in prod; hypothetical stale grace-state if shmup_mode were toggled mid-flight (never toggled at runtime)."
+    }
+  ],
   "created_at": "2026-06-08T01:48:01.670Z",
-  "updated_at": "2026-06-08T01:48:43.942Z",
+  "updated_at": "2026-06-08T03:04:54.917Z",
   "jira_key": null
 }
