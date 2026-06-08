@@ -1,0 +1,31 @@
+{
+  "key": "TASK-070",
+  "title": "Shmup density + dwell: enemies linger on screen much longer and spawn far more",
+  "description": "Playtest feedback on the merged shmup (TASK-064/065/066/067/069): the streamed enemies (1) leave the screen too fast and (2) are too few. Make them LINGER on screen much longer and spawn MANY more.\\n\\nMEASURED ROOT CAUSES:\\n- DWELL: the auto-scroll camera advances right at ShmupScroller.SCROLL_SPEED=180px/s while every enemy drifts LEFT in world at ShmupMotion.DRIFT_SPEED=70px/s -> ~250px/s relative, so an enemy crosses the ~1152px frame in only ~4.6s. Enemies do NOT keep pace with the frame, so they exit the LEFT edge (the despawn) almost immediately.\\n- DENSITY: ShmupSpawner.DEFAULT_WAVES is only 4 waves / 16 enemies total, last wave t_start=15s, but the level runs ~36s (LEVEL_LENGTH 6400 / SCROLL_SPEED 180) -> the back half of the level is empty, and only a couple are ever on screen at once.\\n\\nAPPROACH (keep the pure/deterministic + shmup-scoped design; sectors untouched):\\n1. FRAME-CARRY so enemies LINGER: have ShmupSpawner carry each live enemy with the advancing frame each tick (add the camera's per-tick x-advance to the enemy's position), on top of its ShmupMotion pattern step. Compute the carry from the scroller's own x delta between ticks (current visible_world_rect().position.x - last) so it stays decoupled from the SCROLL_SPEED const and frame-rate independent. Net effect: an enemy's motion becomes RELATIVE to the frame, so its dwell is governed by the (now small) relative cross-drift, not the camera speed. KEEP ShmupMotion pure: its DRIFT_SPEED becomes the small frame-RELATIVE cross speed; reduce it so a STRAIGHT/SINE enemy slowly traverses the frame and lingers ~6-8x longer (target dwell ~25-30s, tunable). HOMING/DIVE already steer at the in-frame player so they naturally linger once carried.\\n2. WAY MORE enemies: rework DEFAULT_WAVES to be much denser and span the FULL ~36s level — higher counts, tighter spacing, more/overlapping waves so several enemies share the screen, keep the mixed pattern + mixed armor (DD-006 element-swap read) and the enter-then-lock-on feel. Target a markedly fuller screen (provisional: ~4-8 concurrent, dozens total across the level) — all tunable in the wave table.\\n\\nFAIRNESS (game-design DD-001): more + lingering enemies must stay readable and fair — keep telegraph+fire intact, do not wall the player; this is density/dwell tuning, not a difficulty-by-stat-inflation change. Numbers are provisional/playtest-tunable.\\n\\nTESTS-FIRST (GUT, deterministic — drive update(delta) with a moving fake scroller, no real frames):\\n(a) FRAME-CARRY: with a scroller advancing right by dx/tick, a streamed enemy's world x is carried right by ~dx on top of its pattern step (so its FRAME-RELATIVE position moves only by the small cross-drift) -> it stays inside the visible rect far longer / is not released after a few ticks the way it is today;\\n(b) DWELL: a STRAIGHT enemy released only after a long traversal (assert it survives many more ticks inside the carried frame than the pre-change leftward-only drift would);\\n(c) the existing ShmupMotion pure-pattern tests stay green (pattern CHARACTER unchanged: relative monotone-left / sine oscillation / homing closes gap / dive swoop-then-peel) — adjust only any hardcoded DRIFT_SPEED expectation;\\n(d) DENSITY: the wave table emits the expected (larger) total and spans to near LEVEL_LENGTH duration; a concurrency assertion (e.g. at some t, >=N enemies are simultaneously active).\\n\\nSAFETY: shmup-only (ShmupSpawner/ShmupMotion/shmup_01 + the wave table); sector_01/02 + drone FSM byte-identical/green. FULL CEREMONY. File real-art/VFX, boss/elite waves, and difficulty-curve as follow-ups.",
+  "acceptance_criteria": [
+    "Streamed shmup enemies LINGER on screen markedly longer (carried with the scrolling frame; target dwell ~6-8x the current ~4.6s, tunable) instead of exiting the left edge within a few seconds.",
+    "The shmup spawns MANY more enemies, denser and spanning the full ~36s level, with several on screen at once — keeping mixed armor + mixed patterns + the enter-then-lock-on feel.",
+    "Frame-carry + dwell + density are deterministic and tests-first: a moving-fake-scroller test proves enemies are carried with the frame and survive far longer; the wave table's larger total + concurrency is asserted; the existing ShmupMotion pure-pattern tests stay green.",
+    "SCOPING: all changes are shmup-only (ShmupSpawner/ShmupMotion/shmup_01 + wave table); sector_01/02 + drone FSM stay byte-identical and their tests green.",
+    "Full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green, human live-playtest approved.",
+    "Remaining polish (real art/VFX, boss/elite waves, difficulty curve) filed as follow-up tickets, not crammed in."
+  ],
+  "status": "in_review",
+  "priority": "medium",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "tuning",
+    "enemy-ai"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-069"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-08T16:29:30.907Z",
+  "updated_at": "2026-06-08T17:08:14.574Z",
+  "jira_key": null
+}

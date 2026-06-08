@@ -35,6 +35,23 @@ class FakeScroller:
 		return rect
 
 
+## TASK-070: a MOVING stand-in for ShmupScroller — its visible_world_rect advances RIGHT by
+## `dx_per_tick` every time the test bumps it (advance()), mirroring the real auto-scroll camera.
+## The spawner reads this rect each update, so the test can prove FRAME-CARRY (the spawner must
+## carry each live enemy right by the rect's per-tick x delta on top of its pattern step). The
+## test advances this BEFORE each spawner.update() so the rect already moved this tick.
+class MovingScroller:
+	extends Node
+	var rect := Rect2(0.0, 0.0, 1000.0, 600.0)
+	var dx_per_tick := 9.0
+
+	func advance() -> void:
+		rect.position.x += dx_per_tick
+
+	func visible_world_rect() -> Rect2:
+		return rect
+
+
 ## A FAKE enemy handle the spawn-spy hands back: just a movable point with a death flag and an
 ## is_dead() predicate, so the spawner's despawn logic runs without instancing a real drone.
 class FakeEnemy:
@@ -495,3 +512,160 @@ func test_homing_enemy_does_not_steer_before_the_entry_lock_delay() -> void:
 		"BEFORE the entry-lock delay a homing enemy does NOT steer at the player (y unchanged)")
 	assert_lt(enemy.global_position.x, scroller.rect.position.x + scroller.rect.size.x + 100.0,
 		"during entry the enemy still slides in from the right (x decreasing)")
+
+
+# --- 7. TASK-070: FRAME-CARRY + DWELL (moving scroller) -----------------------
+
+## Build a spawner wired to a MOVING scroller + a spawn spy with an explicit wave. Auto-frees.
+func _make_spawner_moving(spy: SpawnSpy, scroller: MovingScroller, waves: Array) -> ShmupSpawner:
+	spy.parent = scroller
+	var s := ShmupSpawnerScript.new() as ShmupSpawner
+	s.set_scroller(scroller)
+	s.spawn_callback = Callable(spy, "spawn")
+	s.release_callback = Callable(spy, "release")
+	s.waves = waves
+	add_child_autofree(s)
+	return s
+
+
+func test_streamed_enemy_is_carried_right_with_the_advancing_frame() -> void:
+	# FRAME-CARRY (non-tautological): with a scroller advancing right by dx each tick, a streamed
+	# STRAIGHT enemy's WORLD x is carried right by ~dx on top of its (small) leftward pattern
+	# step. Net per-tick x change is (dx - DRIFT_SPEED*delta) — POSITIVE here (dx dominates the
+	# small cross-drift), so the enemy moves RIGHT in world. The PRE-change spawner (leftward-only,
+	# no carry) would move it LEFT every tick, so this fails for the old behavior.
+	var spy := SpawnSpy.new()
+	var scroller := MovingScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 1000.0, 600.0)
+	scroller.dx_per_tick = 9.0   # 9 px/tick right; at 0.05s that's 180 px/s (the real scroll)
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.STRAIGHT},
+	]
+	var spawner := _make_spawner_moving(spy, scroller, waves)
+	# Spawn the enemy (advance the rect before each update so the spawner sees a fresh delta).
+	for i in range(2):
+		scroller.advance()
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the enemy spawned")
+	var enemy: Node2D = spy.spawns[0]["enemy"]
+	var x_before := enemy.global_position.x
+	# One more carried tick: the rect advances dx, the spawner must carry the enemy with it.
+	scroller.advance()
+	spawner.update(0.05)
+	var x_after := enemy.global_position.x
+	# The carry (dx=9) dominates the small leftward cross-drift, so net world x moved RIGHT.
+	assert_gt(x_after, x_before,
+		"a streamed enemy is carried RIGHT with the advancing frame (frame-carry beats the drift)")
+	# And the carry is ~dx minus the small cross-drift (a few px), NOT a leftward-only step.
+	assert_gt(x_after - x_before, scroller.dx_per_tick - 6.0,
+		"the per-tick world carry is ~the frame's dx (relative motion = only the small cross-drift)")
+
+
+func test_carried_enemy_dwells_far_longer_than_old_leftward_only_drift() -> void:
+	# DWELL (non-tautological): a STRAIGHT enemy carried with the advancing frame survives MANY
+	# more ticks before it exits the LEFT edge than the pre-change leftward-only drift would.
+	# OLD behavior: enemy x decreases ~(DRIFT+relative-scroll) per tick and the left edge advances
+	# right toward it -> released within a handful of ticks. NEW: the carry keeps it near the
+	# frame, so only the tiny cross-drift erodes its lead -> it stays active far longer.
+	var spy := SpawnSpy.new()
+	var scroller := MovingScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 1000.0, 600.0)
+	scroller.dx_per_tick = 9.0
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.STRAIGHT},
+	]
+	var spawner := _make_spawner_moving(spy, scroller, waves)
+	for i in range(2):
+		scroller.advance()
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the enemy spawned")
+	var enemy: Node2D = spy.spawns[0]["enemy"]
+	# Drive 100 carried ticks (~5s). The OLD leftward-only enemy (no carry) would be long gone:
+	# it crossed the ~1064px lead at ~250px/s relative in ~4.3s -> released well before 100 ticks.
+	var still_active_at_100 := false
+	for i in range(100):
+		scroller.advance()
+		spawner.update(0.05)
+		if is_instance_valid(enemy) and enemy in spawner._active:
+			still_active_at_100 = (i == 99)
+	assert_true(still_active_at_100,
+		"a frame-carried STRAIGHT enemy is STILL active after 100 ticks (it dwells; old drift exits)")
+	assert_eq(spy.released.size(), 0,
+		"the carried enemy has NOT been released within ~5s (dwell far exceeds the old ~4.6s)")
+
+
+# --- 8. TASK-070: DENSITY + CONCURRENCY --------------------------------------
+
+func test_default_waves_emit_many_more_enemies_spanning_the_level() -> void:
+	# DENSITY: the reworked default wave table emits MANY more enemies (dozens, not 16) and its
+	# last wave starts near the full ~36s level duration (LEVEL_LENGTH / SCROLL_SPEED), so the
+	# back half of the level is no longer empty.
+	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
+	add_child_autofree(spawner)
+	var total := 0
+	var last_t_start := 0.0
+	for wave in spawner.waves:
+		total += int(wave.get("count", 0))
+		last_t_start = maxf(last_t_start, float(wave.get("t_start", 0.0)))
+	assert_gte(total, 36,
+		"the reworked default wave table emits MANY more enemies (>= 36, was 16)")
+	# Level runs ~36s (LEVEL_LENGTH 6400 / SCROLL_SPEED 180 = ~35.5s); last wave starts late.
+	var level_secs := Shmup01.LEVEL_LENGTH / ShmupScroller.SCROLL_SPEED
+	assert_gte(last_t_start, level_secs * 0.7,
+		"the last default wave starts in the BACK portion of the level (spans the full lane)")
+	assert_lt(last_t_start, level_secs,
+		"the last default wave still starts BEFORE the level ends")
+
+
+func test_default_waves_keep_mixed_armor_and_mixed_motion() -> void:
+	# Density must NOT collapse the variety: the default table still mixes BOTH armor types
+	# (enemy_type 0 + 1) and multiple motion patterns (the enter-then-lock-on read is preserved).
+	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
+	add_child_autofree(spawner)
+	var types := {}
+	var motions := {}
+	for wave in spawner.waves:
+		types[int(wave.get("enemy_type", 0))] = true
+		motions[int(wave.get("motion", ShmupSpawner.MotionPattern.STRAIGHT))] = true
+	assert_true(types.has(0) and types.has(1),
+		"the default table mixes BOTH armor types (DD-006 element-swap read preserved)")
+	assert_gte(motions.size(), 3,
+		"the default table mixes >= 3 motion patterns (variety + enter-then-lock-on feel)")
+
+
+func test_default_stream_puts_several_enemies_on_screen_at_once() -> void:
+	# CONCURRENCY (non-tautological): drive the REAL default wave stream through time with the
+	# moving scroller; at some tick several enemies (>= 4) are simultaneously active + inside the
+	# visible rect. Pre-change (sparse waves + fast left-exit) only ever had ~1-2 at a time.
+	var spy := SpawnSpy.new()
+	var scroller := MovingScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 1152.0, 648.0)   # a real-ish frame size
+	scroller.dx_per_tick = 3.0   # 180 px/s at 1/60 dt
+	add_child_autofree(scroller)
+	var s := ShmupSpawnerScript.new() as ShmupSpawner
+	spy.parent = scroller
+	s.set_scroller(scroller)
+	s.spawn_callback = Callable(spy, "spawn")
+	s.release_callback = Callable(spy, "release")
+	# Use the DEFAULT wave table (do NOT override s.waves) — this asserts the shipped density.
+	add_child_autofree(s)
+	var dt := 1.0 / 60.0
+	var max_concurrent := 0
+	# Drive the full level (~36s) and track peak simultaneous on-screen enemies.
+	for i in range(60 * 38):
+		scroller.advance()
+		s.update(dt)
+		var rect := scroller.visible_world_rect()
+		var on_screen := 0
+		for e in s._active:
+			if e != null and is_instance_valid(e) and e is Node2D:
+				var ex: float = (e as Node2D).global_position.x
+				if ex >= rect.position.x and ex <= rect.position.x + rect.size.x:
+					on_screen += 1
+		max_concurrent = maxi(max_concurrent, on_screen)
+	assert_gte(max_concurrent, 8,
+		"the default stream puts >= 8 enemies on screen at once at peak (markedly fuller screen)")

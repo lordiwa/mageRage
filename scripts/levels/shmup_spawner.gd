@@ -63,19 +63,41 @@ const ENEMY_SCENES := {
 ## Provisional pacing — TASK-067 owns the speed/cadence tuning. TASK-069 adds the motion mix so
 ## enemies ENTER then LOCK ON (variety + the "follow you" feel). Mixed armor across waves so the
 ## player swaps element mid-stream (DD-006 read preserved). Settable so a test owns the schedule.
+## TASK-070: DENSE + LINGERING. The level runs ~35.5s (Shmup01.LEVEL_LENGTH 6400 / SCROLL_SPEED
+## 180). Enemies are now FRAME-CARRIED (they linger ~30s) so OVERLAPPING waves accumulate several
+## on screen at once. Reworked from 4 waves / 16 enemies to a denser stream that SPANS the full
+## lane (last wave starts ~30s in, before the level ends), keeps mixed armor (0 Empire ELEC / 1
+## Shield ICE) + all four motion patterns + the enter-then-lock-on feel. Provisional / playtest-
+## tunable: ~dozens total, ~4-8+ concurrent. Kept FAIR (DD-001) — denser + lingering, not a wall:
+## tighter spacing + overlap, NOT bigger single bursts; telegraph+fire intact.
 const DEFAULT_WAVES: Array = [
 	# Opener: a STRAIGHT line — pacing rest, lets the player read the armor color.
-	{"enemy_type": 0, "count": 4, "spacing": 0.8, "y_pattern": YPattern.LINE, "t_start": 1.5,
+	{"enemy_type": 0, "count": 5, "spacing": 0.7, "y_pattern": YPattern.LINE, "t_start": 1.0,
 		"motion": MotionPattern.STRAIGHT},
-	# A weaving wave that locks on after the entry beat.
-	{"enemy_type": 1, "count": 3, "spacing": 1.0, "y_pattern": YPattern.TOP, "t_start": 6.0,
+	# Early weave (overlaps the opener) — a second armor enters from the top.
+	{"enemy_type": 1, "count": 5, "spacing": 0.8, "y_pattern": YPattern.TOP, "t_start": 4.0,
 		"motion": MotionPattern.SINE},
 	# Homing pressure: enter, then track the player (the core follow-you ask).
-	{"enemy_type": 0, "count": 5, "spacing": 0.6, "y_pattern": YPattern.SINE, "t_start": 10.0,
+	{"enemy_type": 0, "count": 6, "spacing": 0.6, "y_pattern": YPattern.SINE, "t_start": 8.0,
 		"motion": MotionPattern.HOMING},
-	# Dive finale: arc in fast, swoop the player once, peel away.
-	{"enemy_type": 1, "count": 4, "spacing": 0.7, "y_pattern": YPattern.BOTTOM, "t_start": 15.0,
+	# Dive jab from below while the homers + earlier waves still linger.
+	{"enemy_type": 1, "count": 5, "spacing": 0.7, "y_pattern": YPattern.BOTTOM, "t_start": 12.0,
 		"motion": MotionPattern.DIVE},
+	# Mid-level straight reinforcement (fills the lane, keeps the screen busy).
+	{"enemy_type": 0, "count": 6, "spacing": 0.6, "y_pattern": YPattern.LINE, "t_start": 16.0,
+		"motion": MotionPattern.STRAIGHT},
+	# A weaving Shield wave overlapping the straight reinforcement.
+	{"enemy_type": 1, "count": 5, "spacing": 0.7, "y_pattern": YPattern.SINE, "t_start": 19.0,
+		"motion": MotionPattern.SINE},
+	# Back-half homing wave (the lane is full now; element-swap pressure).
+	{"enemy_type": 0, "count": 6, "spacing": 0.6, "y_pattern": YPattern.TOP, "t_start": 23.0,
+		"motion": MotionPattern.HOMING},
+	# Late dive finale — swoop the player as the level closes out.
+	{"enemy_type": 1, "count": 5, "spacing": 0.7, "y_pattern": YPattern.BOTTOM, "t_start": 27.0,
+		"motion": MotionPattern.DIVE},
+	# Closing straight stragglers spanning to near the finish line.
+	{"enemy_type": 0, "count": 5, "spacing": 0.7, "y_pattern": YPattern.LINE, "t_start": 30.5,
+		"motion": MotionPattern.STRAIGHT},
 ]
 
 ## The active wave stream (defaults to DEFAULT_WAVES; a test overrides it).
@@ -105,6 +127,13 @@ var _motion: Dictionary = {}
 
 ## Seconds elapsed since the spawner began driving update() — the wave clock.
 var _clock := 0.0
+
+## TASK-070 FRAME-CARRY: the scroller's left-edge x as of the PREVIOUS tick. Each tick the
+## spawner carries every live enemy right by (this tick's left edge - last) so the enemy moves
+## RELATIVE to the advancing frame — its dwell is governed by the small ShmupMotion cross-drift,
+## not the camera speed. NAN until the first _advance_active reads the scroller (carry = 0 the
+## first tick). Read off the scroller's OWN rect so it's decoupled from SCROLL_SPEED + frame-rate.
+var _last_left_edge := NAN
 
 ## Per-wave count of emits already fired, parallel to `waves` (index-aligned).
 var _emitted: Array[int] = []
@@ -200,6 +229,13 @@ func _emit_one(wave: Dictionary, index: int) -> void:
 ## non-Node2D fake) degrades to the plain leftward drift. Skips any handle that vanished.
 func _advance_active(delta: float) -> void:
 	var player_pos := _player_position()
+	# TASK-070 FRAME-CARRY: how far the scroller's frame advanced (right) since the last tick.
+	# Adding this to every enemy on top of its pattern step makes the motion RELATIVE to the
+	# frame, so an enemy keeps pace with the scroll and only the (small) ShmupMotion cross-drift
+	# erodes its lead -> it LINGERS. Computed from the scroller's OWN left-edge delta (not the
+	# SCROLL_SPEED const), so it stays decoupled + frame-rate independent. Zero on the first tick.
+	var carry_dx := _frame_carry_dx()
+	var carry := Vector2(carry_dx, 0.0)
 	for enemy in _active:
 		if enemy == null or not is_instance_valid(enemy):
 			continue
@@ -210,11 +246,26 @@ func _advance_active(delta: float) -> void:
 		if _motion.has(key):
 			var state: Dictionary = _motion[key]
 			node.global_position = ShmupMotion.next_position(
-				state, node.global_position, player_pos, delta)
+				state, node.global_position, player_pos, delta) + carry
 			state["elapsed"] = float(state.get("elapsed", 0.0)) + delta
 		else:
-			# No motion record (legacy / direct-tracked handle): plain leftward drift.
-			node.global_position.x -= ENTRY_SPEED * delta
+			# No motion record (legacy / direct-tracked handle): plain leftward drift + carry.
+			node.global_position.x += -ENTRY_SPEED * delta + carry_dx
+
+
+## TASK-070 FRAME-CARRY amount (px) this tick: the scroller's visible-rect left-edge advance
+## since the previous tick. Reads the LIVE rect, updates the stored edge, and returns 0 on the
+## very first tick (no previous edge) or when no scroller is wired. Pure side effect on
+## _last_left_edge so the carry stays decoupled from SCROLL_SPEED + the frame rate.
+func _frame_carry_dx() -> float:
+	if _scroller == null:
+		return 0.0
+	var left_edge: float = _scroller.visible_world_rect().position.x
+	var dx := 0.0
+	if not is_nan(_last_left_edge):
+		dx = left_edge - _last_left_edge
+	_last_left_edge = left_edge
+	return dx
 
 
 ## The live player's world position for lock-on/homing/dive, or a far-LEFT fallback (so a

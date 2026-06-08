@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T16:22:43.534Z",
+  "generated_at": "2026-06-08T17:08:14.574Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -407,6 +407,12 @@
       "key": "TASK-069",
       "title": "Shmup enemy behavior: enter-then-lock-on follow + data-driven movement patterns",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-070",
+      "title": "Shmup density + dwell: enemies linger on screen much longer and spawn far more",
+      "status": "in_review",
       "priority": "medium"
     }
   ]
