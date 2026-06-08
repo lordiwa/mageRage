@@ -1,0 +1,29 @@
+{
+  "key": "TASK-064",
+  "title": "New fast side-scrolling shoot-em-up flying level (separate mode)",
+  "description": "Add a SEPARATE fast-paced side-scroller shoot-em-up flying level as its own mode (decided with the human: \\\"new shmup mode alongside\\\" — sector_01/02 stay exactly as-is; this is additive content reachable from the level selector, TASK level-select).\\n\\nGoal: a level that PLAYS like a classic horizontal shmup — the hero is flying fast through a horizontally-scrolling space, shooting, dodging. It reuses the existing player, flight, and the M2.1 combat/projectile systems but tuned for shmup pace.\\n\\nThis ticket needs a short DESIGN pass FIRST (use the game-design skill + docs/GDD.md + docs/LORE-BIBLE.md so it stays canon-consistent) to lock the specifics before building. Open design questions the developer/orchestrator must resolve and record (as a DD in docs/DECISIONES-DISENO.md) before implementation:\\n- Scroll model: auto-scroll (camera advances at a fixed speed, the classic shmup constraint) vs. free-flight-but-fast (player-driven, just higher speeds). Recommend auto-scroll for a real shmup feel, but confirm.\\n- Flight here: shmup levels are flight-centric. Decide how flight is granted/sustained in this level (e.g. always-flying, electricity pre-granted) WITHOUT regressing the metroidvania gating in the sectors — the shmup tuning must be SCOPED to this level only (per-level overrides, not global changes to FlightState/Player defaults). Note the related double-tap-to-stop-flying control (separate TASK): decide whether stopping flight even makes sense in an auto-scroll shmup, and if it's disabled here, do it via a per-level flag, not by editing the shared state.\\n- Speed/feel: faster fly speed + faster projectile cadence for this level only; obstacles/enemies streaming in from the right; a win/lose condition (reach the end / survive, vs. death-respawn).\\n- Reuse the existing enemies (Empire/Shield flying drones already exist as orbs) and projectile pool; greybox any new hazard geometry first (collision is real gameplay -> full ceremony).\\n\\nBuild scope after design lock: new levels/shmup_01.tscn (+ controller script), wired into the level selector list. Real collision/gameplay -> FULL CEREMONY (developer tests-first -> reviewer block-on-HIGH -> PR -> CI). Any per-level flight/speed override must be unit-tested to prove it does NOT leak into sector_01/02 (those corridor + gate + boss-gap + flight-suppression tests must stay byte-identical/green).\\n\\nBecause this is the largest item and design-dependent, expect it to be split into sub-tickets after the design pass (e.g. scroll/camera system, shmup tuning override, enemy streaming/spawner, win-lose). File those as follow-ups rather than cramming one mega-PR.",
+  "acceptance_criteria": [
+    "A short design pass is recorded as a new DD in docs/DECISIONES-DISENO.md locking: scroll model (auto-scroll vs fast-free-flight), how flight is granted in this level, shmup speed/cadence tuning, and the win/lose condition — consistent with docs/GDD.md and the lore bible.",
+    "A new level levels/shmup_01.tscn exists, plays as a fast horizontal flying shoot-em-up (faster fly speed + projectile cadence than the sectors), and is reachable from the level selector.",
+    "All shmup-specific tuning (fly speed, fire cadence, flight granting, any stop-flight disabling) is SCOPED to this level via per-level overrides; sector_01/02 FlightState/Player/combat defaults are unchanged and their corridor + gate + boss-gap + flight-suppression tests stay green/byte-identical.",
+    "The level has a clear win condition (reach the end / survive) and a lose/respawn condition; it reuses the existing player, projectile pool, and flying-drone enemies.",
+    "Full ceremony honored (developer tests-first, independent reviewer block-on-HIGH, PR, CI green, gdlint clean). Larger pieces are split into follow-up sub-tickets rather than one mega-PR."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "level",
+    "new-mode",
+    "design-needed"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-07T23:53:54.008Z",
+  "updated_at": "2026-06-07T23:53:54.008Z",
+  "jira_key": null
+}

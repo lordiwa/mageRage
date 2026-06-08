@@ -1,0 +1,40 @@
+{
+  "key": "TASK-063",
+  "title": "Level selector screen (becomes the new main scene)",
+  "description": "Add a player-facing LEVEL SELECTOR screen that lists the real playable levels and loads the chosen one. This becomes the new run/main_scene in project.godot (so the game boots into the selector instead of straight into sector_02).\\n\\nScope (decided with the human: \\\"pick existing levels\\\", no lock/progress state yet):\\n- New scene scenes/level_select.tscn (+ scripts/ui/level_select.gd) — a CanvasLayer/Control menu following the existing HUD UI conventions (no global theme/font exists; mirror the inline Color language used in scripts/ui/player_hud.gd; VBoxContainer of buttons, MarginContainer padding). One entry per real level: Sector 01, Sector 02, and (once it exists) the new fast shmup level (TASK for that is separate; wire it in when present — until then list the two sectors).\\n- Selecting an entry loads that level via get_tree().change_scene_to_file(<level_path>). There is currently NO scene-change code anywhere in the project, so this introduces the first scene-transition path; keep the level path list as a single data-driven array (path + display name) so adding levels later is one line.\\n- Set project.godot run/main_scene to res://scenes/level_select.tscn (exactly that one line changes for the boot scene).\\n- Keyboard/gamepad navigable (focus the first button on ready; the project already maps move/confirm-style inputs — reuse existing actions, do NOT add new input-map actions without flagging).\\n- Each listed level must still be launchable directly in the editor (the selector is additive; it does not change how levels instance the player/HUD).\\n\\nTests-first (GUT, model scene-structure tests on the existing sector_02 structure tests): assert the selector scene loads headless clean; assert the data-driven level list contains the expected real level paths and that each listed path resolves to an existing .tscn (ResourceLoader.exists); assert the menu builds one button per entry. (Pure/headless assertions — do NOT attempt to assert an actual change_scene visual transition under GUT.) Keep collision/gameplay untouched (this is UI + boot wiring only).\\n\\nNote: this is logic/navigation (boot scene + scene loading), so it runs full ceremony (developer tests-first -> reviewer -> PR -> CI), not a direct visual tweak.",
+  "acceptance_criteria": [
+    "A level-selector scene exists (scenes/level_select.tscn) and is set as project.godot run/main_scene, so the game boots into it.",
+    "The selector lists the real playable levels (Sector 01, Sector 02; the new shmup level is added when it exists) from a single data-driven array of {path, name}; selecting one loads it via change_scene_to_file and each listed path resolves to an existing .tscn.",
+    "The menu is keyboard/gamepad navigable (first entry focused on ready) using existing input actions; no new input-map actions added without being flagged in review.",
+    "Each level remains directly launchable in the editor; player/HUD instancing per level is unchanged; no collision/gameplay logic touched.",
+    "GUT tests assert the selector loads headless clean, that the level list resolves to existing scenes, and that one button is built per entry. Full GUT suite green, gdlint clean."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "ui",
+    "menu",
+    "level-select",
+    "navigation",
+    "boot"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T01:40:48.634Z",
+      "body": "DONE locally + reviewer ACCEPT (no HIGH/MEDIUM). Branch task-063-level-select off master @5736848, 3 commits (859753d test / 8f46ef4 feat / b693acb boot). New scenes/level_select.tscn (CanvasLayer menu) + scripts/ui/level_select.gd (class LevelSelect) with single data-driven LEVEL_ENTRIES [sector_01, sector_02] (shmup added later = 1 line); selecting -> change_scene_to_file (prod swap independently verified; GUT-safe via current_scene==self guard). project.godot run/main_scene flipped to res://scenes/level_select.tscn (1 line; [input] byte-unchanged). Nav reuses EXISTING actions move_up/move_down (focus) + jump/cast_primary (confirm) via _unhandled_input; first button grab_focus on ready; mouse pressed works. Full GUT 865/865 (858 baseline +7), gdlint clean, no level/player/collision/FSM edits. NOT pushed (human go). REVIEWER LOW to fold into TASK-064: add ResourceLoader.exists() guard in select_index before swap (fail-safe when the shmup path is added). Awaiting human go to push + PR."
+    },
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T01:46:07.121Z",
+      "body": "MERGED to master via PR #13 (merge commit 2827988), CI GREEN (gdlint + crucial; nightly skipped). Branch deleted local+origin. Level selector is now the boot scene (run/main_scene). master HEAD 2827988. Reviewer LOW (ResourceLoader.exists guard in select_index) to fold into TASK-064 when the shmup path is wired."
+    }
+  ],
+  "created_at": "2026-06-07T23:53:32.889Z",
+  "updated_at": "2026-06-08T01:46:07.121Z",
+  "jira_key": null
+}

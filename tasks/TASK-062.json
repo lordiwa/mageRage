@@ -1,0 +1,40 @@
+{
+  "key": "TASK-062",
+  "title": "Double-tap jump while flying exits flight and drops to platformer",
+  "description": "New control (extends DD-008): while the hero is in FlightState, pressing JUMP twice in quick succession (a double-tap within a short window) exits flight. \\\"Stop flying\\\" = DROP TO PLATFORMER: leave FlightState, gravity returns, the hero falls and resumes ground movement (lands into MoveState, exactly like the existing landing-exit path).\\n\\nContext from the codebase map: today flight is ENTERED by a second jump press in the air (scripts/fsm/states/jump_state.gd:69-78, gated on the electricity ability + not flight-suppressed, via InputGate.just_pressed(\\\"jump\\\")). FlightState (scripts/fsm/states/flight_state.gd) has NO gravity and currently only exits on landing (is_on_floor -> MoveState) or flight suppression (DD-011 anti-magic zone). This ticket adds a third, player-driven exit: a double-tap of jump WHILE flying.\\n\\nDesign / implementation notes for the developer (confirm idiomatic against the godot-game-dev skill):\\n- Detect the double-tap INSIDE FlightState: count two InputGate.just_pressed(\\\"jump\\\") edges within a small window (e.g. ~0.30s, a named tunable const). The window/threshold must be a named constant so it is unit-testable and tunable.\\n- On the second edge within the window -> transition_to(\\\"MoveState\\\") (the same target as the landing exit, so gravity/fall is applied as a pure fall, consistent with the existing comment at flight_state.gd:70-72). Do NOT introduce a new falling state unless review finds MoveState insufficient.\\n- Must use the InputGate seam for the jump edge (deterministic in tests, per TASK-024 / memory gut-flake-await-input), NOT Input directly.\\n- Must NOT break the ENTER-flight mechanic: a normal single second-jump from JumpState still enters flight. The exit double-tap lives in FlightState only.\\n- Must NOT create a flight-bypass of the gates: dropping to platformer can only ever REMOVE flight, never grant traversal — verify against the gating-with-flight-from-spawn safety (anti-magic zone, FIRE gate, 98px boss gap). Corridor metrics for sector_01/02 stay byte-identical (no level edits expected).\\n- Document the new control in docs/DECISIONES-DISENO.md (extend DD-008).\\n\\nTests-first (GUT, model on test/crucial/test_movement_transitions_crucial.gd + FakePlayer): (a) two jump edges within the window while in FlightState -> transition_requested(FlightState, \\\"MoveState\\\"); (b) a SINGLE jump edge in flight does NOT exit; (c) two jump edges SEPARATED BY MORE THAN the window do NOT exit (window expiry); (d) regression: a second jump in JumpState still enters FlightState. Add the double-tap-exit test to the crucial subset.",
+  "acceptance_criteria": [
+    "While in FlightState, two JUMP presses within the defined double-tap window cause an exit to MoveState; gravity returns and the hero falls/lands (drop-to-platformer).",
+    "A single jump press while flying does NOT exit flight; two presses separated by more than the window do NOT exit (window expiry honored). The window/threshold is a named, tunable constant.",
+    "The existing ENTER-flight mechanic is preserved: a second jump press from JumpState (electricity unlocked, not suppressed) still transitions to FlightState.",
+    "No new flight-bypass: the drop only removes flight, never grants traversal; sector_01/02 corridor + boss-gap metrics stay byte-identical and the flight-gate/anti-magic-zone tests stay green.",
+    "Jump edges are read through the InputGate seam (deterministic). New GUT tests cover enter-still-works, double-tap-exits, single-press-no-exit, and window-expiry; the exit test is in the crucial subset. Full GUT suite green, gdlint clean. DD-008 updated in docs/DECISIONES-DISENO.md."
+  ],
+  "status": "done",
+  "priority": "high",
+  "labels": [
+    "gameplay",
+    "fsm",
+    "flight",
+    "controls",
+    "DD-008"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T01:10:59.169Z",
+      "body": "DONE locally + reviewer ACCEPT (no HIGH/MEDIUM; two negligible LOWs: sub-frame window rounding ~1/60s short, harmless redundant reset). Branch task-062-flight-double-tap-exit off master, 3 commits (a54da5f test / 1a471b2 feat / 0492e37 docs). flight_state.gd adds DOUBLE_TAP_WINDOW := 0.30s double-tap detector reading InputGate.just_pressed(\"jump\"); two edges within the window -> transition_to(\"MoveState\") (gravity returns, pure fall) — ordered AFTER DD-011 suppression (suppression still wins) and before landing exit. jump_state.gd ENTER-flight byte-identical (not in diff). Full GUT 863/863, crucial 62/62 (was 61, +1; ran 3x flake-free), gdlint clean. No level/.tscn/collision edits. DD-008 extended in docs/DECISIONES-DISENO.md. NOT pushed (repo etiquette: human go). REMAINING (live): quick GUI smoke of the feel (entry tap -> fly -> two taps -> drop). Awaiting human go to push + PR + CI + merge."
+    },
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T01:46:04.072Z",
+      "body": "MERGED to master via PR #12 (merge commit 4490155), CI GREEN (gdlint + crucial 62; nightly skipped). Branch deleted local+origin. master HEAD now 2827988. Double-tap-jump-in-flight -> drop-to-platformer is LIVE. REMAINING (live, optional): quick GUI smoke of the feel."
+    }
+  ],
+  "created_at": "2026-06-07T23:53:15.485Z",
+  "updated_at": "2026-06-08T01:46:04.072Z",
+  "jira_key": null
+}

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-07T02:57:28.310Z",
+  "generated_at": "2026-06-08T01:46:07.121Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -359,6 +359,24 @@
       "key": "TASK-061",
       "title": "sector_02 backdrop: swap city skyline for an ice-cavern wall + fix parallax level-wide coverage",
       "status": "done",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-062",
+      "title": "Double-tap jump while flying exits flight and drops to platformer",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-063",
+      "title": "Level selector screen (becomes the new main scene)",
+      "status": "done",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-064",
+      "title": "New fast side-scrolling shoot-em-up flying level (separate mode)",
+      "status": "todo",
       "priority": "medium"
     }
   ]
