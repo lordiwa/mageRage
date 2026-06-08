@@ -44,6 +44,12 @@ func _press_edge(action: String) -> void:
 	InputGate.set_test_override(action, true)
 
 
+# TASK-062: force the edge OFF for the next frame so a held override does not
+# re-fire just_pressed() every physics step (lets a test simulate distinct taps).
+func _release_edge(action: String) -> void:
+	InputGate.set_test_override(action, false)
+
+
 # Builds a state of `state_script`, wires the fake player, parents both so
 # signals/NOTIFICATIONs behave, and returns the state.
 func _make_state(state_script: GDScript, fake: FakePlayer) -> EstadoBase:
@@ -146,6 +152,34 @@ func test_flight_to_move_when_on_floor() -> void:
 	var st := _make_state(FlightState, fake)
 	st.enter()
 	watch_signals(st)
+	st.physics_update(0.016)
+
+	assert_signal_emitted_with_parameters(
+		st, "transition_requested", [st, "MoveState"])
+
+
+func test_flight_double_tap_jump_exits_to_move() -> void:
+	# TASK-062 (extends DD-008): two JUMP edges within DOUBLE_TAP_WINDOW while
+	# flying drop to MoveState (a pure fall — the same target as the landing
+	# exit), giving the player a deliberate stop-flying control. CRUCIAL: this
+	# is the player-facing exit and must never silently break.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	# First tap: an edge, then release so the next frame is not still "pressed".
+	_press_edge("jump")
+	st.physics_update(0.016)
+	_release_edge("jump")
+	st.physics_update(0.016)            # ~0.032s elapsed, inside the window
+
+	# Second tap within the window -> exit to MoveState.
+	_press_edge("jump")
 	st.physics_update(0.016)
 
 	assert_signal_emitted_with_parameters(
