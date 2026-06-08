@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T01:46:07.121Z",
+  "generated_at": "2026-06-08T02:11:31.726Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -378,6 +378,30 @@
       "title": "New fast side-scrolling shoot-em-up flying level (separate mode)",
       "status": "todo",
       "priority": "medium"
+    },
+    {
+      "key": "TASK-065",
+      "title": "Shmup foundation: auto-scroll camera + viewport clamp + per-level flight grant + level skeleton",
+      "status": "in_progress",
+      "priority": "high"
+    },
+    {
+      "key": "TASK-066",
+      "title": "Shmup enemy streaming: spawn flying drones from the right edge in waves",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-067",
+      "title": "Shmup tuning + win/lose: faster fly speed & fire cadence, reach-the-end win, respawn on death",
+      "status": "todo",
+      "priority": "medium"
+    },
+    {
+      "key": "TASK-068",
+      "title": "FIX regression: can't fly in sector_02 — entry double-jump instantly triggers the TASK-062 stop-flight double-tap",
+      "status": "in_progress",
+      "priority": "critical"
     }
   ]
 }
