@@ -49,6 +49,13 @@ enum AimDevice {NONE, PAD, MOUSE}
 ## ONLY ever read in FlightState's exit guards — it changes no other Player/combat default.
 var shmup_mode := false
 
+## TASK-067 (DD-014): per-level FLY-SPEED override. FlightState multiplies its shared
+## FLY_SPEED by this when computing the free-flight velocity, so the shmup can fly FASTER
+## than the sectors WITHOUT changing the shared FlightState.FLY_SPEED const. DEFAULTS 1.0
+## (a no-op multiplier) so sector_01/02 flight is byte-identical; the shmup_01 controller
+## sets it > 1.0 on _ready. Read defensively in FlightState ("fly_speed_scale" in player).
+var fly_speed_scale := 1.0
+
 ## -1 = facing left, +1 = facing right. Used by air dash for its burst direction.
 var facing := 1.0
 

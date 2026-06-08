@@ -36,6 +36,14 @@ enum {SLOT_PRIMARY, SLOT_SECONDARY}
 @export var spells: Array[SpellData] = []
 @export var mana: Mana
 
+## TASK-067 (DD-014): per-level FIRE-CADENCE override. EVERY hold-to-fire interval (the
+## single-slot per-element fire_interval AND the combo interval) is multiplied by this at
+## READ time — it NEVER mutates the shared SpellData.fire_interval data. < 1.0 => shorter
+## intervals => FASTER fire (the shmup pace); DEFAULT 1.0 is a no-op, so the sectors keep the
+## M2.1 per-element cadence (Fire 0.18 / Elec 0.28 / Ice 0.40) byte-identical. The shmup_01
+## controller sets it < 1.0 on _ready.
+@export var cadence_scale := 1.0
+
 ## TASK-014 outgoing-cast feedback: a brief element-tinted flash spawned at the
 ## muzzle on every REAL cast (reuses the impact_spark one-shot). Optional so
 ## movement-only fakes/tests without it still cast cleanly.
@@ -268,7 +276,10 @@ func _held_cast(
 	held: bool,
 	delta: float,
 ) -> Dictionary:
-	var interval := spell.fire_interval if spell != null else _READY_MARGIN
+	# TASK-067: scale the per-element interval by the per-level cadence_scale (default 1.0
+	# = no-op; the shmup sets < 1.0 for faster fire). Reads the SpellData interval; never
+	# mutates it. A null spell stays at READY_MARGIN (the scale is irrelevant there).
+	var interval := spell.fire_interval * cadence_scale if spell != null else _READY_MARGIN
 	# Advance the timer; cap at READY_MARGIN so a long release doesn't overflow but a
 	# ready slot still fires on the first held tick.
 	accum = minf(accum + delta, _READY_MARGIN)
@@ -305,7 +316,9 @@ func combo_window() -> float:
 func combo_interval(spell_a: SpellData, spell_b: SpellData) -> float:
 	var a := spell_a.fire_interval if spell_a != null else _READY_MARGIN
 	var b := spell_b.fire_interval if spell_b != null else _READY_MARGIN
-	return maxf(a, b) * COMBO_CADENCE_PREMIUM
+	# TASK-067: scale by the per-level cadence_scale (default 1.0 no-op) so combos speed up
+	# alongside the singles in the shmup while staying anti-dominant (still * COMBO premium).
+	return maxf(a, b) * COMBO_CADENCE_PREMIUM * cadence_scale
 
 
 ## The summed mana cost of a combo: BOTH elements' costs (anti-dominance — a combo

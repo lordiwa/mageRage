@@ -163,7 +163,11 @@ func physics_update(delta: float) -> void:
 		Input.get_axis("move_left", "move_right"),
 		Input.get_axis("move_up", "move_down")
 	).limit_length(1.0)
-	player.velocity = input * FLY_SPEED
+	# TASK-067 (DD-014): per-level FLY-SPEED override. The shared FLY_SPEED const is NEVER
+	# changed; instead the player carries a fly_speed_scale multiplier (default 1.0 = no-op,
+	# so the sectors are byte-identical). The shmup controller sets it > 1.0 for a faster
+	# air-lane pace. Read defensively so a minimal fake/player without the field defaults to 1.0.
+	player.velocity = input * FLY_SPEED * _fly_speed_scale()
 	# Twin-stick: aim owns facing while a device is aiming.
 	if input.x != 0.0 and not player.is_aiming():
 		player.facing = signf(input.x)
@@ -185,3 +189,9 @@ func physics_update(delta: float) -> void:
 ## without the field defaults to FALSE — the sectors are byte-identical.
 func _is_shmup_mode() -> bool:
 	return "shmup_mode" in player and player.shmup_mode
+
+
+## TASK-067 (DD-014): the per-level FLY-SPEED multiplier. Read defensively so a minimal
+## fake/player without the field defaults to 1.0 (a no-op) — the sectors stay byte-identical.
+func _fly_speed_scale() -> float:
+	return player.fly_speed_scale if "fly_speed_scale" in player else 1.0

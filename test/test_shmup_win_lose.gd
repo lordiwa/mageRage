@@ -33,8 +33,11 @@ func test_level_length_is_a_positive_finish_distance() -> void:
 func test_progress_is_zero_at_the_start() -> void:
 	var level: Node2D = await _make_level()
 	var shmup := level as Shmup01
-	assert_almost_eq(shmup.progress(), 0.0, 1.0,
-		"progress() reads ~0 at the level start (camera at its start x)")
+	# progress() is travel from the captured start x. After the single settle frame the
+	# auto-scroll camera has advanced a few px (SCROLL_SPEED * one delta) — far below the
+	# finish line. Assert it is small + non-negative (not the full LEVEL_LENGTH).
+	assert_between(shmup.progress(), -0.001, 30.0,
+		"progress() reads ~0 (small + nonneg) at the level start, nowhere near the finish")
 	assert_false(shmup.is_victory(), "no victory at the start")
 
 
