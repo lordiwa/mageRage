@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T02:11:31.726Z",
+  "generated_at": "2026-06-08T02:39:38.417Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -400,7 +400,7 @@
     {
       "key": "TASK-068",
       "title": "FIX regression: can't fly in sector_02 — entry double-jump instantly triggers the TASK-062 stop-flight double-tap",
-      "status": "in_progress",
+      "status": "done",
       "priority": "critical"
     }
   ]

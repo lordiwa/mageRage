@@ -9,7 +9,7 @@
     "jump_state ENTER-flight is byte-identical; DD-011 flight-suppression and landing exits intact; no level/collision/.tscn edits; sector_01/02 corridor + gate + boss-gap + flight-suppression tests stay green/byte-identical.",
     "New tests cover: entry-latch-no-exit, held-press-not-two-taps, during-grace-no-exit, deliberate-double-tap-with-release-exits, no-release-no-exit, window-expiry. Full GUT green, crucial green (the deliberate-exit test in the crucial subset), gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green. DD-008 note updated."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "critical",
   "labels": [
     "bugfix",
@@ -23,8 +23,14 @@
   "depends_on": [],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T02:39:38.417Z",
+      "body": "MERGED to master via PR #14 (merge commit 2fdf5f3), CI GREEN (gdlint + crucial 62; nightly skipped). Branch deleted. Flight is RESTORED on master: ENTRY_GRACE=0.25s + release-gated double-tap in flight_state.gd. Regression tests verified to FAIL against pre-fix master and PASS with the fix. Reviewer ACCEPT (no HIGH/MEDIUM). Full GUT 874/874, crucial 62/62. master HEAD now 2fdf5f3. ACTION FOR HUMAN: re-playtest sector_02 to confirm you can now double-jump to fly and stay flying (and that a deliberate tap-release-tap of JUMP after a moment of flight drops you). RECONCILE NOTE: the unmerged task-065-shmup-foundation branch also edits flight_state.gd (shmup-mode guard around the same exit block); when 065 resumes it must be reconciled against this fix (small manual merge — both are additive around the exit detector)."
+    }
+  ],
   "created_at": "2026-06-08T02:11:17.539Z",
-  "updated_at": "2026-06-08T02:11:31.726Z",
+  "updated_at": "2026-06-08T02:39:38.417Z",
   "jira_key": null
 }
