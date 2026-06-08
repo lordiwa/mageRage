@@ -119,8 +119,12 @@ func test_controller_clamps_the_player_into_the_camera_rect() -> void:
 	# Shove the player well beyond the right edge of the visible rect.
 	player.global_position = Vector2(rect.position.x + rect.size.x + 500.0, rect.get_center().y)
 	shmup.clamp_player_to_view()
-	assert_true(scroller.visible_world_rect().has_point(player.global_position),
-		"the player is clamped back inside the camera's visible world rect (can't leave the frame)")
-	assert_almost_eq(player.global_position.x,
-		rect.position.x + rect.size.x, 1.0,
+	# Inside the rect, inclusive of the edges (Rect2.has_point treats the far edges as
+	# exclusive, so assert containment via the inclusive bounds the clamp guarantees).
+	var p := player.global_position
+	assert_between(p.x, rect.position.x, rect.position.x + rect.size.x,
+		"the clamped player x is inside the camera's visible world rect (can't leave the frame)")
+	assert_between(p.y, rect.position.y, rect.position.y + rect.size.y,
+		"the clamped player y stays inside the visible rect")
+	assert_almost_eq(p.x, rect.position.x + rect.size.x, 1.0,
 		"a player shoved past the right edge is pulled exactly to that edge")

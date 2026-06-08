@@ -10,6 +10,10 @@ class_name FakePlayer extends Node
 var velocity := Vector2.ZERO
 var facing := 1.0
 var abilities: Dictionary = {}
+## TASK-065 (DD-014): mirrors Player.shmup_mode. DEFAULTS FALSE so every existing FSM
+## transition test is byte-identical; FlightState reads it to suppress its flight EXITS
+## (double-tap + landing) when the shmup level sets it TRUE.
+var shmup_mode := false
 var on_floor := false
 var gravity := Vector2(0, 980)
 ## DD-008: tracks how many jumps have fired since leaving the ground. The first

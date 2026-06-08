@@ -51,25 +51,33 @@ func physics_update(delta: float) -> void:
 		transition_to("MoveState")
 		return
 
-	# TASK-062 (extends DD-008): double-tap JUMP to stop flying. Count JUMP edges
-	# through the InputGate seam (deterministic in tests, per TASK-024); a second
-	# edge within DOUBLE_TAP_WINDOW of the first drops to MoveState — a PURE FALL,
-	# the same target as the landing exit, never a re-launch (JumpState.enter would
-	# add a fresh upward impulse). This only ever REMOVES flight: it cannot grant
-	# traversal, so it can never bypass a gate (anti-magic zone / FIRE gate / boss
-	# flight gap). If the window lapses with no second tap the pending tap is
-	# dropped, so a later lone press starts a fresh count (no toggle-out on one tap).
-	if _jump_tap_pending:
-		_tap_window_elapsed += delta
-		if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
-			_jump_tap_pending = false
-			_tap_window_elapsed = 0.0
-	if InputGate.just_pressed("jump"):
+	# TASK-065 (DD-014): per-level shmup scoping. In the auto-scroll shmup the hero is
+	# ALWAYS flying — dropping out (double-tap OR landing) means falling off-screen = an
+	# accidental death. So when player.shmup_mode is set we SKIP both flight EXITS below and
+	# keep the hero in FlightState. The flag defaults FALSE, so for the sectors the
+	# double-tap + landing exits run exactly as before (byte-identical). We still ran the
+	# DD-011 suppression exit above (untouched): the shmup has no anti-magic zones, so that
+	# guard is inert here, and leaving it alone keeps the sector contract intact.
+	if not _is_shmup_mode():
+		# TASK-062 (extends DD-008): double-tap JUMP to stop flying. Count JUMP edges
+		# through the InputGate seam (deterministic in tests, per TASK-024); a second
+		# edge within DOUBLE_TAP_WINDOW of the first drops to MoveState — a PURE FALL,
+		# the same target as the landing exit, never a re-launch (JumpState.enter would
+		# add a fresh upward impulse). This only ever REMOVES flight: it cannot grant
+		# traversal, so it can never bypass a gate (anti-magic zone / FIRE gate / boss
+		# flight gap). If the window lapses with no second tap the pending tap is
+		# dropped, so a later lone press starts a fresh count (no toggle-out on one tap).
 		if _jump_tap_pending:
-			transition_to("MoveState")
-			return
-		_jump_tap_pending = true
-		_tap_window_elapsed = 0.0
+			_tap_window_elapsed += delta
+			if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
+				_jump_tap_pending = false
+				_tap_window_elapsed = 0.0
+		if InputGate.just_pressed("jump"):
+			if _jump_tap_pending:
+				transition_to("MoveState")
+				return
+			_jump_tap_pending = true
+			_tap_window_elapsed = 0.0
 
 	# Resolve the shared DashComponent and tick its timers.
 	var dash := player.get_node_or_null("DashComponent") as DashComponent
@@ -105,6 +113,17 @@ func physics_update(delta: float) -> void:
 
 	# DD-008: flight ends only on landing (no toggle-out). Landed while flying ->
 	# grounded handling (no free re-launch through Jump).
-	if player.is_on_floor():
+	# TASK-065 (DD-014): suppressed in the shmup (player.shmup_mode) — the always-flying hero
+	# must never drop to platformer movement (off-screen fall). Default FALSE keeps the sector
+	# landing exit byte-identical.
+	if player.is_on_floor() and not _is_shmup_mode():
 		transition_to("MoveState")
 		return
+
+
+## TASK-065 (DD-014): true when the per-level shmup flag is set on the player, meaning the
+## hero is in the always-flying auto-scroll mode and FlightState's exits (double-tap +
+## landing) must NOT fire. Read defensively ("shmup_mode" in player) so a minimal fake/player
+## without the field defaults to FALSE — the sectors are byte-identical.
+func _is_shmup_mode() -> bool:
+	return "shmup_mode" in player and player.shmup_mode

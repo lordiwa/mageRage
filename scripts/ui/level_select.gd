@@ -29,6 +29,7 @@ signal level_selected(path: String)
 const LEVEL_ENTRIES: Array[Dictionary] = [
 	{"path": "res://levels/sector_01.tscn", "name": "Sector 01"},
 	{"path": "res://levels/sector_02.tscn", "name": "Sector 02"},
+	{"path": "res://levels/shmup_01.tscn", "name": "Shmup 01"},
 ]
 
 # --- Look: mirror the inline HUD color language (no global theme exists) ------
@@ -156,11 +157,26 @@ func _on_button_pressed(index: int) -> void:
 ## announce-before-swap order lets a headless test assert the path via the signal without
 ## a real change_scene transition. An out-of-range / unresolved path is a safe no-op.
 func select_index(index: int) -> void:
-	var path := _path_for(index)
+	_select_path(_path_for(index))
+
+## TASK-065 (folds the deferred TASK-063 reviewer LOW): load `path` only after guarding it
+## with ResourceLoader.exists(). Now that a THIRD real path exists, a typo'd / dangling entry
+## must NOT hard-crash change_scene_to_file — an empty or non-existent path is logged and
+## refused (no announce, no swap). The announce-before-swap order is preserved for the seam.
+func _select_path(path: String) -> void:
 	if path.is_empty():
+		return
+	if not ResourceLoader.exists(path):
+		push_warning("LevelSelect: refusing to load a missing level scene: %s" % path)
 		return
 	level_selected.emit(path)
 	_change_scene(path)
+
+## TEST ONLY seam: exercise the _select_path guard with an arbitrary path (e.g. a deliberately
+## missing one) WITHOUT a LEVEL_ENTRIES index, so the ResourceLoader.exists() fail-safe can be
+## asserted in isolation. Production selection always goes through select_index.
+func select_path_for_test(path: String) -> void:
+	_select_path(path)
 
 ## The actual scene swap, factored out as an overridable seam. Guarded twice: a missing
 ## tree (headless construction) is safe, AND the swap only fires when THIS selector is
