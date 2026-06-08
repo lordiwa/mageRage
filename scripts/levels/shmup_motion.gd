@@ -24,9 +24,12 @@ enum MotionPattern { STRAIGHT, SINE, HOMING, DIVE }
 ## read its armor color, THEN locks on and steers toward the live player. Tunable; SHORT/fair.
 const ENTRY_LOCK_DELAY := 0.5
 
-## Baseline leftward world drift (px/s) — the frame-advance pace shared by every pattern so an
-## enemy always approaches as the frame scrolls. Mirrors the old ShmupSpawner.ENTRY_SPEED.
-const DRIFT_SPEED := 70.0
+## Baseline leftward CROSS-drift (px/s) — TASK-070: with the spawner now FRAME-CARRYING each
+## live enemy (it adds the auto-scroll camera's per-tick x advance on top of this pattern step),
+## DRIFT_SPEED is the small FRAME-RELATIVE cross speed, NOT the camera-relative exit speed. It is
+## deliberately SMALL so a STRAIGHT/SINE enemy traverses the ~1152px frame slowly and LINGERS
+## ~30s (vs the old ~4.6s exit, when 70 px/s was fighting the 180 px/s camera). Tunable.
+const DRIFT_SPEED := 35.0
 
 ## SINE ongoing-motion knobs: vertical amplitude (px) around the center y and the angular
 ## frequency (rad/s) of the weave. Tunable — a readable, not-dizzying weave.
