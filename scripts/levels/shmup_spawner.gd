@@ -20,6 +20,13 @@ class_name ShmupSpawner extends Node
 ## camera rect (NOT magic numbers) via y_for_pattern() so a wave reads the same at any viewport.
 enum YPattern { LINE, SINE, TOP, BOTTOM }
 
+## TASK-069: the per-wave MOVEMENT pattern. Mirrors ShmupMotion.MotionPattern 1:1 (same order,
+## same int values) so a wave dict + a test can name it as ShmupSpawner.MotionPattern.* and the
+## int flows straight into ShmupMotion.next_position(). STRAIGHT (default) keeps the original
+## flat-drift behavior; SINE/HOMING/DIVE add variety + the enter-then-lock-on follow. The motion
+## MATH is PURE in ShmupMotion (frame-free, unit-tested); test_shmup_motion guards the enum.
+enum MotionPattern { STRAIGHT, SINE, HOMING, DIVE }
+
 ## How far PAST the right edge of the camera rect an enemy spawns (px) — just off-screen so it
 ## slides into view rather than popping in. Tunable.
 const SPAWN_MARGIN := 64.0
@@ -45,18 +52,30 @@ const ENEMY_SCENES := {
 }
 
 ## The DATA-DRIVEN wave stream — the single place to add/retune waves. Each wave is
-## {enemy_type, count, spacing, y_pattern, t_start}:
+## {enemy_type, count, spacing, y_pattern, t_start, motion}:
 ##   enemy_type : index into ENEMY_SCENES (which existing drone to stream);
 ##   count      : how many enemies the wave emits;
 ##   spacing    : seconds between successive emits within the wave;
-##   y_pattern  : a YPattern (LINE/SINE/TOP/BOTTOM) entry formation;
-##   t_start    : seconds (since the spawner started) the wave's first emit fires.
-## Provisional pacing — TASK-067 owns the final tuning + win/lose. Settable so a test owns the
-## schedule.
+##   y_pattern  : a YPattern (LINE/SINE/TOP/BOTTOM) entry formation (the SPAWN y);
+##   t_start    : seconds (since the spawner started) the wave's first emit fires;
+##   motion     : TASK-069 — a MotionPattern (STRAIGHT/SINE/HOMING/DIVE) ongoing MOVEMENT.
+##                Optional; defaults to STRAIGHT (the original flat-drift behavior).
+## Provisional pacing — TASK-067 owns the speed/cadence tuning. TASK-069 adds the motion mix so
+## enemies ENTER then LOCK ON (variety + the "follow you" feel). Mixed armor across waves so the
+## player swaps element mid-stream (DD-006 read preserved). Settable so a test owns the schedule.
 const DEFAULT_WAVES: Array = [
-	{"enemy_type": 0, "count": 4, "spacing": 0.8, "y_pattern": YPattern.LINE, "t_start": 1.5},
-	{"enemy_type": 1, "count": 3, "spacing": 1.0, "y_pattern": YPattern.TOP, "t_start": 6.0},
-	{"enemy_type": 0, "count": 5, "spacing": 0.6, "y_pattern": YPattern.SINE, "t_start": 10.0},
+	# Opener: a STRAIGHT line — pacing rest, lets the player read the armor color.
+	{"enemy_type": 0, "count": 4, "spacing": 0.8, "y_pattern": YPattern.LINE, "t_start": 1.5,
+		"motion": MotionPattern.STRAIGHT},
+	# A weaving wave that locks on after the entry beat.
+	{"enemy_type": 1, "count": 3, "spacing": 1.0, "y_pattern": YPattern.TOP, "t_start": 6.0,
+		"motion": MotionPattern.SINE},
+	# Homing pressure: enter, then track the player (the core follow-you ask).
+	{"enemy_type": 0, "count": 5, "spacing": 0.6, "y_pattern": YPattern.SINE, "t_start": 10.0,
+		"motion": MotionPattern.HOMING},
+	# Dive finale: arc in fast, swoop the player once, peel away.
+	{"enemy_type": 1, "count": 4, "spacing": 0.7, "y_pattern": YPattern.BOTTOM, "t_start": 15.0,
+		"motion": MotionPattern.DIVE},
 ]
 
 ## The active wave stream (defaults to DEFAULT_WAVES; a test overrides it).
@@ -73,6 +92,16 @@ var release_callback: Callable
 ## The auto-scroll camera (duck-typed: must expose visible_world_rect() -> Rect2). Fed by the
 ## level controller; a test feeds a fake. Read each update for the LIVE right edge + rect.
 var _scroller: Object
+
+## TASK-069: the live PLAYER (duck-typed Node2D: read .global_position) the homing/dive/lock-on
+## patterns steer toward. Fed by the level controller via set_player(); a test injects a fake.
+## Null is safe (the patterns fall back to plain leftward drift with no target).
+var _player: Object
+
+## TASK-069: per-active-enemy MOTION state, keyed by the enemy handle's instance id. Each entry
+## is a ShmupMotion state dict {pattern, spawn, center_y, elapsed} the spawner advances per tick
+## via ShmupMotion.next_position() — the spawner OWNS the streamed enemy's position by pattern.
+var _motion: Dictionary = {}
 
 ## Seconds elapsed since the spawner began driving update() — the wave clock.
 var _clock := 0.0
@@ -151,16 +180,49 @@ func _emit_one(wave: Dictionary, index: int) -> void:
 	if enemy == null:
 		return
 	_active.append(enemy)
+	# TASK-069: opt the streamed enemy into shmup motion (the spawner OWNS its position) so its
+	# drone FSM movement states yield position control — and seed its per-enemy motion state.
+	if enemy is Object and "shmup_motion" in enemy:
+		enemy.shmup_motion = true
+	var motion_pattern: int = int(wave.get("motion", MotionPattern.STRAIGHT))
+	_motion[(enemy as Object).get_instance_id()] = {
+		"pattern": motion_pattern,
+		"spawn": at,
+		"center_y": at.y,
+		"elapsed": 0.0,
+	}
 
 
-## Carry every live enemy LEFTWARD by ENTRY_SPEED * delta (world drift, on top of its own AI), so
-## it approaches the hero as the frame scrolls. Skips any handle that vanished.
+## TASK-069: drive every live enemy's position by its assigned MOTION pattern (the spawner OWNS
+## the streamed enemy's position; its drone FSM movement states yield via the shmup_motion flag).
+## Each enemy runs its entry pattern for ENTRY_LOCK_DELAY then locks on toward the LIVE player —
+## STRAIGHT just drifts left (the original behavior), so an enemy without a motion record (or a
+## non-Node2D fake) degrades to the plain leftward drift. Skips any handle that vanished.
 func _advance_active(delta: float) -> void:
+	var player_pos := _player_position()
 	for enemy in _active:
 		if enemy == null or not is_instance_valid(enemy):
 			continue
-		if enemy is Node2D:
-			(enemy as Node2D).global_position.x -= ENTRY_SPEED * delta
+		if not (enemy is Node2D):
+			continue
+		var node := enemy as Node2D
+		var key := (enemy as Object).get_instance_id()
+		if _motion.has(key):
+			var state: Dictionary = _motion[key]
+			node.global_position = ShmupMotion.next_position(
+				state, node.global_position, player_pos, delta)
+			state["elapsed"] = float(state.get("elapsed", 0.0)) + delta
+		else:
+			# No motion record (legacy / direct-tracked handle): plain leftward drift.
+			node.global_position.x -= ENTRY_SPEED * delta
+
+
+## The live player's world position for lock-on/homing/dive, or a far-LEFT fallback (so a
+## pattern with no player target simply keeps advancing toward the left edge). Defensive.
+func _player_position() -> Vector2:
+	if _player != null and is_instance_valid(_player) and _player is Node2D:
+		return (_player as Node2D).global_position
+	return Vector2(-1.0e9, 0.0)
 
 
 ## Sweep the active set: release (recycle) any enemy that has left the LEFT edge of the camera
@@ -176,6 +238,8 @@ func _sweep_despawns() -> void:
 		if enemy == null or not is_instance_valid(enemy):
 			continue
 		if _should_release(enemy, left_edge):
+			# TASK-069: drop the per-enemy motion record alongside the release (no leak).
+			_motion.erase((enemy as Object).get_instance_id())
 			if release_callback.is_valid():
 				release_callback.call(enemy)
 			continue
@@ -248,6 +312,30 @@ func set_scroller(scroller: Object) -> void:
 ## True once a scroller has been fed (wiring assertion for the level test).
 func has_scroller() -> bool:
 	return _scroller != null
+
+
+# --- Player wiring (TASK-069 lock-on target) ---------------------------------
+
+## Feed the spawner the live PLAYER (duck-typed Node2D) the homing/dive/lock-on patterns steer
+## toward. Mirrors set_scroller — the level controller wires it on _ready; a test injects a fake.
+func set_player(player: Object) -> void:
+	_player = player
+
+
+## True once a player has been fed (wiring assertion for the level test).
+func has_player() -> bool:
+	return _player != null
+
+
+## TASK-069 accessor: the resolved MOTION pattern of a live enemy handle (or STRAIGHT if it has
+## no record). Public so a test can assert a wave's motion field flows through to the enemy.
+func motion_for(enemy: Object) -> int:
+	if enemy == null:
+		return MotionPattern.STRAIGHT
+	var state: Variant = _motion.get(enemy.get_instance_id(), null)
+	if state == null:
+		return MotionPattern.STRAIGHT
+	return int((state as Dictionary).get("pattern", MotionPattern.STRAIGHT))
 
 
 # --- Default (real-game) seams -----------------------------------------------

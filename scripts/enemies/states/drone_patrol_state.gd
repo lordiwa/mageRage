@@ -24,6 +24,12 @@ func physics_update(_delta: float) -> void:
 	if drone.player_in_aggro_range():
 		transition_to("DroneChaseState")
 		return
+	# TASK-069: in the shmup the SPAWNER owns this enemy's position per its motion pattern, so
+	# the patrol hover YIELDS position control (no velocity / move_and_slide) — the transition
+	# logic above still runs so the drone can still reach Chase/Attack and fire. Sector drones
+	# (shmup_motion false) fall through to the unchanged hover below (byte-identical).
+	if "shmup_motion" in drone and drone.shmup_motion:
+		return
 	# Hover: flip direction at the patrol bounds around spawn.
 	var offset: float = drone.global_position.x - drone.spawn_position.x
 	if offset > HOVER_RANGE:

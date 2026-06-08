@@ -363,7 +363,7 @@ func test_default_waves_exist_so_the_level_has_a_stream() -> void:
 # --- 6. TASK-069: per-wave MOTION pattern + enter-then-lock-on follow ---------
 
 ## A movable fake player whose live position the spawner reads for homing/dive/lock-on.
-class FakePlayer:
+class FakePlayerNode:
 	extends Node2D
 
 
@@ -430,7 +430,7 @@ func test_set_player_feeds_the_live_target_for_lock_on() -> void:
 	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
 	add_child_autofree(spawner)
 	assert_false(spawner.has_player(), "no player fed yet")
-	var player := FakePlayer.new()
+	var player := FakePlayerNode.new()
 	add_child_autofree(player)
 	spawner.set_player(player)
 	assert_true(spawner.has_player(), "set_player wires the live target (like set_scroller)")
@@ -444,7 +444,7 @@ func test_homing_enemy_moves_toward_the_injected_player_after_lock_on() -> void:
 	var scroller := FakeScroller.new()
 	scroller.rect = Rect2(0.0, 0.0, 2000.0, 600.0)
 	add_child_autofree(scroller)
-	var player := FakePlayer.new()
+	var player := FakePlayerNode.new()
 	add_child_autofree(player)
 	player.global_position = Vector2(800.0, 60.0)   # off to one side + high
 	var waves := [
@@ -473,7 +473,7 @@ func test_homing_enemy_does_not_steer_before_the_entry_lock_delay() -> void:
 	var scroller := FakeScroller.new()
 	scroller.rect = Rect2(0.0, 0.0, 2000.0, 600.0)
 	add_child_autofree(scroller)
-	var player := FakePlayer.new()
+	var player := FakePlayerNode.new()
 	add_child_autofree(player)
 	player.global_position = Vector2(800.0, 60.0)
 	var waves := [

@@ -40,6 +40,14 @@ var death_burst_parent: Node
 ## in tests. Loosely typed so a fake target works headless.
 var target: Node2D
 
+## TASK-069: SHMUP-SCOPED movement opt-in. Default FALSE so sector_01/02 drones are
+## BYTE-IDENTICAL (the FSM Patrol/Chase own movement exactly as before). The shmup
+## spawner flips it TRUE on streamed enemies: the MOVEMENT states (Patrol/Chase) then
+## YIELD position control (skip their steering + move_and_slide) so the spawner can own
+## the body's position per its motion pattern — while the Attack telegraph+fire path
+## still runs (combat read preserved). MOVEMENT-only; no sector behavior changes.
+var shmup_motion := false
+
 ## Spawn point for the Patrol hover (captured on _ready).
 var spawn_position := Vector2.ZERO
 

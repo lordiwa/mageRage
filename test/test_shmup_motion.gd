@@ -15,6 +15,7 @@
 extends GutTest
 
 const ShmupMotionScript := preload("res://scripts/levels/shmup_motion.gd")
+const ShmupSpawnerScript := preload("res://scripts/levels/shmup_spawner.gd")
 
 
 ## Build a fresh per-enemy motion state for `pattern` spawned at `spawn` with center y at the
@@ -52,6 +53,20 @@ func test_motion_pattern_enum_has_all_four_patterns() -> void:
 		"HOMING pattern exists")
 	assert_true("DIVE" in ShmupMotion.MotionPattern,
 		"DIVE pattern exists")
+
+
+func test_spawner_motion_enum_mirrors_shmup_motion_one_to_one() -> void:
+	# The spawner re-declares MotionPattern (so a wave dict can name it); the int values MUST
+	# match ShmupMotion's exactly, since the wave's int flows straight into next_position().
+	# This guards against the two enums drifting (a wave would silently pick the wrong pattern).
+	assert_eq(ShmupSpawner.MotionPattern.STRAIGHT, ShmupMotion.MotionPattern.STRAIGHT,
+		"STRAIGHT int matches across the spawner + motion enums")
+	assert_eq(ShmupSpawner.MotionPattern.SINE, ShmupMotion.MotionPattern.SINE,
+		"SINE int matches across the spawner + motion enums")
+	assert_eq(ShmupSpawner.MotionPattern.HOMING, ShmupMotion.MotionPattern.HOMING,
+		"HOMING int matches across the spawner + motion enums")
+	assert_eq(ShmupSpawner.MotionPattern.DIVE, ShmupMotion.MotionPattern.DIVE,
+		"DIVE int matches across the spawner + motion enums")
 
 
 func test_entry_lock_delay_is_a_short_positive_beat() -> void:
@@ -117,7 +132,8 @@ func test_dive_arcs_toward_the_player_then_peels_away() -> void:
 	var player := Vector2(400.0, 300.0)
 	var state := _state(ShmupMotion.MotionPattern.DIVE, Vector2(1000.0, 100.0))
 	var pos := Vector2(1000.0, 100.0)
-	var min_gap := pos.distance_to(player)
+	var start_gap := pos.distance_to(player)
+	var min_gap := start_gap
 	var min_at := 0
 	var gaps: Array = []
 	for i in range(120):   # ~6s — long enough to swoop in AND peel away
@@ -128,9 +144,9 @@ func test_dive_arcs_toward_the_player_then_peels_away() -> void:
 		if g < min_gap:
 			min_gap = g
 			min_at = i
-	# It got CLOSER than it started (it swooped in).
-	assert_lt(min_gap, pos.distance_to(Vector2(1000.0, 100.0)),
-		"DIVE swoops toward the player (gap shrinks below the start)")
+	# It got CLOSER to the player than it started (it swooped in).
+	assert_lt(min_gap, start_gap,
+		"DIVE swoops toward the player (closest-approach gap shrinks below the start gap)")
 	# The closest approach is NOT the final tick — it peeled away afterwards.
 	assert_lt(min_at, gaps.size() - 1,
 		"DIVE reaches its closest approach mid-arc, not at the end")
@@ -176,7 +192,7 @@ func test_homing_steers_at_the_live_player_only_after_the_delay() -> void:
 		"AFTER ENTRY_LOCK_DELAY the enemy steers toward the LIVE player (closes the y gap)")
 
 
-func test_lock_on_tracks_the_LIVE_player_position_not_a_cached_one() -> void:
+func test_lock_on_tracks_the_live_player_position_not_a_cached_one() -> void:
 	# Non-tautological: move the player MID-RUN after lock-on; the enemy must redirect
 	# toward the NEW position (lock-on reads the live arg each tick, not a spawn snapshot).
 	var state := _state(ShmupMotion.MotionPattern.HOMING, Vector2(1000.0, 300.0))
