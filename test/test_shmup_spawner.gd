@@ -51,20 +51,30 @@ class SpawnSpy:
 	extends RefCounted
 	var spawns: Array = []
 	var released: Array = []
+	## Where fake enemies are parented (an in-tree, auto-freed node) so they don't leak as
+	## orphans. Set by the test before driving the spawner.
+	var parent: Node
 
 	func spawn(enemy_type: int, at: Vector2) -> Node2D:
 		var e := FakeEnemy.new()
+		if parent != null:
+			parent.add_child(e)
 		e.global_position = at
 		spawns.append({"type": enemy_type, "position": at, "enemy": e})
 		return e
 
 	func release(enemy: Node2D) -> void:
 		released.append(enemy)
+		# Recycle: free the fake handle (mirrors the real deferred free) so it doesn't orphan.
+		if enemy != null and is_instance_valid(enemy):
+			enemy.queue_free()
 
 
 ## Build a spawner wired to a fake scroller + a spawn spy, with a single explicit wave so the
 ## test owns the schedule. Auto-frees. `waves` overrides the default data-driven stream.
 func _make_spawner(spy: SpawnSpy, scroller: FakeScroller, waves: Array) -> ShmupSpawner:
+	# Parent fake enemies under the (in-tree, auto-freed) scroller so they don't leak as orphans.
+	spy.parent = scroller
 	var s := ShmupSpawnerScript.new() as ShmupSpawner
 	s.set_scroller(scroller)
 	s.spawn_callback = Callable(spy, "spawn")
