@@ -1,0 +1,32 @@
+{
+  "key": "TASK-069",
+  "title": "Shmup enemy behavior: enter-then-lock-on follow + data-driven movement patterns",
+  "description": "Follow-up to the fast-shmup epic (TASK-064; foundation 065, streaming 066, tuning/win-lose 067 all merged). PLAYTEST feedback: streamed enemies don't engage and lack variety. ROOT CAUSE: the streamed drones reuse the sectors' drone FSM, which only chases inside a 280px aggro range at 90px/s — but the hero flies 1.6x across a large auto-scroll frame, so the drones sit in Patrol and never close in; meanwhile the spawner's only ongoing motion is a flat 70px/s leftward drift. The wave \"patterns\" (LINE/SINE/TOP/BOTTOM) today set ONLY the spawn Y, not ongoing movement.\\n\\nHUMAN DESIGN-LOCK (this session):\\n- FOLLOW FEEL = ENTER-THEN-LOCK-ON: an enemy slides in on its pattern for a brief beat (~0.5s, tunable) so the player can read its armor color, THEN locks on and steers toward the player while still drifting left with the frame. Fair/readable per DD-001 (telegraph before threat).\\n- PATTERN SET (data-driven per wave, all four): STRAIGHT (current flat drift, baseline/rest filler), SINE (weave up/down while advancing — extend the existing spawn-Y sine into ongoing motion), HOMING/SEEK (the lock-on follow), DIVE/SWOOP (arc in fast, swoop toward the player once, peel away).\\n\\nDESIGN doctrine fit (game-design skill): combat read must stay alive — the drones KEEP telegraphing + firing by armor type (the element-swap RPS is preserved); this ticket changes MOVEMENT only. Keep enemies fair (telegraph, not bullet-sponge) and on tone (desperate guardians, not gleeful evil). Mixed armor across waves so the player swaps mid-stream.\\n\\nSCOPE / APPROACH:\\n- Add a SHMUP-SCOPED per-enemy movement behavior driven by the ShmupSpawner (NOT a change to the shared drone FSM / DroneAi / sector states). The cleanest path: when an enemy is streamed in the shmup, suppress/override the sector FSM's MOVEMENT (Patrol/Chase position control) and let a shmup motion controller own the enemy's position per its assigned pattern, while the drone still runs its telegraph+fire (Attack) so it shoots. Investigate the least-invasive seam (e.g. a per-enemy shmup_motion flag the drone's movement states honor, or a dedicated shmup movement component the spawner attaches) — choose the option that keeps sector behavior byte-identical.\\n- Extend the wave table with a per-wave MOTION/behavior field selecting one of the four patterns; pattern math is PURE + deterministic (mirror the existing static y_for_pattern helper) so it is unit-testable frame-free.\\n- ENTER-THEN-LOCK-ON: each spawned enemy runs an entry phase (its pattern's slide-in) for ENTRY_LOCK_DELAY seconds, then transitions to lock-on (homing steer toward the player's live position, capped so it stays fair and still advances with the frame). The HOMING pattern is lock-on dominant; SINE/STRAIGHT/DIVE define the entry phase then may still lock-on per the chosen feel.\\n\\nTESTS-FIRST (GUT, deterministic — drive update(delta)/pattern fns directly, no real frames):\\n(a) each pattern produces its characteristic motion (straight = monotone left; sine = oscillating y around a center; dive = arc toward player then away; homing = position moves toward the player's position over ticks);\\n(b) ENTER-THEN-LOCK-ON timing: before ENTRY_LOCK_DELAY an enemy follows its entry pattern and does NOT yet steer at the player; after the delay it steers toward the live player position;\\n(c) SCOPING: the shmup motion override does NOT alter sector_01/02 drone behavior — DroneAi / drone FSM chase/patrol/attack and the sector drones stay byte-identical and their tests stay green;\\n(d) the drones still FIRE in shmup (combat read preserved) — telegraph+fire path intact.\\n\\nSAFETY: shmup-only; sector drone AI + tests byte-identical/green. FULL CEREMONY (gameplay/logic). File any further polish (real art, more patterns, boss-wave) as follow-ups, don't cram.",
+  "acceptance_criteria": [
+    "In shmup_01, streamed enemies ENTER on their assigned pattern then LOCK ON and visibly track the player (enter-then-lock-on, ~0.5s tunable delay); they no longer sit idle out of aggro range.",
+    "Four data-driven per-wave movement patterns exist and are selectable per wave: STRAIGHT, SINE (weave), HOMING/SEEK, DIVE/SWOOP. Pattern math is pure + deterministic.",
+    "Enemies still telegraph and FIRE by armor type in shmup (the element-swap combat read is preserved); this ticket changes movement only.",
+    "SCOPING: the shmup movement override is per-level/per-enemy and does NOT change the shared drone FSM / DroneAi or sector_01/02 drone behavior — sector drone tests stay byte-identical and green.",
+    "Tests-first GUT coverage (per-pattern motion, enter-then-lock-on timing, scoping, still-fires) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green.",
+    "Any remaining polish (real art, additional patterns, boss/elite waves, difficulty curve) is filed as follow-up tickets rather than crammed in."
+  ],
+  "status": "in_review",
+  "priority": "medium",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "enemy-ai",
+    "patterns"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-066",
+    "TASK-067"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-08T15:50:28.294Z",
+  "updated_at": "2026-06-08T16:20:51.163Z",
+  "jira_key": null
+}

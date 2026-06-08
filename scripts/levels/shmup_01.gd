@@ -86,6 +86,10 @@ func _ready() -> void:
 	# camera's RIGHT edge as the frame advances.
 	if _spawner != null and _scroller != null:
 		_spawner.set_scroller(_scroller)
+	# TASK-069: feed the spawner the live PLAYER so the homing/dive/lock-on motion patterns can
+	# steer toward the hero's live position (enter-then-lock-on follow). Guarded no-op if absent.
+	if _spawner != null and _player != null and _spawner.has_method("set_player"):
+		_spawner.set_player(_player)
 	# TASK-067: apply the per-level SPEED/CADENCE tuning (scoped to this level) + wire the
 	# win/lose loop (death feedback + the optional banner).
 	_apply_shmup_tuning()

@@ -19,6 +19,12 @@ func physics_update(_delta: float) -> void:
 	if drone.can_attack():
 		transition_to("DroneAttackState")
 		return
+	# TASK-069: in the shmup the SPAWNER owns this enemy's position per its motion pattern, so
+	# Chase YIELDS position control (no steering velocity / move_and_slide) — the transitions
+	# above still run so the drone reaches Attack and FIRES. Sector drones (shmup_motion false)
+	# fall through to the unchanged steering below (byte-identical).
+	if "shmup_motion" in drone and drone.shmup_motion:
+		return
 	var dir: Vector2 = drone.steer_toward_player()
 	drone.velocity = dir * CHASE_SPEED * drone.speed_multiplier()
 	drone.move_and_slide()
