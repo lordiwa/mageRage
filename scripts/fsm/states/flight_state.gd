@@ -17,17 +17,37 @@ class_name FlightState extends EstadoBase
 const FLY_SPEED := 260.0
 
 ## TASK-062 (extends DD-008): a double-tap of JUMP while flying is a deliberate
-## "stop flying" control. Two JUMP edges within this window drop the hero to
+## "stop flying" control. Two CLEAN JUMP taps within this window drop the hero to
 ## MoveState (a pure fall — same target as the landing exit), so gravity returns
 ## and the hero lands into platformer movement. Tunable/unit-testable constant.
 const DOUBLE_TAP_WINDOW := 0.30
 
-## True once a first in-flight JUMP edge is seen and we are waiting for a second
-## within DOUBLE_TAP_WINDOW. Reset in enter() so each flight starts clean.
+## TASK-068 (regression fix): a brief grace right after entering flight during
+## which JUMP edges are IGNORED for exit detection. The hero ENTERS flight via a
+## double-jump (two rapid JUMP presses in JumpState), and Input.is_action_just_pressed
+## can latch true across MULTIPLE physics frames within one render frame; without
+## this grace those entry presses bled straight into the exit detector and dropped
+## the hero back to MoveState the instant flight began ("ya no puede volar").
+## Tunable/unit-testable constant.
+const ENTRY_GRACE := 0.25
+
+## True once a first CLEAN in-flight JUMP tap is seen and we are waiting for a
+## second within DOUBLE_TAP_WINDOW. Reset in enter() so each flight starts clean.
 var _jump_tap_pending := false
 ## Seconds elapsed since the pending first tap; when it exceeds the window the
 ## pending tap is dropped so a later lone press starts a fresh count.
 var _tap_window_elapsed := 0.0
+## TASK-068 entry grace countdown (seconds). While > 0 the exit detector is fully
+## skipped. Seeded in enter() and ticked down every physics frame.
+var _entry_grace := 0.0
+## TASK-068 release-gating: jump-held state observed on the PREVIOUS physics frame
+## (via InputGate.pressed). A tap only counts when this is false (a rising edge
+## that follows a release), so a held/latched single press can never count twice.
+var _jump_was_down := false
+## TASK-068 release-gating: the detector is ARMED only after JUMP has been observed
+## RELEASED at least once since entering flight (after grace), so the entry hold/
+## latch fully clears before any tap can count toward the exit.
+var _exit_armed := false
 
 func enter() -> void:
 	player.velocity = Vector2.ZERO
@@ -35,6 +55,13 @@ func enter() -> void:
 	# press in JumpState must not be mistaken for the first half of an exit tap).
 	_jump_tap_pending = false
 	_tap_window_elapsed = 0.0
+	# TASK-068: start the entry grace and reset release-gating so the entry
+	# double-jump (and any multi-frame just_pressed latch) cannot drop the hero.
+	_entry_grace = ENTRY_GRACE
+	# Assume jump may still be held from the entry press; require an observed
+	# release before the detector arms.
+	_jump_was_down = true
+	_exit_armed = false
 
 func physics_update(delta: float) -> void:
 	# TASK-028 (DD-011) — SUSTAIN gate. Gating only the entry edge let a hero who was
@@ -51,25 +78,53 @@ func physics_update(delta: float) -> void:
 		transition_to("MoveState")
 		return
 
-	# TASK-062 (extends DD-008): double-tap JUMP to stop flying. Count JUMP edges
-	# through the InputGate seam (deterministic in tests, per TASK-024); a second
-	# edge within DOUBLE_TAP_WINDOW of the first drops to MoveState — a PURE FALL,
-	# the same target as the landing exit, never a re-launch (JumpState.enter would
-	# add a fresh upward impulse). This only ever REMOVES flight: it cannot grant
-	# traversal, so it can never bypass a gate (anti-magic zone / FIRE gate / boss
-	# flight gap). If the window lapses with no second tap the pending tap is
-	# dropped, so a later lone press starts a fresh count (no toggle-out on one tap).
-	if _jump_tap_pending:
-		_tap_window_elapsed += delta
-		if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
-			_jump_tap_pending = false
-			_tap_window_elapsed = 0.0
-	if InputGate.just_pressed("jump"):
+	# TASK-062 (extends DD-008) + TASK-068 (regression fix): GRACE + RELEASE-GATED
+	# double-tap JUMP to stop flying. A second CLEAN tap within DOUBLE_TAP_WINDOW
+	# drops to MoveState — a PURE FALL, the same target as the landing exit, never
+	# a re-launch (JumpState.enter would add a fresh upward impulse). This only ever
+	# REMOVES flight: it cannot grant traversal, so it can never bypass a gate
+	# (anti-magic zone / FIRE gate / boss flight gap).
+	#
+	# Read BOTH the rising edge (just_pressed) and the held state (pressed) through
+	# the InputGate seam so tests are deterministic (TASK-024) and the entry latch
+	# is defeated:
+	#   1. ENTRY GRACE: while _entry_grace > 0 we tick it down and SKIP all exit
+	#      detection. The entry double-jump (and Godot's multi-physics-frame
+	#      just_pressed latch) therefore can NEVER drop the hero.
+	#   2. RELEASE-GATING: a tap counts only when it is a rising edge that FOLLOWS
+	#      a release (jump was up last frame), and only once the detector is ARMED
+	#      — armed after JUMP has been observed released at least once post-grace.
+	#      A single held/latched press can never register as two taps.
+	# Track the previous-frame held state up front so every early-return below
+	# leaves it consistent for the next frame.
+	var jump_down := InputGate.pressed("jump")
+	var jump_edge := InputGate.just_pressed("jump")
+	var was_down := _jump_was_down
+	_jump_was_down = jump_down
+
+	if _entry_grace > 0.0:
+		# During grace: ignore all jump input for exit, just tick the timer down.
+		# Do NOT arm and do NOT count taps; the entry presses pass through harmless.
+		_entry_grace -= delta
+	else:
+		# Arm only after observing a genuine release (jump up this frame) so the
+		# entry hold/latch has fully cleared before any tap can count.
+		if not jump_down:
+			_exit_armed = true
+		# Expire a stale pending first tap so a later lone tap starts fresh.
 		if _jump_tap_pending:
-			transition_to("MoveState")
-			return
-		_jump_tap_pending = true
-		_tap_window_elapsed = 0.0
+			_tap_window_elapsed += delta
+			if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
+				_jump_tap_pending = false
+				_tap_window_elapsed = 0.0
+		# A CLEAN tap = an armed rising edge that follows a release (was up last
+		# frame). Held/latched presses (was_down true) never count.
+		if _exit_armed and jump_edge and not was_down:
+			if _jump_tap_pending:
+				transition_to("MoveState")
+				return
+			_jump_tap_pending = true
+			_tap_window_elapsed = 0.0
 
 	# Resolve the shared DashComponent and tick its timers.
 	var dash := player.get_node_or_null("DashComponent") as DashComponent
