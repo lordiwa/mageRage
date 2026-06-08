@@ -1,0 +1,297 @@
+## Unit tests for the shmup enemy spawner (scripts/levels/shmup_spawner.gd, ShmupSpawner) —
+## the TASK-066 enemy stream for the auto-scroll shmup (levels/shmup_01.tscn).
+##
+## The spawner streams the EXISTING flying-drone enemies in from the RIGHT edge of the
+## auto-scroll camera's visible rect on a DATA-DRIVEN, timed wave schedule; spawned enemies
+## drift LEFTWARD relative to the world so they approach as the frame scrolls, and are
+## released/recycled when they leave the LEFT edge or die.
+##
+## EVERYTHING here is DETERMINISTIC and FRAME-FREE (the GUT flake footgun + the ticket's
+## explicit "do NOT rely on real frames / real enemy scenes" requirement):
+##   - the camera rect comes from a tiny FAKE scroller (a fixed Rect2), not a real Camera2D;
+##   - spawning goes through an INJECTED spawn callback (a spy) that records each
+##     (enemy_type, position) and returns a FAKE enemy handle — no real enemy .tscn instanced;
+##   - despawn goes through an INJECTED release callback (a spy) so we can count recycles;
+##   - time is driven by calling update(delta) DIRECTLY, never through _physics_process.
+##
+## What it proves:
+##   1. The y-pattern helper is pure + frame-free (LINE/SINE/TOP/BOTTOM map into the rect).
+##   2. A wave emits exactly its `count` enemies over simulated time (spawn-count over time).
+##   3. Spawned enemies start at/just past the RIGHT edge at the wave's y-pattern (position).
+##   4. Enemies are released when off the LEFT edge OR dead (despawn/recycle via the seam).
+##   5. The wave schedule is data-driven (editing the `waves` array changes the stream).
+extends GutTest
+
+const ShmupSpawnerScript := preload("res://scripts/levels/shmup_spawner.gd")
+
+
+## A minimal stand-in for ShmupScroller: returns a FIXED visible world rect so the spawner's
+## right-edge / y-pattern math is exercised with no real Camera2D / viewport / frames.
+class FakeScroller:
+	extends Node
+	var rect := Rect2(0.0, 0.0, 1000.0, 600.0)
+
+	func visible_world_rect() -> Rect2:
+		return rect
+
+
+## A FAKE enemy handle the spawn-spy hands back: just a movable point with a death flag and an
+## is_dead() predicate, so the spawner's despawn logic runs without instancing a real drone.
+class FakeEnemy:
+	extends Node2D
+	var dead := false
+
+	func is_dead() -> bool:
+		return dead
+
+
+## A spy that captures every spawn and hands back a FakeEnemy positioned where asked. Tests read
+## `.spawns` (an Array of {type, position, enemy}) and `.released` (the recycled FakeEnemies).
+class SpawnSpy:
+	extends RefCounted
+	var spawns: Array = []
+	var released: Array = []
+	## Where fake enemies are parented (an in-tree, auto-freed node) so they don't leak as
+	## orphans. Set by the test before driving the spawner.
+	var parent: Node
+
+	func spawn(enemy_type: int, at: Vector2) -> Node2D:
+		var e := FakeEnemy.new()
+		if parent != null:
+			parent.add_child(e)
+		e.global_position = at
+		spawns.append({"type": enemy_type, "position": at, "enemy": e})
+		return e
+
+	func release(enemy: Node2D) -> void:
+		released.append(enemy)
+		# Recycle: free the fake handle (mirrors the real deferred free) so it doesn't orphan.
+		if enemy != null and is_instance_valid(enemy):
+			enemy.queue_free()
+
+
+## Build a spawner wired to a fake scroller + a spawn spy, with a single explicit wave so the
+## test owns the schedule. Auto-frees. `waves` overrides the default data-driven stream.
+func _make_spawner(spy: SpawnSpy, scroller: FakeScroller, waves: Array) -> ShmupSpawner:
+	# Parent fake enemies under the (in-tree, auto-freed) scroller so they don't leak as orphans.
+	spy.parent = scroller
+	var s := ShmupSpawnerScript.new() as ShmupSpawner
+	s.set_scroller(scroller)
+	s.spawn_callback = Callable(spy, "spawn")
+	s.release_callback = Callable(spy, "release")
+	s.waves = waves
+	add_child_autofree(s)
+	return s
+
+
+# --- 1. Pure y-pattern helper (frame-free) -----------------------------------
+
+func test_y_pattern_line_centers_in_the_rect() -> void:
+	var rect := Rect2(0.0, 100.0, 1000.0, 600.0)
+	# LINE: every enemy in the wave shares the rect's vertical center.
+	var y := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.LINE, rect, 0)
+	assert_almost_eq(y, rect.position.y + rect.size.y * 0.5, 0.001,
+		"LINE pattern places enemies at the vertical center of the rect")
+
+
+func test_y_pattern_top_and_bottom_sit_inside_the_rect_edges() -> void:
+	var rect := Rect2(0.0, 0.0, 1000.0, 600.0)
+	var top := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.TOP, rect, 0)
+	var bottom := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.BOTTOM, rect, 0)
+	assert_between(top, rect.position.y, rect.get_center().y,
+		"TOP pattern sits in the upper half of the rect (inside it)")
+	assert_between(bottom, rect.get_center().y, rect.position.y + rect.size.y,
+		"BOTTOM pattern sits in the lower half of the rect (inside it)")
+
+
+func test_y_pattern_sine_stays_inside_the_rect_and_varies_by_index() -> void:
+	var rect := Rect2(0.0, 0.0, 1000.0, 600.0)
+	var y0 := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.SINE, rect, 0)
+	var y1 := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.SINE, rect, 1)
+	# Inside the rect.
+	assert_between(y0, rect.position.y, rect.position.y + rect.size.y,
+		"SINE y stays inside the rect (index 0)")
+	assert_between(y1, rect.position.y, rect.position.y + rect.size.y,
+		"SINE y stays inside the rect (index 1)")
+	# Varies with the member index (a wave of sine enemies isn't a flat line).
+	assert_ne(y0, y1, "SINE varies the y with the member index across the wave")
+
+
+# --- 2. Spawn count over simulated time --------------------------------------
+
+func test_wave_emits_exactly_its_count_over_time() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	# One wave: 4 enemies, 0.5s apart, starting at t=0.
+	var waves := [
+		{"enemy_type": 0, "count": 4, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	# Drive ~2.5s of simulated time in small ticks (deterministic, no real frames).
+	for i in range(50):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 4,
+		"a wave of count=4 emits exactly 4 enemies over the simulated time")
+
+
+func test_wave_respects_t_start_and_spacing_schedule() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	# One wave: 3 enemies, 1.0s apart, starting at t=1.0 (so first spawn near t=1.0).
+	var waves := [
+		{"enemy_type": 0, "count": 3, "spacing": 1.0, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 1.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	# At t=0.5 (before t_start) nothing has spawned.
+	for i in range(10):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 0, "no enemy spawns before the wave's t_start")
+	# Advance to t≈1.2: the first enemy of the wave has spawned, not yet the second.
+	for i in range(14):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the first wave enemy spawns at/after t_start, before spacing")
+
+
+# --- 3. Spawn position: right edge + y-pattern -------------------------------
+
+func test_enemies_spawn_at_or_past_the_right_edge_of_the_camera_rect() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	scroller.rect = Rect2(200.0, 50.0, 800.0, 500.0)
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the single enemy spawned")
+	var right_edge := scroller.rect.position.x + scroller.rect.size.x
+	var spawn_x: float = spy.spawns[0]["position"].x
+	assert_gte(spawn_x, right_edge,
+		"the enemy spawns AT or PAST the right edge of the camera rect (enters from the right)")
+
+
+func test_enemies_spawn_at_the_waves_y_pattern() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 1000.0, 600.0)
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.TOP,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the single enemy spawned")
+	var expected_y := ShmupSpawner.y_for_pattern(ShmupSpawner.YPattern.TOP, scroller.rect, 0)
+	assert_almost_eq(spy.spawns[0]["position"].y, expected_y, 0.001,
+		"the enemy spawns at the wave's y-pattern (TOP) position")
+
+
+# --- 4. Despawn / recycle ----------------------------------------------------
+
+func test_enemy_off_the_left_edge_is_released() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 1000.0, 600.0)
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	# Spawn the enemy.
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the enemy spawned")
+	var enemy: FakeEnemy = spy.spawns[0]["enemy"]
+	# Shove it well past the LEFT edge of the rect.
+	enemy.global_position.x = scroller.rect.position.x - 500.0
+	spawner.update(0.05)
+	assert_eq(spy.released.size(), 1, "an enemy past the LEFT edge is released/recycled")
+	assert_eq(spy.released[0], enemy, "the released handle is the off-screen enemy")
+
+
+func test_dead_enemy_is_released() -> void:
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the enemy spawned")
+	var enemy: FakeEnemy = spy.spawns[0]["enemy"]
+	# Keep it on-screen but mark it dead.
+	enemy.global_position = scroller.rect.get_center()
+	enemy.dead = true
+	spawner.update(0.05)
+	assert_eq(spy.released.size(), 1, "a DEAD enemy is released/recycled")
+	assert_eq(spy.released[0], enemy, "the released handle is the dead enemy")
+
+
+func test_a_released_enemy_is_not_released_twice() -> void:
+	# Recycle discipline: once released, an enemy is dropped from the active set so a later
+	# update can't release it again (no double-free / double-recycle).
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	var enemy: FakeEnemy = spy.spawns[0]["enemy"]
+	enemy.dead = true
+	spawner.update(0.05)
+	spawner.update(0.05)
+	assert_eq(spy.released.size(), 1, "a released enemy is never released a second time")
+
+
+# --- 5. Data-driven stream ---------------------------------------------------
+
+func test_the_wave_stream_is_data_driven() -> void:
+	# Editing the `waves` array (the single data-driven definition) is all it takes to change
+	# the stream: two waves of different counts emit count_a + count_b enemies total.
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 2, "spacing": 0.3, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+		{"enemy_type": 1, "count": 3, "spacing": 0.3, "y_pattern": ShmupSpawner.YPattern.SINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(40):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 5, "two data-driven waves emit count_a + count_b = 5 enemies")
+	# The second wave carried its own enemy_type (1) through the seam.
+	var types := {}
+	for rec in spy.spawns:
+		types[rec["type"]] = true
+	assert_true(types.has(0) and types.has(1),
+		"each wave's enemy_type flows through the spawn seam (data-driven composition)")
+
+
+func test_default_waves_exist_so_the_level_has_a_stream() -> void:
+	# Even with no override, the spawner ships a default data-driven stream (so wiring it into
+	# the level yields enemies). Just assert the default is a non-empty, well-formed array.
+	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
+	add_child_autofree(spawner)
+	assert_gt(spawner.waves.size(), 0, "the spawner ships a default non-empty wave stream")
+	var first: Dictionary = spawner.waves[0]
+	assert_true(first.has("count") and first.has("spacing") and first.has("y_pattern"),
+		"each default wave is the documented {enemy_type,count,spacing,y_pattern,t_start} shape")

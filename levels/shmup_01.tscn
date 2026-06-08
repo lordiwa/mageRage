@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3 uid="uid://b8mageshmup001"]
+[gd_scene load_steps=9 format=3 uid="uid://b8mageshmup001"]
 
 [ext_resource type="PackedScene" uid="uid://b8mageragepl0r" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/levels/shmup_01.gd" id="2_shmup"]
 [ext_resource type="Script" path="res://scripts/levels/shmup_scroller.gd" id="3_scroller"]
 [ext_resource type="PackedScene" uid="uid://b8mageragephud0" path="res://scenes/player_hud.tscn" id="4_playerhud"]
+[ext_resource type="Script" path="res://scripts/levels/shmup_spawner.gd" id="5_spawner"]
 
 [sub_resource type="RectangleShape2D" id="Rect_floor"]
 size = Vector2(6400, 64)
@@ -72,3 +73,6 @@ script = ExtResource("3_scroller")
 position = Vector2(220, 20)
 
 [node name="PlayerHUD" parent="." instance=ExtResource("4_playerhud")]
+
+[node name="ShmupSpawner" type="Node" parent="."]
+script = ExtResource("5_spawner")

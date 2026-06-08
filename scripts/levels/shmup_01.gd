@@ -18,6 +18,9 @@ class_name Shmup01 extends Node2D
 @onready var _player: Node2D = get_node_or_null("Player")
 @onready var _player_spawn: Marker2D = get_node_or_null("PlayerSpawn")
 @onready var _scroller: ShmupScroller = get_node_or_null("ShmupScroller") as ShmupScroller
+## TASK-066: the enemy STREAM. Fed the auto-scroll camera on _ready so it emits the existing
+## flying-drone enemies from the LIVE right edge of the scrolling frame in data-driven waves.
+@onready var _spawner: ShmupSpawner = get_node_or_null("ShmupSpawner") as ShmupSpawner
 
 
 func _ready() -> void:
@@ -36,6 +39,10 @@ func _ready() -> void:
 		if _player_spawn != null:
 			_scroller.global_position = _player_spawn.global_position
 		_scroller.make_current()
+	# TASK-066: feed the spawner the live auto-scroll camera so it streams enemies in from the
+	# camera's RIGHT edge as the frame advances.
+	if _spawner != null and _scroller != null:
+		_spawner.set_scroller(_scroller)
 
 
 ## DD-014 always-flying setup, scoped to this level on the reused Player instance:
@@ -76,3 +83,8 @@ func clamp_player_to_view() -> void:
 ## Anchor accessor: the auto-scroll camera (read-only, for tests + the controller).
 func scroller() -> ShmupScroller:
 	return _scroller
+
+
+## TASK-066 accessor: the enemy stream spawner (read-only, for tests + the controller).
+func spawner() -> ShmupSpawner:
+	return _spawner
