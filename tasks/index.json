@@ -394,7 +394,7 @@
     {
       "key": "TASK-067",
       "title": "Shmup tuning + win/lose: faster fly speed & fire cadence, reach-the-end win, respawn on death",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     },
     {

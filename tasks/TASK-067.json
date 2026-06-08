@@ -9,7 +9,7 @@
     "Tests-first GUT coverage (override scoping, win-on-finish, lose-on-death) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green.",
     "Any remaining polish (real art, parallax backdrop, balance) is filed as follow-up tickets rather than crammed in."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -22,9 +22,18 @@
     "TASK-065",
     "TASK-066"
   ],
-  "linked_commits": [],
-  "linked_prs": [],
-  "comments": [],
+  "linked_commits": [
+    "d2f326b",
+    "946be4c",
+    "6320357",
+    "051df6c"
+  ],
+  "linked_prs": [
+    "https://github.com/lordiwa/mageRage/pull/17"
+  ],
+  "comments": [
+    "DONE + MERGED to master via PR #17 (merge 3fbd328), CI GREEN (gdlint + crucial 62; nightly skipped). Full GUT 929/929, reviewer ACCEPT (no HIGH/MEDIUM; one mitigated LOW). LOSE semantics decided by human = revive-in-frame-and-continue (DD-014 updated); per-level fly_speed_scale=1.6 / cadence_scale=0.6 are scoped opt-in seams (defaults 1.0), sectors byte-identical. Completes the fast-shmup epic TASK-064."
+  ],
   "created_at": "2026-06-08T01:48:28.724Z",
   "updated_at": "2026-06-08T03:42:50.664Z",
   "jira_key": null
