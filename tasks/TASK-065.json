@@ -1,0 +1,32 @@
+{
+  "key": "TASK-065",
+  "title": "Shmup foundation: auto-scroll camera + viewport clamp + per-level flight grant + level skeleton",
+  "description": "First sub-ticket of TASK-064 (auto-scroll shmup mode). Build the FOUNDATION; enemy streaming (TASK-066) and tuning/win-lose (TASK-067) are separate.\\n\\nDecided design (record as DD-014 in docs/DECISIONES-DISENO.md, Spanish, this ticket): the shmup is a SEPARATE level levels/shmup_01.tscn reached from the level selector, with a constant-rightward AUTO-SCROLL camera. The hero is ALWAYS flying here (flight pre-granted, gravity off), constrained to the visible viewport; the world scrolls past. All shmup behavior is SCOPED to this level via a per-level flag/override — it must NOT change sector_01/02 FlightState/Player/combat defaults.\\n\\nScope of THIS ticket:\\n1. DD-014 recorded (auto-scroll model, always-flying, per-level scoping, stop-flight disabled here, win=reach end / lose=respawn — even if win/lose lands in TASK-067, document the intent).\\n2. An auto-scroll camera mechanism: a Camera2D (or a scroller node) that advances at a constant SCROLL_SPEED (named const, tunable). Decide cleanly whether the camera moves and the player is clamped into its rect, or the world moves — pick the idiomatic Godot 4.6 approach (camera advances; player position clamped to the camera's visible rect each physics frame). The clamp must use the viewport/camera rect, not magic numbers.\\n3. Per-level FLIGHT grant + scoping: in shmup_01 the hero starts flying and STAYS flying — pre-grant the electricity ability (or an equivalent always-fly path) and DISABLE the TASK-062 double-tap-stop-flight exit IN THIS LEVEL ONLY, via a per-level flag (e.g. a Player/FlightState property like shmup_mode set by the level controller, read where the double-tap exit and the landing exit would otherwise fire). Gravity off. CRITICAL: prove via tests this flag defaults FALSE and does NOT change sector behavior (sector FlightState enter/exit, double-tap exit, DD-011 suppression, landing all unchanged when the flag is off).\\n4. levels/shmup_01.tscn skeleton: greybox bounds, the player instanced (like the sectors), the player HUD instanced, a PlayerSpawn marker, the auto-scroll camera wired, a controller script scripts/levels/shmup_01.gd (class_name) that sets the per-level flags on _ready and snaps the player to spawn. Greybox only — real art later. Collision geometry that exists (floor/ceiling/bounds) is REAL gameplay -> keep it deliberate and tested.\\n5. Wire shmup_01 into the level selector LEVEL_ENTRIES (one line) AND fold the deferred reviewer LOW from TASK-063: add a ResourceLoader.exists() guard in level_select.select_index before change_scene_to_file (fail-safe now that a third path exists).\\n\\nTests-first (GUT): (a) shmup_01.tscn loads headless clean; (b) the auto-scroll camera advances by SCROLL_SPEED*delta over a simulated tick (deterministic, call the scroller's update directly — do NOT rely on real frames); (c) the player clamp keeps the player inside the camera rect when pushed past an edge; (d) per-level flight flag: when set, the double-tap-exit and landing exit do NOT drop the hero (stays flying); when UNSET (default, i.e. the sectors), all existing FlightState transitions are byte-identical/green; (e) the selector now lists 3 levels and every path resolves, and select_index refuses a non-existent path (the new guard). Reuse FakePlayer where possible.\\n\\nSAFETY: per-level scoping is the whole point — the sector_01/02 corridor + gate + boss-gap + flight-suppression + double-tap-exit tests MUST stay green and byte-identical. FULL CEREMONY (developer tests-first -> reviewer block-on-HIGH -> PR -> CI). Engine C:/Godot/Godot_v4.6.3-stable_win64_console.exe, never 'cd && ', --import after new class_name.",
+  "acceptance_criteria": [
+    "DD-014 recorded in docs/DECISIONES-DISENO.md (auto-scroll shmup model, always-flying, per-level scoping, stop-flight disabled in shmup, win/lose intent).",
+    "levels/shmup_01.tscn exists, loads headless clean, instances the player + HUD + a spawn marker + an auto-scroll camera, and is reachable from the level selector (LEVEL_ENTRIES has 3 entries, all resolving).",
+    "An auto-scroll camera advances at a constant tunable SCROLL_SPEED and the player is clamped inside the camera's visible rect (tested deterministically, no reliance on real frames).",
+    "In shmup_01 the hero is always flying (flight pre-granted, gravity off) and the TASK-062 double-tap-stop-flight exit + landing exit are suppressed via a per-level flag; the flag DEFAULTS OFF so sector_01/02 FlightState enter/exit/double-tap/suppression/landing behavior is byte-identical and all those tests stay green.",
+    "level_select.select_index now guards with ResourceLoader.exists() before change_scene_to_file (TASK-063 reviewer LOW folded in). Full GUT suite green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged with CI green."
+  ],
+  "status": "in_progress",
+  "priority": "high",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "level",
+    "auto-scroll",
+    "flight",
+    "DD-014"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-064"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-08T01:48:01.670Z",
+  "updated_at": "2026-06-08T01:48:43.942Z",
+  "jira_key": null
+}

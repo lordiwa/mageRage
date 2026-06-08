@@ -50,6 +50,27 @@ func _release_edge(action: String) -> void:
 	InputGate.set_test_override(action, false)
 
 
+# TASK-068: drive jump's rising EDGE + held state on for one frame.
+func _jump_down() -> void:
+	InputGate.set_test_override("jump", true)
+
+
+# TASK-068: drive jump fully UP (no edge, not held) for one frame — the release
+# between two deliberate taps.
+func _jump_up() -> void:
+	InputGate.set_test_override("jump", false)
+
+
+# TASK-068: tick FlightState past ENTRY_GRACE with jump released, so the exit
+# detector is armed (a release was observed) and no edge is counted.
+func _fly_past_grace(st: EstadoBase) -> void:
+	_jump_up()
+	var waited := 0.0
+	while waited < FlightState.ENTRY_GRACE + 0.05:
+		st.physics_update(0.016)
+		waited += 0.016
+
+
 # Builds a state of `state_script`, wires the fake player, parents both so
 # signals/NOTIFICATIONs behave, and returns the state.
 func _make_state(state_script: GDScript, fake: FakePlayer) -> EstadoBase:
@@ -158,11 +179,9 @@ func test_flight_to_move_when_on_floor() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-func test_flight_double_tap_jump_exits_to_move() -> void:
-	# TASK-062 (extends DD-008): two JUMP edges within DOUBLE_TAP_WINDOW while
-	# flying drop to MoveState (a pure fall — the same target as the landing
-	# exit), giving the player a deliberate stop-flying control. CRUCIAL: this
-	# is the player-facing exit and must never silently break.
+# DELIBERATE exit: after grace, tap (edge) -> release -> tap again within
+# DOUBLE_TAP_WINDOW -> drop to MoveState (a pure fall).
+func test_flight_deliberate_double_tap_after_grace_exits_to_move() -> void:
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -172,14 +191,16 @@ func test_flight_double_tap_jump_exits_to_move() -> void:
 	st.enter()
 	watch_signals(st)
 
-	# First tap: an edge, then release so the next frame is not still "pressed".
-	_press_edge("jump")
-	st.physics_update(0.016)
-	_release_edge("jump")
-	st.physics_update(0.016)            # ~0.032s elapsed, inside the window
+	_fly_past_grace(st)
 
-	# Second tap within the window -> exit to MoveState.
-	_press_edge("jump")
+	# First clean tap (edge after release).
+	_jump_down()
+	st.physics_update(0.016)
+	# Release between the taps.
+	_jump_up()
+	st.physics_update(0.016)            # ~0.032s into the window
+	# Second clean tap within DOUBLE_TAP_WINDOW.
+	_jump_down()
 	st.physics_update(0.016)
 
 	assert_signal_emitted_with_parameters(

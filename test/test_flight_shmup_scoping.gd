@@ -8,10 +8,17 @@
 ## untouched for safety and not exercised here.
 ##
 ## CRITICAL byte-identical guard: the flag DEFAULTS FALSE, and with it false EVERY existing
-## FlightState transition (double-tap exit, single-tap no-exit, landing exit) fires exactly
-## as before. Those flag-OFF cases are ALSO covered verbatim in test_movement_transitions.gd
-## (unchanged); this file pins the OFF path again next to the ON path so the contrast is one
-## file, and adds the ON-path cases the sectors never had.
+## FlightState transition (the TASK-068 grace + release-gated double-tap exit, landing exit)
+## fires exactly as before. Those flag-OFF cases are ALSO covered verbatim in
+## test_movement_transitions.gd (unchanged); this file pins the OFF path again next to the ON
+## path so the contrast is one file, and adds the ON-path cases the sectors never had.
+##
+## TASK-068 RECONCILE: master's flight regression fix replaced the raw double-tap detector
+## with an ENTRY_GRACE + release-gated DELIBERATE double-tap (tap-release-tap AFTER a brief
+## entry grace). The flag-OFF cases below were updated to drive that new path (fly past grace,
+## then a clean tap-release-tap) — a raw same-frame double edge no longer exits even with the
+## flag off. The flag-ON cases use the SAME deliberate, would-otherwise-exit sequence and
+## assert NO exit, proving the shmup guard genuinely suppresses a real exit, not a no-op.
 ##
 ## Edges are forced deterministically through the InputGate seam (TASK-024 flake guard); the
 ## after_each clears the overrides so they never leak into a later input-edge test.
@@ -42,6 +49,17 @@ func _make_flight(fake: FakePlayer) -> FlightState:
 	return st
 
 
+# TASK-068: tick FlightState past ENTRY_GRACE with jump held UP the whole time, so the
+# exit detector is ARMED (a release has been observed) and no edge is counted. Required
+# before any deliberate double-tap can register on the new grace + release-gated detector.
+func _fly_past_grace(st: EstadoBase) -> void:
+	_release_edge("jump")
+	var waited := 0.0
+	while waited < FlightState.ENTRY_GRACE + 0.05:
+		st.physics_update(0.016)
+		waited += 0.016
+
+
 # --- FakePlayer mirrors the Player shmup_mode flag (default FALSE) ------------
 
 func test_fake_player_defaults_shmup_mode_off() -> void:
@@ -55,8 +73,10 @@ func test_fake_player_defaults_shmup_mode_off() -> void:
 
 # --- Flag OFF (default / the sectors): existing exits STILL fire (byte-identical) ---
 
-func test_flag_off_double_tap_jump_still_exits_to_move() -> void:
-	# DEFAULT path (sectors): two jump edges within the window still drop to MoveState.
+func test_flag_off_deliberate_double_tap_still_exits_to_move() -> void:
+	# DEFAULT path (sectors): the TASK-068 DELIBERATE double-tap — fly past the entry
+	# grace, then a clean tap-release-tap within DOUBLE_TAP_WINDOW — still drops to
+	# MoveState (byte-identical to master's flight regression fix).
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -67,16 +87,21 @@ func test_flag_off_double_tap_jump_still_exits_to_move() -> void:
 	st.enter()
 	watch_signals(st)
 
+	_fly_past_grace(st)
+
+	# First clean tap (edge after release).
 	_press_edge("jump")
 	st.physics_update(0.016)
+	# Release between the taps.
 	_release_edge("jump")
 	st.physics_update(0.016)
+	# Second clean tap within DOUBLE_TAP_WINDOW.
 	_press_edge("jump")
 	st.physics_update(0.016)
 
 	assert_signal_emitted_with_parameters(
 		st, "transition_requested", [st, "MoveState"],
-		"flag OFF: the TASK-062 double-tap exit still fires (byte-identical)")
+		"flag OFF: the TASK-068 deliberate double-tap exit still fires (byte-identical)")
 
 
 func test_flag_off_landing_still_exits_to_move() -> void:
@@ -99,8 +124,10 @@ func test_flag_off_landing_still_exits_to_move() -> void:
 # --- Flag ON (shmup): both exits are SUPPRESSED, the hero stays flying -------
 
 func test_flag_on_double_tap_jump_does_not_exit() -> void:
-	# SHMUP path: two jump edges within the window must NOT drop the hero (no accidental
-	# fall off-screen). The hero stays in FlightState.
+	# SHMUP path: the SAME deliberate double-tap that exits with the flag off (fly past
+	# grace, then a clean tap-release-tap within DOUBLE_TAP_WINDOW) must NOT drop the hero
+	# (no accidental fall off-screen). The hero stays in FlightState — proving the shmup
+	# guard suppresses a genuine, would-otherwise-fire exit, not a no-op.
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -111,6 +138,8 @@ func test_flag_on_double_tap_jump_does_not_exit() -> void:
 	st.enter()
 	watch_signals(st)
 
+	_fly_past_grace(st)
+
 	_press_edge("jump")
 	st.physics_update(0.016)
 	_release_edge("jump")
@@ -119,7 +148,7 @@ func test_flag_on_double_tap_jump_does_not_exit() -> void:
 	st.physics_update(0.016)
 
 	assert_signal_not_emitted(st, "transition_requested",
-		"flag ON (shmup): the double-tap exit is suppressed — the hero stays flying")
+		"flag ON (shmup): the deliberate double-tap exit is suppressed — the hero stays flying")
 
 
 func test_flag_on_landing_does_not_exit() -> void:

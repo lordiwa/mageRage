@@ -326,11 +326,45 @@ func test_flight_to_move_when_on_floor() -> void:
 		st, "transition_requested", [st, "MoveState"])
 
 
-# --- TASK-062: double-tap jump while flying drops to platformer (MoveState) ---
+# --- TASK-062 / TASK-068: grace + release-gated double-tap to stop flying -----
+#
+# TASK-068 regression: the entry double-jump (and Godot's multi-physics-frame
+# just_pressed latch) used to bleed straight into the exit detector and drop the
+# hero back to MoveState the instant flight began ("ya no puede volar"). The fix
+# adds (1) an ENTRY_GRACE during which jump edges are ignored for exit, and
+# (2) release-gating: a tap only counts as a fresh rising edge AFTER the button
+# has been observed released since entering flight, so a held/latched press can
+# never register as two taps. Helpers below drive BOTH just_pressed and pressed
+# (held/release) deterministically through the InputGate seam.
 
-func test_flight_double_tap_jump_exits_to_move() -> void:
-	# Two JUMP edges within DOUBLE_TAP_WINDOW while flying drop to MoveState
-	# (a pure fall, same target as the landing-exit). Airborne the whole time.
+
+# Force jump's rising EDGE on (just_pressed=true) AND mark it held (pressed=true)
+# for this frame — a realistic "button is down" frame.
+func _jump_down() -> void:
+	InputGate.set_test_override("jump", true)
+
+
+# Force jump fully UP for this frame: no edge (just_pressed=false) and not held
+# (pressed=false). Used to model the release between two deliberate taps.
+func _jump_up() -> void:
+	InputGate.set_test_override("jump", false)
+
+
+# Tick FlightState past ENTRY_GRACE with the jump button held UP the whole time,
+# so the detector is armed (a release has been observed) and no edge is counted.
+func _fly_past_grace(st: EstadoBase) -> void:
+	_jump_up()
+	var waited := 0.0
+	# Comfortably exceed ENTRY_GRACE with the button released.
+	while waited < FlightState.ENTRY_GRACE + 0.05:
+		st.physics_update(0.016)
+		waited += 0.016
+
+
+# REGRESSION (the actual bug): a jump edge LATCHED on FlightState's first physics
+# frames right after entry (the entry double-jump press / Godot multi-frame edge
+# latch) must NOT drop the hero. He stays flying.
+func test_flight_entry_edge_latch_does_not_exit() -> void:
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -340,22 +374,90 @@ func test_flight_double_tap_jump_exits_to_move() -> void:
 	st.enter()
 	watch_signals(st)
 
-	# First tap: an edge, then release so the next frame is not still "pressed".
-	_press_edge("jump")
-	st.physics_update(0.016)
-	_release_edge("jump")
-	st.physics_update(0.016)            # ~0.032s elapsed, inside the window
+	# Simulate the entry edge latching true across the first several physics
+	# frames within one render frame (the documented just_pressed pitfall).
+	_jump_down()
+	for i in range(4):
+		st.physics_update(0.016)
 
-	# Second tap within the window -> exit to MoveState.
-	_press_edge("jump")
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+# REGRESSION: a HELD jump (pressed stays true, just_pressed true across frames)
+# must NOT count as two taps. A single uninterrupted hold can never exit.
+func test_flight_held_jump_is_not_two_taps() -> void:
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	# Fly past grace first (released), then hold jump down continuously.
+	_fly_past_grace(st)
+	_jump_down()
+	for i in range(10):                 # held, no release between
+		st.physics_update(0.016)
+
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+# During-grace jump edges are ignored: even a clean tap-release-tap that happens
+# entirely WITHIN the grace window must not exit.
+func test_flight_during_grace_double_tap_does_not_exit() -> void:
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	# Two clean taps very early — well inside ENTRY_GRACE (0.25s).
+	_jump_down()
+	st.physics_update(0.016)
+	_jump_up()
+	st.physics_update(0.016)
+	_jump_down()
+	st.physics_update(0.016)            # ~0.048s, inside grace -> no exit
+
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+# DELIBERATE exit: after grace, tap (edge) -> release -> tap again within
+# DOUBLE_TAP_WINDOW -> drop to MoveState (a pure fall).
+func test_flight_deliberate_double_tap_after_grace_exits_to_move() -> void:
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	_fly_past_grace(st)
+
+	# First clean tap (edge after release).
+	_jump_down()
+	st.physics_update(0.016)
+	# Release between the taps.
+	_jump_up()
+	st.physics_update(0.016)            # ~0.032s into the window
+	# Second clean tap within DOUBLE_TAP_WINDOW.
+	_jump_down()
 	st.physics_update(0.016)
 
 	assert_signal_emitted_with_parameters(
 		st, "transition_requested", [st, "MoveState"])
 
 
-func test_flight_single_jump_does_not_exit() -> void:
-	# A SINGLE jump edge while flying must NOT exit (no toggle-out on one tap).
+# NO-RELEASE: two rising edges after grace WITHOUT a release between them must
+# NOT exit (release-gating — the second edge is not a fresh press-after-release).
+func test_flight_two_edges_without_release_do_not_exit() -> void:
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -365,17 +467,21 @@ func test_flight_single_jump_does_not_exit() -> void:
 	st.enter()
 	watch_signals(st)
 
-	_press_edge("jump")
+	_fly_past_grace(st)
+
+	# Jump goes down and STAYS down across frames (held). just_pressed may latch
+	# true on each frame, but there is no release between, so it is one tap.
+	_jump_down()
 	st.physics_update(0.016)
-	_release_edge("jump")
-	st.physics_update(0.016)            # no second edge
+	st.physics_update(0.016)            # still held — no release
+	st.physics_update(0.016)
 
 	assert_signal_not_emitted(st, "transition_requested")
 
 
-func test_flight_two_jumps_past_window_do_not_exit() -> void:
-	# Two jump edges SEPARATED BY MORE THAN the window do not exit: the window
-	# expires and resets the count, so the second tap is a fresh first tap.
+# WINDOW-EXPIRY: two CLEAN taps (each a fresh press-after-release) separated by
+# MORE than DOUBLE_TAP_WINDOW must NOT exit; the first pending tap expires.
+func test_flight_two_clean_taps_past_window_do_not_exit() -> void:
 	var fake := FakePlayer.new()
 	add_child_autofree(fake)
 	fake.abilities = {"electricity": true}
@@ -385,28 +491,36 @@ func test_flight_two_jumps_past_window_do_not_exit() -> void:
 	st.enter()
 	watch_signals(st)
 
-	# First tap.
-	_press_edge("jump")
-	st.physics_update(0.016)
-	_release_edge("jump")
+	_fly_past_grace(st)
 
-	# Let MORE than DOUBLE_TAP_WINDOW (0.30s) elapse with no jump edge.
+	# First clean tap.
+	_jump_down()
+	st.physics_update(0.016)
+	_jump_up()
+
+	# Let MORE than DOUBLE_TAP_WINDOW (0.30s) elapse with the button released.
 	var waited := 0.0
 	while waited < 0.40:
 		st.physics_update(0.05)
 		waited += 0.05
 
-	# Second tap now: outside the window -> treated as a fresh first tap, no exit.
-	_press_edge("jump")
+	# Second clean tap now: outside the window -> fresh first tap, no exit.
+	_jump_down()
 	st.physics_update(0.016)
 
 	assert_signal_not_emitted(st, "transition_requested")
 
 
 func test_flight_double_tap_window_is_a_named_constant() -> void:
-	# The window/threshold must be a named, tunable constant (AC2).
+	# The window/threshold must be a named, tunable constant (AC3).
 	assert_true(FlightState.DOUBLE_TAP_WINDOW > 0.0,
 		"FlightState.DOUBLE_TAP_WINDOW must exist and be a positive tunable constant")
+
+
+func test_flight_entry_grace_is_a_named_constant() -> void:
+	# ENTRY_GRACE must be a named, tunable constant (AC3, TASK-068).
+	assert_true(FlightState.ENTRY_GRACE > 0.0,
+		"FlightState.ENTRY_GRACE must exist and be a positive tunable constant")
 
 
 # --- JumpState: launch impulse ---------------------------------------------

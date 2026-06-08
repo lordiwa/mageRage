@@ -1,0 +1,36 @@
+{
+  "key": "TASK-068",
+  "title": "FIX regression: can't fly in sector_02 — entry double-jump instantly triggers the TASK-062 stop-flight double-tap",
+  "description": "REGRESSION on master (HEAD c2c5652), reported by the human after playtest: 'ya no puede volar en el nivel 02' — the hero can no longer fly in sector_02 (and any sector). Introduced by TASK-062 (double-tap JUMP while flying -> drop to platformer). The TASK-062 reviewer EXPLICITLY flagged this risk and recommended a GUI smoke check that we deferred — the playtest is that smoke check, and it fails.\\n\\nROOT CAUSE: FlightState's stop-flight detector (scripts/fsm/states/flight_state.gd) counts InputGate.just_pressed(\\\"jump\\\") rising edges within DOUBLE_TAP_WINDOW with NO entry grace and NO release-gating. The hero ENTERS flight via a double-jump (two rapid JUMP presses, jump_state.gd:75-79). Those entry presses — compounded by Godot's well-known pitfall that Input.is_action_just_pressed() read in _physics_process can latch true across multiple physics frames within one render frame — bleed straight into the exit detector, so the hero enters flight and is immediately dropped back to MoveState. From the player's view: flight doesn't work. The headless InputGate tests passed because they toggle overrides manually and never reproduce the real multi-physics-frame edge latch.\\n\\nFIX (keep the user's control 'press jump twice while flying -> stop flying', but make it DELIBERATE and robust):\\n1. ENTRY GRACE: in FlightState.enter() start a grace timer (named const, e.g. ENTRY_GRACE := 0.25s). While grace is active, IGNORE jump edges for exit detection (just tick the timer down). This guarantees the entry double-jump cannot drop the hero.\\n2. RELEASE-GATING: only count a jump tap toward the double-tap when the button was RELEASED since the previous count. Track held state via InputGate.pressed(\\\"jump\\\"); arm the detector only after observing a release post-entry, and require a fresh press-after-release for each of the two exit taps. A single held/latched press can never register as two taps.\\n3. Keep DOUBLE_TAP_WINDOW for the gap between the two CLEAN taps. Net control: fly past the brief grace, then deliberately tap JUMP twice (release between) within the window -> drop to platformer.\\n\\nTESTS (this is where TASK-062 was weak — add tests that model the REAL failure):\\n- REGRESSION test reproducing the bug class: simulate the entry path — a jump edge present on FlightState's first physics frame(s) (entry latch) MUST NOT cause an exit; the hero stays flying. Also: a held jump (pressed stays true across frames, just_pressed true) must NOT count as two taps.\\n- During-grace jump edges do NOT exit.\\n- A DELIBERATE double-tap AFTER grace, with a release between the two presses, within the window -> exit to MoveState.\\n- Two taps after grace but WITHOUT a release between them -> NO exit (release-gating).\\n- Two taps after grace separated by MORE than the window -> no exit (window expiry).\\n- Keep all existing TASK-062 + sector FlightState tests green (enter still works, DD-011 suppression, landing exit). Extend InputGate test usage to drive BOTH just_pressed and pressed (release) deterministically.\\n\\nSAFETY: FlightState only; jump_state ENTER-flight byte-identical; no level/collision edits; DD-011 suppression + landing exits intact; sector corridor/gate/boss tests byte-identical. Update DD-008 note in docs/DECISIONES-DISENO.md to describe the grace + release-gated double-tap. FULL CEREMONY (tests-first -> reviewer block-on-HIGH -> PR -> CI). Engine C:/Godot/Godot_v4.6.3-stable_win64_console.exe, never 'cd && ', --import as needed.\\n\\nNOTE for orchestrator: this branches off master. The unmerged task-065-shmup-foundation branch ALSO edits flight_state.gd (the shmup-mode guard) — merge this fix first, then reconcile 065 on top (both changes are additive around the same exit block; expect a small manual merge).",
+  "acceptance_criteria": [
+    "In the sectors the hero can ENTER flight via double-jump and STAY flying — the entry double-jump no longer triggers an immediate stop-flight drop (regression fixed). Verified by a test that reproduces the entry-edge latch class (jump edge present on FlightState's first frames does not exit).",
+    "Stopping flight requires a DELIBERATE double-tap AFTER a short entry grace, with the jump button RELEASED between the two presses and both within DOUBLE_TAP_WINDOW; a held/latched single press cannot register as two taps (release-gating), and during-grace edges are ignored.",
+    "ENTRY_GRACE and DOUBLE_TAP_WINDOW are named, tunable constants; the detector reads jump edges + held state through the InputGate seam (deterministic).",
+    "jump_state ENTER-flight is byte-identical; DD-011 flight-suppression and landing exits intact; no level/collision/.tscn edits; sector_01/02 corridor + gate + boss-gap + flight-suppression tests stay green/byte-identical.",
+    "New tests cover: entry-latch-no-exit, held-press-not-two-taps, during-grace-no-exit, deliberate-double-tap-with-release-exits, no-release-no-exit, window-expiry. Full GUT green, crucial green (the deliberate-exit test in the crucial subset), gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green. DD-008 note updated."
+  ],
+  "status": "done",
+  "priority": "critical",
+  "labels": [
+    "bugfix",
+    "regression",
+    "gameplay",
+    "fsm",
+    "flight",
+    "DD-008"
+  ],
+  "assignee": null,
+  "depends_on": [],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T02:39:38.417Z",
+      "body": "MERGED to master via PR #14 (merge commit 2fdf5f3), CI GREEN (gdlint + crucial 62; nightly skipped). Branch deleted. Flight is RESTORED on master: ENTRY_GRACE=0.25s + release-gated double-tap in flight_state.gd. Regression tests verified to FAIL against pre-fix master and PASS with the fix. Reviewer ACCEPT (no HIGH/MEDIUM). Full GUT 874/874, crucial 62/62. master HEAD now 2fdf5f3. ACTION FOR HUMAN: re-playtest sector_02 to confirm you can now double-jump to fly and stay flying (and that a deliberate tap-release-tap of JUMP after a moment of flight drops you). RECONCILE NOTE: the unmerged task-065-shmup-foundation branch also edits flight_state.gd (shmup-mode guard around the same exit block); when 065 resumes it must be reconciled against this fix (small manual merge — both are additive around the exit detector)."
+    }
+  ],
+  "created_at": "2026-06-08T02:11:17.539Z",
+  "updated_at": "2026-06-08T02:39:38.417Z",
+  "jira_key": null
+}

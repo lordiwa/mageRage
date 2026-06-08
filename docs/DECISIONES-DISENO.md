@@ -188,17 +188,34 @@ Reemplaza el layout de DD-007. Gamepad principal, teclado additive.
 - **Vuelo:** **doble salto** — el segundo salto en el aire entra a `FlightState`. **No hay
   botón dedicado de vuelo.** Sigue gateado por Electricidad (sin Electricidad no hay
   segundo salto / vuelo).
-- **Salir del vuelo (TASK-062):** dos formas. (a) Al **tocar piso** se cae a `MoveState`.
-  (b) **Doble-tap de Salto** estando en vuelo: dos pulsaciones de Salto dentro de una
-  ventana corta (`FlightState.DOUBLE_TAP_WINDOW`, **0.30 s**, constante ajustable) cortan
-  el vuelo y **bajan a plataformeo**: se sale de `FlightState`, vuelve la gravedad y el héroe
-  **cae** (mismo destino `MoveState` que la salida por aterrizaje — caída pura, sin nuevo
-  impulso de salto). Un solo tap **no** corta el vuelo; si la ventana expira sin segundo tap,
-  el contador se reinicia (un tap posterior empieza de cero). Lectura del flanco por la
-  costura `InputGate` (determinista en tests, TASK-024). **Seguridad de gating:** soltar el
-  vuelo solo puede **quitar** vuelo, nunca otorgar travesía — no abre ningún gate
-  (zona anti-magia / gate de FUEGO / hueco de vuelo de 98 px del jefe); como mucho hace la
-  travesía más difícil.
+- **Salir del vuelo (TASK-062, endurecido en TASK-068):** dos formas. (a) Al **tocar
+  piso** se cae a `MoveState`. (b) **Doble-tap DELIBERADO de Salto** estando en vuelo:
+  dos pulsaciones *limpias* de Salto dentro de una ventana corta
+  (`FlightState.DOUBLE_TAP_WINDOW`, **0.30 s**, constante ajustable) cortan el vuelo y
+  **bajan a plataformeo**: se sale de `FlightState`, vuelve la gravedad y el héroe **cae**
+  (mismo destino `MoveState` que la salida por aterrizaje — caída pura, sin nuevo impulso
+  de salto). **Regresión TASK-068 ("ya no puede volar"):** el héroe **entra** al vuelo con
+  un doble salto (dos pulsaciones rápidas de Salto en `JumpState`); esas pulsaciones de
+  entrada —agravadas por el known-pitfall de Godot donde `Input.is_action_just_pressed()`
+  leído en `_physics_process` puede quedar latched a `true` durante **varios frames de
+  física** dentro de un mismo frame de render— se colaban en el detector de salida y
+  tiraban al héroe a `MoveState` apenas comenzaba el vuelo. El detector ahora es **gracia
+  de entrada + release-gated**:
+  - **Gracia de entrada (`FlightState.ENTRY_GRACE`, 0.25 s, constante ajustable):** en
+    `enter()` se arma un contador; mientras está activo se **ignoran** todos los flancos de
+    Salto para salida (solo decrementa). El doble salto de entrada (y cualquier latch
+    multi-frame) nunca puede cortar el vuelo.
+  - **Release-gating:** se lee el estado mantenido vía `InputGate.pressed("jump")` y el
+    detector se **arma** solo tras observar Salto **soltado** al menos una vez después de la
+    gracia; cada tap cuenta únicamente como un flanco que **sigue a una soltada** (el botón
+    estaba arriba el frame anterior). Una pulsación mantenida/latched **nunca** cuenta como
+    dos taps.
+  Un solo tap **no** corta el vuelo; si la ventana expira sin segundo tap limpio, el
+  contador se reinicia (un tap posterior empieza de cero). Lectura del flanco y del estado
+  mantenido por la costura `InputGate` (determinista en tests, TASK-024/068). **Seguridad de
+  gating:** soltar el vuelo solo puede **quitar** vuelo, nunca otorgar travesía — no abre
+  ningún gate (zona anti-magia / gate de FUEGO / hueco de vuelo de 98 px del jefe); como
+  mucho hace la travesía más difícil.
 - **Planeo (Hielo):** **mantener LB** (botón 9, left shoulder) / Alt. Gateado por Hielo.
 - **Dash:** **RB** (botón 10, right shoulder) / Shift. Gateado por Fuego.
 

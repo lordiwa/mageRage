@@ -1,0 +1,31 @@
+{
+  "key": "TASK-067",
+  "title": "Shmup tuning + win/lose: faster fly speed & fire cadence, reach-the-end win, respawn on death",
+  "description": "Third sub-ticket of TASK-064. Depends on the foundation (TASK-065) and ideally the enemy stream (TASK-066). Make shmup_01 actually FEEL like a fast shoot-em-up and give it a win/lose loop.\\n\\nScope:\\n- Per-level SPEED/CADENCE tuning: faster hero fly speed + faster projectile fire cadence than the sectors, applied via per-level OVERRIDES ONLY (named tunable consts; do NOT change the shared FlightState FLY_SPEED or the M2.1 fire_interval defaults). Prove via tests the overrides are scoped and the sector defaults are untouched.\\n- WIN condition: reach the end of the fixed-length scroll (a finish distance/marker) -> a victory state (mirror how sector victory is signalled). \\n- LOSE condition: HP reaches 0 -> respawn at the level start (or a clean retry), consistent with DD-009 death-respawn; falling out of the frame is already prevented by the foundation's flight/clamp.\\n- Minimal HUD/feedback for win/lose (reuse the existing HUD patterns; a victory/defeat label like the boss HUD).\\n\\nTests-first (GUT): (a) shmup fly-speed + fire-cadence overrides take effect in shmup_01 but the shared FlightState/combat defaults (and the sector levels) are byte-identical; (b) reaching the finish distance triggers the win/victory state; (c) HP->0 triggers respawn/retry at start; (d) deterministic (drive controller updates directly).\\n\\nSAFETY: shmup-only overrides; sector tests byte-identical/green. FULL CEREMONY. May reveal further polish follow-ups (parallax backdrop, real art) — file them, don't cram.",
+  "acceptance_criteria": [
+    "shmup_01 plays noticeably faster than the sectors (hero fly speed + projectile fire cadence) via per-level overrides; the shared FlightState/combat defaults and sector_01/02 are byte-identical and their tests stay green.",
+    "Reaching the end of the scroll triggers a win/victory state; HP reaching 0 triggers respawn/retry at the level start (DD-009-consistent).",
+    "Minimal win/lose HUD feedback reusing existing HUD patterns.",
+    "Tests-first GUT coverage (override scoping, win-on-finish, lose-on-death) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green.",
+    "Any remaining polish (real art, parallax backdrop, balance) is filed as follow-up tickets rather than crammed in."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "tuning",
+    "win-lose"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-065",
+    "TASK-066"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-08T01:48:28.724Z",
+  "updated_at": "2026-06-08T01:48:28.724Z",
+  "jira_key": null
+}

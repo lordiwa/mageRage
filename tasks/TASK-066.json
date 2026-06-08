@@ -1,0 +1,30 @@
+{
+  "key": "TASK-066",
+  "title": "Shmup enemy streaming: spawn flying drones from the right edge in waves",
+  "description": "Second sub-ticket of TASK-064. Depends on the shmup foundation (TASK-065). Add the classic-shmup enemy stream: flying enemies enter from the right edge of the scrolling frame in timed waves/patterns, fly toward/past the player, and can be shot down. Reuse the EXISTING flying-drone enemies (Empire ELEC orb / Shield ICE orb, already in scenes/) and the existing projectile pool — do NOT invent new enemy types here.\\n\\nScope:\\n- A spawner component (scripts/levels/ or scripts/enemies/) that emits enemies at the right edge of the camera rect on a timed/pattern schedule (named tunable consts for interval + wave composition). Enemies move leftward relative to the world (so they approach as the frame scrolls). Keep their existing AI/projectiles; just place + give them a shmup entry trajectory.\\n- A data-driven wave/pattern definition so adding/retuning waves is cheap (array of {enemy, count, spacing, y-pattern, t}).\\n- Enemies despawn/return-to-pool when they exit the left side or die (reuse the existing pooling/deactivation; mind the TASK-044 deferred-disable callback lesson).\\n- Greybox is fine for any new spawn-marker geometry; enemies use their existing art.\\n\\nTests-first (GUT): (a) the spawner emits the expected number of enemies for a wave over simulated time (deterministic, drive its update directly); (b) spawned enemies start at/just past the right camera edge at the wave's y-pattern; (c) enemies are released/pooled when off the left edge or dead; (d) no per-frame allocation regression (reuse pool). Reuse existing enemy scenes + projectile pool.\\n\\nSAFETY: shmup-only; must not change sector enemy behavior. FULL CEREMONY (tests-first -> reviewer block-on-HIGH -> PR -> CI). Collision is real gameplay.",
+  "acceptance_criteria": [
+    "A data-driven, tunable spawner streams the existing flying-drone enemies in from the right edge of the scrolling frame on a timed/pattern schedule; enemies approach the player and can be shot with the existing projectile pool.",
+    "Enemies are released back to the pool / despawned when they leave the left edge or die, with no per-frame allocation regression and no Godot callback errors (heeds the TASK-044 deferred-disable lesson).",
+    "Wave/pattern composition is a single data-driven definition so retuning is cheap.",
+    "Sector_01/02 enemy behavior is unchanged (shmup-only); their tests stay green/byte-identical.",
+    "Tests-first GUT coverage (spawn count over time, entry position/pattern, despawn/pooling) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green."
+  ],
+  "status": "todo",
+  "priority": "medium",
+  "labels": [
+    "gameplay",
+    "shmup",
+    "enemies",
+    "spawner"
+  ],
+  "assignee": null,
+  "depends_on": [
+    "TASK-065"
+  ],
+  "linked_commits": [],
+  "linked_prs": [],
+  "comments": [],
+  "created_at": "2026-06-08T01:48:16.439Z",
+  "updated_at": "2026-06-08T01:48:16.439Z",
+  "jira_key": null
+}
