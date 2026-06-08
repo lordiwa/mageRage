@@ -9,7 +9,7 @@
     "Sector_01/02 enemy behavior is unchanged (shmup-only); their tests stay green/byte-identical.",
     "Tests-first GUT coverage (spawn count over time, entry position/pattern, despawn/pooling) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green."
   ],
-  "status": "in_progress",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -23,8 +23,14 @@
   ],
   "linked_commits": [],
   "linked_prs": [],
-  "comments": [],
+  "comments": [
+    {
+      "author": "orchestrator",
+      "at": "2026-06-08T03:21:41.476Z",
+      "body": "DONE + MERGED to master via PR #16 (merge commit 7d44b52), CI GREEN (gdlint + crucial; nightly skipped). ShmupSpawner streams existing empire/shield drones from the right edge in data-driven DEFAULT_WAVES (LINE/SINE/TOP/BOTTOM y-patterns), deferred queue_free recycle (TASK-044 honored), no per-frame instancing. Full GUT 914/914, gdlint clean, shmup-only. Reviewer ACCEPT (no HIGH). MEDIUM folded into TASK-067: spawner is_dead() branch is dead code on the drone root (is_dead lives on the Health child) — dead drones still cleaned via the is_instance_valid prune, so functional, but TASK-067 should query the Health child (or rely on the validity prune with a comment). LOW (TASK-067 tuning): entry motion mutates global_position.x on top of drone AI velocity (ENTRY_SPEED<chase mitigates)."
+    }
+  ],
   "created_at": "2026-06-08T01:48:16.439Z",
-  "updated_at": "2026-06-08T03:04:55.037Z",
+  "updated_at": "2026-06-08T03:21:41.476Z",
   "jira_key": null
 }
