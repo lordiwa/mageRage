@@ -599,6 +599,47 @@ métricas del carril greybox (suelo y=+328 / techo y=-288, espejo de la banda fl
 los sectores); el flag `Player.shmup_mode` (default FALSE). La velocidad de vuelo, cadencia
 de disparo, longitud del carril y la condición de victoria se afinan en TASK-067.
 
+### Actualización TASK-067 — tuning (velocidad/cadencia) + bucle victoria/derrota
+
+**Tuning por-nivel vía seams SCOPED que default al no-op (sectores byte-idénticos):** el
+shmup se siente más rápido que los sectores SIN tocar ningún default compartido. Dos seams,
+ambos default `1.0`:
+
+- **Velocidad de vuelo — `Player.fly_speed_scale` (default 1.0).** `FlightState` calcula la
+  velocidad de vuelo libre como `input * FLY_SPEED * fly_speed_scale`. La const compartida
+  `FlightState.FLY_SPEED` (260) NO se cambia; es un multiplicador por-player leído de forma
+  defensiva (`"fly_speed_scale" in player`). El controlador del shmup lo fija en
+  `Shmup01.FLY_SPEED_SCALE = 1.6` en `_ready`. Con el default 1.0 el vuelo de los sectores es
+  byte-idéntico (verificado por test).
+- **Cadencia de disparo — `MagicManager.cadence_scale` (default 1.0).** TODO intervalo
+  hold-to-fire (el `fire_interval` por-elemento de cada slot Y el intervalo de combo) se
+  multiplica por `cadence_scale` en tiempo de LECTURA — NUNCA muta el dato compartido
+  `SpellData.fire_interval`. `< 1.0` => intervalos más cortos => disparo más rápido. El shmup
+  lo fija en `Shmup01.FIRE_CADENCE_SCALE = 0.6`. Con el default 1.0 la cadencia M2.1
+  (Fire 0.18 / Elec 0.28 / Ice 0.40) es byte-idéntica.
+
+**Victoria = recorrer el carril.** `Shmup01.LEVEL_LENGTH` (6400 px, ~36s a 180 px/s) es la
+distancia de meta medida desde la x de la cámara capturada en `_ready` (`progress()` =
+`scroller.x - _start_x`). Cuando `check_progress()` (llamada cada frame de física, y
+directamente por el test) ve `progress() >= LEVEL_LENGTH`, latcha el estado de victoria y
+emite `shmup_victory` UNA sola vez — espejo de `sector_02.sector_victory`.
+
+**Derrota = HP a 0 -> respawn en el inicio (DD-009).** La muerte usa el camino existente:
+`Player.take_player_damage` lleva el HP a 0, la salud emite `died` y `Player.respawn()`
+devuelve al héroe al spawn registrado (el inicio del nivel). `Shmup01` escucha el `died` de
+la salud para emitir `shmup_defeat` (feedback breve de reintento); el bucle continúa (el héroe
+revive en el inicio). No hay penalización dura — es demo/greybox.
+
+**HUD mínimo (`ShmupBanner`, espejo del label de victoria de `boss_hud`):** dos Labels (VICTORY
+terminal + DOWNED—RETRY breve auto-ocultable) que arrancan ocultos y se muestran por las señales
+`shmup_victory` / `shmup_defeat` (desacoplado: el controlador emite, el banner muestra). Greybox.
+
+**Fold de revisión TASK-066:** la detección de drone muerto en `ShmupSpawner` ahora consulta el
+hijo `Health` (`get_node_or_null("Health").is_dead()`) — el `is_dead()` a nivel raíz era código
+muerto para drones reales (la salud vive en el hijo, no en el `CharacterBody2D` raíz). Se
+mantiene el fallback a un `is_dead()` raíz para fakes duck-typed. Test añadido con un fake con
+forma de drone real (sin `is_dead()` raíz; hijo `Health` que reporta muerto).
+
 ### Feature-vetting checklist (re-ejecutable por el revisor)
 
 ```
