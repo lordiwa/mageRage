@@ -45,6 +45,31 @@ class FakeEnemy:
 		return dead
 
 
+## TASK-067: a REAL-DRONE-SHAPED fake. The real EmpireDrone/ShieldDrone is a CharacterBody2D
+## ROOT whose is_dead() lives on a Health CHILD node (named "Health"), NOT on the root. This
+## fake mirrors that shape (no is_dead() on the root; a Health child that reports dead) so the
+## spawner's CORRECTED dead-release contract is exercised the way a real drone actually dies —
+## the TASK-066 review MEDIUM (the old root-level is_dead() check was dead code for real drones).
+class FakeHealthChild:
+	extends Node
+	var dead := false
+
+	func is_dead() -> bool:
+		return dead
+
+
+class FakeDrone:
+	extends Node2D
+	# NO is_dead() on the root (just like the real CharacterBody2D drone). The death state
+	# lives on the Health child added in _init so it mirrors the real scene tree.
+	var health: FakeHealthChild
+
+	func _init() -> void:
+		health = FakeHealthChild.new()
+		health.name = "Health"
+		add_child(health)
+
+
 ## A spy that captures every spawn and hands back a FakeEnemy positioned where asked. Tests read
 ## `.spawns` (an Array of {type, position, enemy}) and `.released` (the recycled FakeEnemies).
 class SpawnSpy:
@@ -238,6 +263,44 @@ func test_dead_enemy_is_released() -> void:
 	spawner.update(0.05)
 	assert_eq(spy.released.size(), 1, "a DEAD enemy is released/recycled")
 	assert_eq(spy.released[0], enemy, "the released handle is the dead enemy")
+
+
+func test_real_drone_shaped_dead_enemy_is_released_via_health_child() -> void:
+	# TASK-067 (folds the TASK-066 review MEDIUM): the REAL drone is a CharacterBody2D root
+	# whose is_dead() lives on a Health CHILD, not the root — so the spawner must query the
+	# Health child to detect death. This drives a real-drone-shaped fake (no root is_dead();
+	# a Health child reporting dead) and asserts it IS released, exercising the corrected
+	# contract the way real drones actually die (the old root-level check was dead code).
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	# Build a real-drone-shaped fake, on-screen, with its Health child marked dead.
+	var drone := FakeDrone.new()
+	scroller.add_child(drone)
+	drone.global_position = scroller.rect.get_center()
+	drone.health.dead = true
+	# Sanity: the root has NO is_dead() (mirrors the real CharacterBody2D drone).
+	assert_false(drone.has_method("is_dead"),
+		"the real-drone-shaped fake has NO is_dead() on the root (death lives on the Health child)")
+
+	# A spy whose spawn returns this exact drone, so the spawner tracks + sweeps it.
+	var spy := SpawnSpy.new()
+	spy.parent = scroller
+	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
+	spawner.set_scroller(scroller)
+	spawner.spawn_callback = func(_t: int, _at: Vector2) -> Node2D: return drone
+	spawner.release_callback = Callable(spy, "release")
+	spawner.waves = [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	add_child_autofree(spawner)
+
+	# Spawn it (it's tracked), then sweep: the Health-child death must release it.
+	for i in range(3):
+		spawner.update(0.05)
+	assert_eq(spy.released.size(), 1,
+		"a real-drone-shaped enemy whose Health CHILD reports dead IS released (corrected contract)")
+	assert_eq(spy.released[0], drone, "the released handle is the dead real-drone-shaped enemy")
 
 
 func test_a_released_enemy_is_not_released_twice() -> void:
