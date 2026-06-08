@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T03:42:50.664Z",
+  "generated_at": "2026-06-08T16:20:51.163Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -402,6 +402,12 @@
       "title": "FIX regression: can't fly in sector_02 — entry double-jump instantly triggers the TASK-062 stop-flight double-tap",
       "status": "done",
       "priority": "critical"
+    },
+    {
+      "key": "TASK-069",
+      "title": "Shmup enemy behavior: enter-then-lock-on follow + data-driven movement patterns",
+      "status": "in_review",
+      "priority": "medium"
     }
   ]
 }
