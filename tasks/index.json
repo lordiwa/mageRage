@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T03:21:42.126Z",
+  "generated_at": "2026-06-08T03:42:50.664Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -394,7 +394,7 @@
     {
       "key": "TASK-067",
       "title": "Shmup tuning + win/lose: faster fly speed & fire cadence, reach-the-end win, respawn on death",
-      "status": "in_progress",
+      "status": "in_review",
       "priority": "medium"
     },
     {

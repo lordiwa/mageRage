@@ -9,7 +9,7 @@
     "Tests-first GUT coverage (override scoping, win-on-finish, lose-on-death) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green.",
     "Any remaining polish (real art, parallax backdrop, balance) is filed as follow-up tickets rather than crammed in."
   ],
-  "status": "in_progress",
+  "status": "in_review",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -26,6 +26,6 @@
   "linked_prs": [],
   "comments": [],
   "created_at": "2026-06-08T01:48:28.724Z",
-  "updated_at": "2026-06-08T03:21:42.126Z",
+  "updated_at": "2026-06-08T03:42:50.664Z",
   "jira_key": null
 }
