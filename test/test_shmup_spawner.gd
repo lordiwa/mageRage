@@ -358,3 +358,140 @@ func test_default_waves_exist_so_the_level_has_a_stream() -> void:
 	var first: Dictionary = spawner.waves[0]
 	assert_true(first.has("count") and first.has("spacing") and first.has("y_pattern"),
 		"each default wave is the documented {enemy_type,count,spacing,y_pattern,t_start} shape")
+
+
+# --- 6. TASK-069: per-wave MOTION pattern + enter-then-lock-on follow ---------
+
+## A movable fake player whose live position the spawner reads for homing/dive/lock-on.
+class FakePlayer:
+	extends Node2D
+
+
+func test_wave_motion_field_flows_through_and_defaults_to_straight() -> void:
+	# A wave can name a MOTION pattern; with none given it defaults to STRAIGHT (the current
+	# flat-drift baseline) so existing waves keep their behavior (data-driven, back-compatible).
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	# Wave WITHOUT a motion field -> STRAIGHT default.
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spy.spawns.size(), 1, "the enemy spawned")
+	# The spawner records each active enemy's resolved motion; a missing field is STRAIGHT.
+	assert_eq(spawner.motion_for(spy.spawns[0]["enemy"]), ShmupSpawner.MotionPattern.STRAIGHT,
+		"a wave with no motion field defaults to STRAIGHT (back-compatible flat drift)")
+
+
+func test_wave_can_select_a_homing_motion_pattern() -> void:
+	# The wave dict carries a per-wave motion selecting one of the four patterns.
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.HOMING},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(5):
+		spawner.update(0.05)
+	assert_eq(spawner.motion_for(spy.spawns[0]["enemy"]), ShmupSpawner.MotionPattern.HOMING,
+		"a wave's motion field selects the per-enemy movement pattern (data-driven)")
+
+
+func test_straight_motion_drifts_the_enemy_leftward() -> void:
+	# A STRAIGHT enemy's x decreases as the spawner advances it (the baseline drift, now
+	# driven through the motion path rather than a hard-coded ENTRY_SPEED nudge).
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	add_child_autofree(scroller)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.LINE,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.STRAIGHT},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	for i in range(3):
+		spawner.update(0.05)
+	var enemy: Node2D = spy.spawns[0]["enemy"]
+	var x_after_spawn := enemy.global_position.x
+	for i in range(10):
+		spawner.update(0.05)
+	assert_lt(enemy.global_position.x, x_after_spawn,
+		"a STRAIGHT enemy drifts leftward as the spawner advances it")
+
+
+func test_set_player_feeds_the_live_target_for_lock_on() -> void:
+	# The spawner is fed the player (duck-typed, like set_scroller) so homing/dive/lock-on
+	# can read the live position. Wiring assertion.
+	var spawner := ShmupSpawnerScript.new() as ShmupSpawner
+	add_child_autofree(spawner)
+	assert_false(spawner.has_player(), "no player fed yet")
+	var player := FakePlayer.new()
+	add_child_autofree(player)
+	spawner.set_player(player)
+	assert_true(spawner.has_player(), "set_player wires the live target (like set_scroller)")
+
+
+func test_homing_enemy_moves_toward_the_injected_player_after_lock_on() -> void:
+	# End-to-end through the spawner: a HOMING enemy, after the entry-lock beat, closes the
+	# distance to the LIVE injected player position over successive update ticks. The player
+	# is parked off to one side so the enemy must steer, not just drift left into it.
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 2000.0, 600.0)
+	add_child_autofree(scroller)
+	var player := FakePlayer.new()
+	add_child_autofree(player)
+	player.global_position = Vector2(800.0, 60.0)   # off to one side + high
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.BOTTOM,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.HOMING},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	spawner.set_player(player)
+	# Spawn it.
+	for i in range(3):
+		spawner.update(0.05)
+	var enemy: Node2D = spy.spawns[0]["enemy"]
+	var start_gap := enemy.global_position.distance_to(player.global_position)
+	# Drive past the entry-lock beat + several lock-on ticks.
+	for i in range(60):
+		spawner.update(0.05)
+	var end_gap := enemy.global_position.distance_to(player.global_position)
+	assert_lt(end_gap, start_gap,
+		"a HOMING enemy closes the distance to the injected live player after lock-on")
+
+
+func test_homing_enemy_does_not_steer_before_the_entry_lock_delay() -> void:
+	# Enter-then-lock-on through the spawner: during the entry beat a homing enemy slides in
+	# on its entry (leftward) and does NOT yet close the vertical gap to the off-axis player.
+	var spy := SpawnSpy.new()
+	var scroller := FakeScroller.new()
+	scroller.rect = Rect2(0.0, 0.0, 2000.0, 600.0)
+	add_child_autofree(scroller)
+	var player := FakePlayer.new()
+	add_child_autofree(player)
+	player.global_position = Vector2(800.0, 60.0)
+	var waves := [
+		{"enemy_type": 0, "count": 1, "spacing": 0.5, "y_pattern": ShmupSpawner.YPattern.BOTTOM,
+			"t_start": 0.0, "motion": ShmupSpawner.MotionPattern.HOMING},
+	]
+	var spawner := _make_spawner(spy, scroller, waves)
+	spawner.set_player(player)
+	for i in range(2):
+		spawner.update(0.05)
+	var enemy: Node2D = spy.spawns[0]["enemy"]
+	var y_at_spawn := enemy.global_position.y
+	# Drive only PART of the entry-lock beat.
+	var entry_steps := int(ShmupMotion.ENTRY_LOCK_DELAY / 0.05) - 2
+	entry_steps = maxi(entry_steps, 1)
+	for i in range(entry_steps):
+		spawner.update(0.05)
+	assert_almost_eq(enemy.global_position.y, y_at_spawn, 1.0,
+		"BEFORE the entry-lock delay a homing enemy does NOT steer at the player (y unchanged)")
+	assert_lt(enemy.global_position.x, scroller.rect.position.x + scroller.rect.size.x + 100.0,
+		"during entry the enemy still slides in from the right (x decreasing)")
