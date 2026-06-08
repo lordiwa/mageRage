@@ -646,6 +646,56 @@ muerto para drones reales (la salud vive en el hijo, no en el `CharacterBody2D` 
 mantiene el fallback a un `is_dead()` raíz para fakes duck-typed. Test añadido con un fake con
 forma de drone real (sin `is_dead()` raíz; hijo `Health` que reporta muerto).
 
+### Actualización TASK-069 — comportamiento del enemigo: ENTER-then-LOCK-ON + 4 patrones
+
+**Problema (playtest):** los drones streameados reusaban la FSM de los sectores, que sólo persigue
+dentro de un aggro de 280 px a 90 px/s — pero el héroe vuela 1.6x por un cuadro de auto-scroll
+grande, así que los drones se quedaban en Patrol y nunca cerraban; el único movimiento continuo
+era un drift plano a 70 px/s. Los "patrones" de ola (LINE/SINE/TOP/BOTTOM) sólo fijaban la Y de
+spawn, no el movimiento continuo.
+
+**Design-lock (humano, esta sesión) — FOLLOW FEEL = ENTER-THEN-LOCK-ON.** Cada enemigo
+streameado corre su patrón de ENTRADA durante un beat breve `ENTRY_LOCK_DELAY` (0.5 s, tunable —
+para que el jugador lea el color de armadura, telegraph-before-threat DD-001), LUEGO se "engancha"
+(lock-on) y dirige hacia la posición VIVA del jugador mientras sigue derivando con el frame.
+
+**Cuatro patrones de movimiento data-driven por ola** (campo `motion` en el dict de ola; default
+STRAIGHT = comportamiento original):
+- **STRAIGHT** — drift plano a la izquierda (baseline / descanso de ritmo); nunca dirige.
+- **SINE** — oscila la Y alrededor de un centro mientras avanza (extiende la sine de spawn-Y al
+  movimiento continuo).
+- **HOMING/SEEK** — lock-on dominante: dirige hacia la posición viva del jugador (el "te sigue").
+- **DIVE/SWOOP** — arquea rápido desde el borde, hace UN picado hacia el jugador, y se aparta.
+
+**Combate PRESERVADO:** este ticket cambia SÓLO el MOVIMIENTO. Los drones siguen telegrafiando +
+disparando por tipo de armadura (el RPS de swap de elemento DD-006 intacto).
+
+**Seam (mantiene los sectores BYTE-IDÉNTICOS):** un flag por-enemigo `shmup_motion` (default
+FALSE) en `EmpireDrone`/`ShieldDrone`. Los estados de MOVIMIENTO (`DronePatrolState`/
+`DroneChaseState`) CEDEN el control de posición SÓLO cuando el flag está activo (omiten su
+velocity + `move_and_slide`); su lógica de TRANSICIÓN sigue corriendo, así que el drone aún llega
+a Attack y DISPARA. El path de Attack (telegraph+fire) y el escudo de `ShieldDrone` no se tocan.
+El spawner activa el flag en los enemigos streameados y OWNS su posición vía el patrón. Con el
+flag en false (default de sectores) Patrol/Chase/Attack + DroneAi son byte-idénticos (verificado
+por test: con flag OFF los estados aún llaman `move_and_slide`/setean velocity como antes).
+
+**Mate del patrón — PURA + determinista (`ShmupMotion`, espejo de `y_for_pattern`):**
+`ShmupMotion.next_position(state, pos, player, delta)` calcula la posición por-tick frame-free.
+El estado por-enemigo `{pattern, spawn, center_y, elapsed}` lo avanza el spawner cada
+`update(delta)`; entry-vs-lockon es `elapsed >= ENTRY_LOCK_DELAY`. `ShmupSpawner.MotionPattern`
+re-declara el enum 1:1 con `ShmupMotion.MotionPattern` (mismos ints; test de sync lo guarda).
+
+**Cableado del jugador:** el spawner recibe el jugador vivo (duck-typed, como `set_scroller`) vía
+`ShmupSpawner.set_player()`, fijado por `Shmup01` en `_ready`; un test inyecta un jugador fake.
+
+**Números (tunables):** `ENTRY_LOCK_DELAY = 0.5 s`; `DRIFT_SPEED = 70 px/s`; `SINE_AMPLITUDE =
+90 px` / `SINE_FREQ = 3.0 rad/s`; `HOMING_SPEED = 130 px/s`; `DIVE_SWOOP_SPEED = 240 px/s` /
+`DIVE_SWOOP_TIME = 0.7 s` / `DIVE_PEEL_SPEED = 160 px/s`. `DEFAULT_WAVES` ahora mezcla
+STRAIGHT/SINE/HOMING/DIVE + armadura mixta para que el jugador swapee elemento mid-stream.
+
+**Follow-ups (no se meten aquí):** arte real de los nuevos movimientos, más patrones, olas de
+boss/élite, y la curva de dificultad — tickets aparte.
+
 ### Feature-vetting checklist (re-ejecutable por el revisor)
 
 ```
