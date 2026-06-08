@@ -10,7 +10,7 @@
     "Full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green, human live-playtest approved.",
     "Remaining polish (real art/VFX, boss/elite waves, difficulty curve) filed as follow-up tickets, not crammed in."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -22,10 +22,17 @@
   "depends_on": [
     "TASK-069"
   ],
-  "linked_commits": [],
-  "linked_prs": [],
-  "comments": [],
+  "linked_commits": [
+    "490c4dd",
+    "9b86ee4"
+  ],
+  "linked_prs": [
+    "https://github.com/lordiwa/mageRage/pull/19"
+  ],
+  "comments": [
+    "DONE + MERGED to master via PR #19 (merge 43de7a0), CI GREEN (gdlint + crucial; nightly skipped). Full GUT 958/958, reviewer ACCEPT (no HIGH/MEDIUM; 2 cosmetic LOWs). Live-playtest approved ('perfecto'). FRAME-CARRY: ShmupSpawner._advance_active carries each enemy with the frame (carry_dx = scroller visible-rect left-edge delta, NAN-guarded first tick, once/tick, both motion paths); enemy motion now frame-relative. DRIFT_SPEED 70->35 (~30s dwell, ~6.5x longer). DEFAULT_WAVES 16->48 enemies / 9 overlapping waves spanning the full lane, peak >=8 concurrent, mixed armor+patterns kept. ShmupMotion stayed pure (carry in spawner). Shmup-only; sectors byte-identical."
+  ],
   "created_at": "2026-06-08T16:29:30.907Z",
-  "updated_at": "2026-06-08T17:08:14.574Z",
+  "updated_at": "2026-06-08T17:10:05.917Z",
   "jira_key": null
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T17:08:14.574Z",
+  "generated_at": "2026-06-08T17:10:05.917Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -412,7 +412,7 @@
     {
       "key": "TASK-070",
       "title": "Shmup density + dwell: enemies linger on screen much longer and spawn far more",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     }
   ]
