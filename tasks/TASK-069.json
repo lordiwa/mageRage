@@ -10,7 +10,7 @@
     "Tests-first GUT coverage (per-pattern motion, enter-then-lock-on timing, scoping, still-fires) is deterministic; full GUT green, gdlint clean, reviewer ACCEPT (no HIGH), PR merged CI-green.",
     "Any remaining polish (real art, additional patterns, boss/elite waves, difficulty curve) is filed as follow-up tickets rather than crammed in."
   ],
-  "status": "in_review",
+  "status": "done",
   "priority": "medium",
   "labels": [
     "gameplay",
@@ -23,10 +23,18 @@
     "TASK-066",
     "TASK-067"
   ],
-  "linked_commits": [],
-  "linked_prs": [],
-  "comments": [],
+  "linked_commits": [
+    "d4e5709",
+    "f88bec2",
+    "52f2816"
+  ],
+  "linked_prs": [
+    "https://github.com/lordiwa/mageRage/pull/18"
+  ],
+  "comments": [
+    "DONE + MERGED to master via PR #18 (merge c9a368d), CI GREEN (gdlint + crucial; nightly skipped). Full GUT 952/952, reviewer ACCEPT (no HIGH/MEDIUM; 2 unreachable LOWs). Live-playtest approved by human. SEAM: per-enemy shmup_motion flag (default false) on EmpireDrone/ShieldDrone; DronePatrolState/DroneChaseState skip velocity+move_and_slide ONLY when flag true and ONLY after transition logic (so Attack/fire still runs) -> sectors byte-identical. New pure scripts/levels/shmup_motion.gd (ShmupMotion, MotionPattern{STRAIGHT,SINE,HOMING,DIVE}, ENTRY_LOCK_DELAY=0.5). Spawner sets flag + owns position per per-wave motion field; DEFAULT_WAVES now mixed pattern+armor. Combat read preserved (movement-only)."
+  ],
   "created_at": "2026-06-08T15:50:28.294Z",
-  "updated_at": "2026-06-08T16:20:51.163Z",
+  "updated_at": "2026-06-08T16:22:43.534Z",
   "jira_key": null
 }

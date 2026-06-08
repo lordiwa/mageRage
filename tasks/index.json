@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-08T16:20:51.163Z",
+  "generated_at": "2026-06-08T16:22:43.534Z",
   "tasks": [
     {
       "key": "TASK-001",
@@ -406,7 +406,7 @@
     {
       "key": "TASK-069",
       "title": "Shmup enemy behavior: enter-then-lock-on follow + data-driven movement patterns",
-      "status": "in_review",
+      "status": "done",
       "priority": "medium"
     }
   ]
