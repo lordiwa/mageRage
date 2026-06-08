@@ -187,7 +187,18 @@ Reemplaza el layout de DD-007. Gamepad principal, teclado additive.
 - **Salto:** A (botón 0) / Espacio.
 - **Vuelo:** **doble salto** — el segundo salto en el aire entra a `FlightState`. **No hay
   botón dedicado de vuelo.** Sigue gateado por Electricidad (sin Electricidad no hay
-  segundo salto / vuelo). Se sale del vuelo al tocar piso.
+  segundo salto / vuelo).
+- **Salir del vuelo (TASK-062):** dos formas. (a) Al **tocar piso** se cae a `MoveState`.
+  (b) **Doble-tap de Salto** estando en vuelo: dos pulsaciones de Salto dentro de una
+  ventana corta (`FlightState.DOUBLE_TAP_WINDOW`, **0.30 s**, constante ajustable) cortan
+  el vuelo y **bajan a plataformeo**: se sale de `FlightState`, vuelve la gravedad y el héroe
+  **cae** (mismo destino `MoveState` que la salida por aterrizaje — caída pura, sin nuevo
+  impulso de salto). Un solo tap **no** corta el vuelo; si la ventana expira sin segundo tap,
+  el contador se reinicia (un tap posterior empieza de cero). Lectura del flanco por la
+  costura `InputGate` (determinista en tests, TASK-024). **Seguridad de gating:** soltar el
+  vuelo solo puede **quitar** vuelo, nunca otorgar travesía — no abre ningún gate
+  (zona anti-magia / gate de FUEGO / hueco de vuelo de 98 px del jefe); como mucho hace la
+  travesía más difícil.
 - **Planeo (Hielo):** **mantener LB** (botón 9, left shoulder) / Alt. Gateado por Hielo.
 - **Dash:** **RB** (botón 10, right shoulder) / Shift. Gateado por Fuego.
 
@@ -205,7 +216,7 @@ Reemplaza el layout de DD-007. Gamepad principal, teclado additive.
 | Acción | Gamepad | Teclado |
 |---|---|---|
 | Mover / vertical | Stick izq | A/D, ←/→, W/S |
-| Salto / (doble = vuelo) | A | Espacio |
+| Salto / (doble = vuelo / doble-tap en vuelo = bajar a plataformeo) | A | Espacio |
 | Planeo (mantener) | LB | Alt |
 | Dash | RB | Shift |
 | Asignar Fuego/Hielo/Elec | X / Y / B | 1 / 2 / 3 |

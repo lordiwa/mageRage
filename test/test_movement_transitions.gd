@@ -49,6 +49,13 @@ func _press_edge(action: String) -> void:
 	InputGate.set_test_override(action, true)
 
 
+# TASK-062: force the edge OFF for the next frame so a held override does not
+# re-fire just_pressed() on every physics step. Simulating distinct taps means
+# toggling the override true (an edge) then false (no edge) between frames.
+func _release_edge(action: String) -> void:
+	InputGate.set_test_override(action, false)
+
+
 # Builds a state of `state_script`, wires the fake player, parents both so
 # signals/NOTIFICATIONs behave, and returns [state, captured_target_holder].
 func _make_state(state_script: GDScript, fake: FakePlayer) -> EstadoBase:
@@ -317,6 +324,89 @@ func test_flight_to_move_when_on_floor() -> void:
 
 	assert_signal_emitted_with_parameters(
 		st, "transition_requested", [st, "MoveState"])
+
+
+# --- TASK-062: double-tap jump while flying drops to platformer (MoveState) ---
+
+func test_flight_double_tap_jump_exits_to_move() -> void:
+	# Two JUMP edges within DOUBLE_TAP_WINDOW while flying drop to MoveState
+	# (a pure fall, same target as the landing-exit). Airborne the whole time.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	# First tap: an edge, then release so the next frame is not still "pressed".
+	_press_edge("jump")
+	st.physics_update(0.016)
+	_release_edge("jump")
+	st.physics_update(0.016)            # ~0.032s elapsed, inside the window
+
+	# Second tap within the window -> exit to MoveState.
+	_press_edge("jump")
+	st.physics_update(0.016)
+
+	assert_signal_emitted_with_parameters(
+		st, "transition_requested", [st, "MoveState"])
+
+
+func test_flight_single_jump_does_not_exit() -> void:
+	# A SINGLE jump edge while flying must NOT exit (no toggle-out on one tap).
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	_press_edge("jump")
+	st.physics_update(0.016)
+	_release_edge("jump")
+	st.physics_update(0.016)            # no second edge
+
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+func test_flight_two_jumps_past_window_do_not_exit() -> void:
+	# Two jump edges SEPARATED BY MORE THAN the window do not exit: the window
+	# expires and resets the count, so the second tap is a fresh first tap.
+	var fake := FakePlayer.new()
+	add_child_autofree(fake)
+	fake.abilities = {"electricity": true}
+	fake.on_floor = false
+
+	var st := _make_state(FlightState, fake)
+	st.enter()
+	watch_signals(st)
+
+	# First tap.
+	_press_edge("jump")
+	st.physics_update(0.016)
+	_release_edge("jump")
+
+	# Let MORE than DOUBLE_TAP_WINDOW (0.30s) elapse with no jump edge.
+	var waited := 0.0
+	while waited < 0.40:
+		st.physics_update(0.05)
+		waited += 0.05
+
+	# Second tap now: outside the window -> treated as a fresh first tap, no exit.
+	_press_edge("jump")
+	st.physics_update(0.016)
+
+	assert_signal_not_emitted(st, "transition_requested")
+
+
+func test_flight_double_tap_window_is_a_named_constant() -> void:
+	# The window/threshold must be a named, tunable constant (AC2).
+	assert_true(FlightState.DOUBLE_TAP_WINDOW > 0.0,
+		"FlightState.DOUBLE_TAP_WINDOW must exist and be a positive tunable constant")
 
 
 # --- JumpState: launch impulse ---------------------------------------------

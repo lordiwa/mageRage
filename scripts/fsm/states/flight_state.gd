@@ -3,7 +3,8 @@
 ## Gravity is ignored: the hero moves under pure directional input. This state is
 ## only reachable through the electricity-gated DOUBLE-JUMP transitions in
 ## JumpState / GlideState, so it needs no "am I unlocked?" flag of its own.
-## DD-008: there is no toggle-out — flight ends only on landing.
+## DD-008: flight ends on landing OR on a deliberate double-tap of JUMP
+## (TASK-062 — see DOUBLE_TAP_WINDOW below); there is no single-press toggle-out.
 ##
 ## TASK-055: an air dash (Fire's horizontal burst) is now available in FlightState
 ## via the shared DashComponent on the Player. The burst overrides the free-flight
@@ -15,10 +16,27 @@ class_name FlightState extends EstadoBase
 
 const FLY_SPEED := 260.0
 
+## TASK-062 (extends DD-008): a double-tap of JUMP while flying is a deliberate
+## "stop flying" control. Two JUMP edges within this window drop the hero to
+## MoveState (a pure fall — same target as the landing exit), so gravity returns
+## and the hero lands into platformer movement. Tunable/unit-testable constant.
+const DOUBLE_TAP_WINDOW := 0.30
+
+## True once a first in-flight JUMP edge is seen and we are waiting for a second
+## within DOUBLE_TAP_WINDOW. Reset in enter() so each flight starts clean.
+var _jump_tap_pending := false
+## Seconds elapsed since the pending first tap; when it exceeds the window the
+## pending tap is dropped so a later lone press starts a fresh count.
+var _tap_window_elapsed := 0.0
+
 func enter() -> void:
 	player.velocity = Vector2.ZERO
+	# TASK-062: a fresh flight has no pending tap (e.g. the entry double-jump
+	# press in JumpState must not be mistaken for the first half of an exit tap).
+	_jump_tap_pending = false
+	_tap_window_elapsed = 0.0
 
-func physics_update(_delta: float) -> void:
+func physics_update(delta: float) -> void:
 	# TASK-028 (DD-011) — SUSTAIN gate. Gating only the entry edge let a hero who was
 	# ALREADY FLYING on entry coast through an un-purged anti-magic field (skipping the
 	# purge). Re-read the flag every physics frame: while suppressed, drop OUT of flight
@@ -33,10 +51,30 @@ func physics_update(_delta: float) -> void:
 		transition_to("MoveState")
 		return
 
+	# TASK-062 (extends DD-008): double-tap JUMP to stop flying. Count JUMP edges
+	# through the InputGate seam (deterministic in tests, per TASK-024); a second
+	# edge within DOUBLE_TAP_WINDOW of the first drops to MoveState — a PURE FALL,
+	# the same target as the landing exit, never a re-launch (JumpState.enter would
+	# add a fresh upward impulse). This only ever REMOVES flight: it cannot grant
+	# traversal, so it can never bypass a gate (anti-magic zone / FIRE gate / boss
+	# flight gap). If the window lapses with no second tap the pending tap is
+	# dropped, so a later lone press starts a fresh count (no toggle-out on one tap).
+	if _jump_tap_pending:
+		_tap_window_elapsed += delta
+		if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
+			_jump_tap_pending = false
+			_tap_window_elapsed = 0.0
+	if InputGate.just_pressed("jump"):
+		if _jump_tap_pending:
+			transition_to("MoveState")
+			return
+		_jump_tap_pending = true
+		_tap_window_elapsed = 0.0
+
 	# Resolve the shared DashComponent and tick its timers.
 	var dash := player.get_node_or_null("DashComponent") as DashComponent
 	if dash != null:
-		dash.update(_delta)
+		dash.update(delta)
 
 	# --- Active air dash burst (during the burst: override velocity, skip flight physics) ---
 	if dash != null and dash.is_dashing():
