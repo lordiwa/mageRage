@@ -14,6 +14,9 @@ var abilities: Dictionary = {}
 ## transition test is byte-identical; FlightState reads it to suppress its flight EXITS
 ## (double-tap + landing) when the shmup level sets it TRUE.
 var shmup_mode := false
+## TASK-067 (DD-014): mirrors Player.fly_speed_scale. DEFAULTS 1.0 (no-op) so every
+## existing flight-velocity test is byte-identical; FlightState multiplies FLY_SPEED by it.
+var fly_speed_scale := 1.0
 var on_floor := false
 var gravity := Vector2(0, 980)
 ## DD-008: tracks how many jumps have fired since leaving the ground. The first

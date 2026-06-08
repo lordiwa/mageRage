@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://b8mageshmup001"]
+[gd_scene load_steps=10 format=3 uid="uid://b8mageshmup001"]
 
 [ext_resource type="PackedScene" uid="uid://b8mageragepl0r" path="res://scenes/player.tscn" id="1_player"]
 [ext_resource type="Script" path="res://scripts/levels/shmup_01.gd" id="2_shmup"]
 [ext_resource type="Script" path="res://scripts/levels/shmup_scroller.gd" id="3_scroller"]
 [ext_resource type="PackedScene" uid="uid://b8mageragephud0" path="res://scenes/player_hud.tscn" id="4_playerhud"]
 [ext_resource type="Script" path="res://scripts/levels/shmup_spawner.gd" id="5_spawner"]
+[ext_resource type="Script" path="res://scripts/ui/shmup_banner.gd" id="6_banner"]
 
 [sub_resource type="RectangleShape2D" id="Rect_floor"]
 size = Vector2(6400, 64)
@@ -76,3 +77,28 @@ position = Vector2(220, 20)
 
 [node name="ShmupSpawner" type="Node" parent="."]
 script = ExtResource("5_spawner")
+
+[node name="ShmupBanner" type="CanvasLayer" parent="."]
+script = ExtResource("6_banner")
+victory_label_path = NodePath("VictoryLabel")
+defeat_label_path = NodePath("DefeatLabel")
+
+[node name="VictoryLabel" type="Label" parent="ShmupBanner"]
+offset_left = 440.0
+offset_top = 300.0
+offset_right = 840.0
+offset_bottom = 360.0
+theme_override_colors/font_color = Color(0.95, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 48
+text = "VICTORY"
+horizontal_alignment = 1
+
+[node name="DefeatLabel" type="Label" parent="ShmupBanner"]
+offset_left = 440.0
+offset_top = 300.0
+offset_right = 840.0
+offset_bottom = 360.0
+theme_override_colors/font_color = Color(0.95, 0.3, 0.25, 1)
+theme_override_font_sizes/font_size = 40
+text = "DOWNED — RETRY"
+horizontal_alignment = 1

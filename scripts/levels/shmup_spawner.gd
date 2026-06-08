@@ -183,11 +183,29 @@ func _sweep_despawns() -> void:
 	_active = survivors
 
 
-## Release predicate: off the LEFT edge (fully past it) or dead. Duck-typed is_dead() so a fake
-## enemy (test) and a real drone (Health-backed is_dead) both work.
+## Release predicate: off the LEFT edge (fully past it) or dead. TASK-067 (folds the TASK-066
+## review MEDIUM): the REAL EmpireDrone/ShieldDrone is a CharacterBody2D ROOT whose is_dead()
+## lives on a Health CHILD node, NOT on the root — so the old root-level `enemy.is_dead()`
+## check was DEAD CODE for real drones (they were only ever cleaned by the validity prune).
+## _is_enemy_dead() now queries the Health child first (the real-drone contract) and falls back
+## to a root-level is_dead() (the test FakeEnemy), so both a real drone and a bare fake work.
 func _should_release(enemy: Object, left_edge: float) -> bool:
 	if enemy is Node2D and (enemy as Node2D).global_position.x < left_edge:
 		return true
+	if _is_enemy_dead(enemy):
+		return true
+	return false
+
+
+## Dead-enemy detection that matches how enemies ACTUALLY die: query the Health CHILD's
+## is_dead() (the real EmpireDrone/ShieldDrone shape, "Health" node off the body root) and
+## fall back to a root-level is_dead() for a bare duck-typed fake. Defensive at every step
+## (a missing child / method is simply "not dead").
+func _is_enemy_dead(enemy: Object) -> bool:
+	if enemy is Node:
+		var health := (enemy as Node).get_node_or_null("Health")
+		if health != null and health.has_method("is_dead") and health.is_dead():
+			return true
 	if enemy.has_method("is_dead") and enemy.is_dead():
 		return true
 	return false
