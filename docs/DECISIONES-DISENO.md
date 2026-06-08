@@ -528,3 +528,117 @@ disparo potenciado; mapeo puro conmutativo; combos DENTRO del RPS vía media de 
 elementos base; anti-dominancia por ventana + maná sumado + cadencia lenta + modo-combo que
 intercambia simples + invariante dmg/maná verificada; antimateria excluida y única por
 encima del RPS) queda como base de M2.1.
+
+---
+
+## DD-014 — Modo shoot-em-up de auto-scroll (TASK-064/065)  ·  **ACEPTADA (números provisionales)**
+
+**Origen:** decisión del usuario — "un nuevo modo shmup AL LADO" de los sectores. Un nivel
+de **shoot-em-up horizontal rápido** como **modo aparte y aditivo**, alcanzable desde el
+selector de niveles (TASK-063). Los sectores `sector_01/02` quedan **exactamente como están**:
+esto NO toca su FlightState/Player/combate. TASK-064 es el paraguas; **TASK-065 construye
+sólo la FUNDACIÓN** (cámara + clamp + concesión de vuelo + esqueleto de nivel). El
+**streaming de enemigos** (TASK-066) y la **condición de victoria/derrota + tuning**
+(TASK-067) son tickets POSTERIORES y NO entran aquí.
+
+**Decisión (modelo del modo):**
+
+- **Nivel separado** `levels/shmup_01.tscn` (no un modo dentro de un sector), con su propio
+  controlador `Shmup01`. Greybox primero (colisión = gameplay real): un carril de vuelo con
+  suelo + techo + muro izquierdo como límites deliberados.
+- **Auto-scroll** (la restricción clásica del shmup, recomendada y confirmada): una cámara
+  `ShmupScroller` (subclase de `Camera2D`) avanza a la **derecha a velocidad constante**
+  `SCROLL_SPEED` cada tick de física. El mundo pasa; el héroe NO impulsa el scroll. La cámara
+  arranca **centrada en el spawn** y se hace `current` (sustituye a la cámara montada en el
+  player de los sectores, que NO se toca).
+- **Héroe SIEMPRE volando.** El vuelo es central en el shmup. El controlador, en `_ready`,
+  **pre-concede** la habilidad de vuelo (`electricity` en `abilities`) y mete al héroe en
+  `FlightState` desde el frame uno (FlightState no aplica gravedad → **gravedad off**).
+- **El héroe queda CLAMPEADO al rect visible de la cámara** cada frame de física (el clamp
+  vive en el controlador del nivel): puede maniobrar DENTRO del cuadro pero no salir; al
+  avanzar la cámara, lo **arrastra hacia la derecha**. El rect se deriva del tamaño del
+  viewport / zoom (NO números mágicos). `SCROLL_SPEED (180 px/s)` se fija **por debajo** de
+  `FlightState.FLY_SPEED (260)` para que el jugador conserve autoridad de maniobra dentro del
+  cuadro en vez de quedar pegado a la pared derecha.
+- **Salir del vuelo está DESHABILITADO en el shmup, vía flag por-nivel.** Caer del vuelo =
+  caer fuera de pantalla = muerte accidental. La salida por **doble-tap de JUMP** (TASK-062)
+  Y la salida por **aterrizaje** (`is_on_floor`) de `FlightState` se **suprimen** cuando
+  `Player.shmup_mode` está activo. El flag **default es FALSE**, lo pone SÓLO el controlador
+  del shmup en `_ready`, y `FlightState` lo lee de forma defensiva: con el flag en false TODA
+  transición de los sectores (enter/doble-tap/suppression DD-011/aterrizaje) es
+  **byte-idéntica** (verificado por tests). El scoping por-nivel es el punto central: el modo
+  shmup NO altera ningún default de Player/FlightState/combate de los sectores.
+- **Victoria/derrota (INTENCIÓN, se implementa en TASK-067):** **Victoria = llegar al final
+  del scroll** (recorrer el carril); **Derrota = respawn** (caer fuera/morir reaparece en el
+  spawn registrado, DD-009). No se construye en TASK-065, sólo se documenta aquí.
+
+**Coherencia con canon:** el shmup encaja en el pilar **"vuelo = libertad y condena"** — es
+el clímax del verbo de vuelo llevado a un carril aéreo abierto donde el mundo corre hacia ti.
+Reutiliza al Player, el vuelo y los sistemas de proyectil/combate M2.1 existentes (TASK-066
+los hará streamear). El Imperio sigue siendo cuarentena, no maldad caricaturesca (pilar 1).
+
+**Números provisionales (tunables, TASK-067):** `ShmupScroller.SCROLL_SPEED = 180 px/s`;
+métricas del carril greybox (suelo y=+328 / techo y=-288, espejo de la banda flight-safe de
+los sectores); el flag `Player.shmup_mode` (default FALSE). La velocidad de vuelo, cadencia
+de disparo, longitud del carril y la condición de victoria se afinan en TASK-067.
+
+### Feature-vetting checklist (re-ejecutable por el revisor)
+
+```
+FEATURE: Auto-scroll shoot-em-up mode — FOUNDATION (DD-014 / TASK-065)
+ONE-LINE: A SEPARATE level with a constant-rightward auto-scroll camera; the hero is ALWAYS
+          flying (flight pre-granted, gravity off) and clamped into the visible frame, the
+          world scrolling past. Stop-flight (double-tap + landing) is disabled here via a
+          per-level flag that defaults OFF (sectors byte-identical).
+
+--- GATE A: PILLARS (need >=1 "serves") ---
+[x] Jailer-was-protector  : neutral — note: no toca la ficción del Imperio (greybox aún).
+[x] Weapon-chooses-target : neutral — note: reutiliza el combate existente; sin cambios.
+[x] Flight=freedom&doom   : serves — note: el shmup ES el verbo de vuelo llevado al carril
+    aéreo abierto donde el mundo corre hacia ti; "libertad y condena" hecho modo.
+    >> 1 "serves", 0 "VIOLATES" => PASS.
+
+--- GATE B: CORE-LOOP LAYER (need >=1, steals from none) ---
+[x] Micro  : serves, steals from NONE — note: maniobra dentro del cuadro (esquivar/posicionar)
+    segundo-a-segundo; el clamp + SCROLL_SPEED < FLY_SPEED preservan la autoridad del jugador.
+    No roba el swap RPS (el combate no cambia).
+[x] Minute : serves — note: recorrer el carril hasta el final es la meta de tamaño-minuto
+    (la victoria llega en TASK-067; la fundación ya entrega el carril y el avance).
+[x] Macro  : n/a — note: modo aparte aditivo; no cambia la progresión metroidvania.
+    >> 1+ "serves", 0 "steals" => PASS.
+
+--- GATE C: CANON CONSISTENCY (need "consistent") ---
+[x] Contradicts GDD?         : no — un modo de vuelo rápido es coherente con "el juego se
+    vuelve un side-scroller aéreo" al dominar Electricidad (skill game-design, tabla de verbos).
+[x] Contradicts LORE-BIBLE?  : no — reutiliza vuelo/combate; sin nuevas afirmaciones de canon.
+[x] Tone severe/tragic/cosmic: yes — severo: salir del vuelo = caer fuera = muerte; nada quippy.
+    >> Sin contradicciones, tono OK => PASS.
+
+--- GATE D: TEACHES / REWARDS A VERB (need "yes") ---
+[x] Which verb/element: recompensa el VUELO (FlightState) como verbo central del modo.
+[x] If it gates traversal: n/a — no es un gate metroidvania; es un modo aparte.
+[x] If combat: preserve the RPS read? : n/a en TASK-065 (combate sin cambios; enemigos en 066).
+    >> PASS.
+
+--- IMPLEMENTATION HANDOFF (godot-game-dev) ---
+[x] Maps to: Camera2D (ShmupScroller) + FSM FlightState (scoping por flag) + collision
+    Environment layer (greybox bounds) + level controller (clamp); selector LEVEL_ENTRIES.
+[x] Data-driven where possible? : el modelo es escena + controlador delgado; SCROLL_SPEED y el
+    flag son constantes/vars nombradas y tunables.
+[x] Test plan (GUT, determinista, headless): advance(delta) mueve x por SCROLL_SPEED*delta
+    (sin frames reales); visible_world_rect derivado de viewport/zoom; clamp por cada borde;
+    FlightState flag OFF byte-idéntico / ON sin salida; shmup_01 carga limpio + spawn + grant
+    + flag + start-in-FlightState + cámara current + clamp; selector lista 3, guard de path.
+    SUITE COMPLETA GREEN + CRUCIAL ×2.
+
+VERDICT: SHIP — reason: sirve micro+minuto y el pilar de vuelo, no contradice canon, tono
+severo. El scoping por-nivel (flag default OFF) garantiza que los sectores son byte-idénticos.
+Sólo FUNDACIÓN; enemigos (066) y victoria/derrota + tuning (067) son tickets aparte. Números
+PROVISIONALES.
+```
+
+**Estado:** **ACEPTADA** el **modelo** (nivel separado de auto-scroll; héroe siempre volando
+con vuelo pre-concedido + gravedad off; clamp al rect visible; stop-flight deshabilitado por
+flag por-nivel con default FALSE → sectores byte-idénticos; victoria = fin del scroll /
+derrota = respawn como intención). **PROVISIONALES** los números (SCROLL_SPEED, métricas del
+carril, tuning de vuelo/cadencia) y los tickets de enemigos/victoria-derrota (TASK-066/067).
