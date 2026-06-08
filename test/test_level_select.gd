@@ -27,6 +27,8 @@ const LEVEL_SELECT := preload("res://scenes/level_select.tscn")
 ## resolves).
 const SECTOR_01_PATH := "res://levels/sector_01.tscn"
 const SECTOR_02_PATH := "res://levels/sector_02.tscn"
+## TASK-065: the shmup level is now the THIRD real entry (added as one line once it exists).
+const SHMUP_01_PATH := "res://levels/shmup_01.tscn"
 
 
 ## Instance the selector, parent it (auto-freed), settle one frame so _ready runs
@@ -59,6 +61,7 @@ func test_level_list_is_data_driven_and_contains_the_real_sectors() -> void:
 		paths.append(entry["path"])
 	assert_has(paths, SECTOR_01_PATH, "the list includes Sector 01 (res://levels/sector_01.tscn)")
 	assert_has(paths, SECTOR_02_PATH, "the list includes Sector 02 (res://levels/sector_02.tscn)")
+	assert_has(paths, SHMUP_01_PATH, "the list includes the shmup level (res://levels/shmup_01.tscn) — TASK-065")
 
 
 func test_every_listed_level_path_resolves_to_an_existing_scene() -> void:
@@ -127,3 +130,44 @@ func test_selecting_an_entry_emits_level_selected_with_its_path() -> void:
 	assert_eq(captured.size(), 1, "level_selected fires exactly once per selection")
 	assert_eq(captured[0], menu._path_for(0),
 		"level_selected carries the chosen entry's level path")
+
+
+# --- TASK-065: the selector now lists 3 levels, all resolving --------------------
+
+func test_selector_lists_three_levels_all_resolving() -> void:
+	# The shmup level brings the selector to THREE entries; every listed path must still
+	# resolve (the future-entry guard now that a third real path exists).
+	var menu: LevelSelect = await _make_selector()
+	var entries: Array = menu.level_entries()
+	assert_eq(entries.size(), 3, "the selector lists exactly three levels (TASK-065)")
+	for entry in entries:
+		assert_true(ResourceLoader.exists(entry["path"]),
+			"every listed level path resolves: %s" % entry["path"])
+
+
+# --- TASK-065 (folds TASK-063 reviewer LOW): select_index guards a missing path ---
+
+func test_select_index_refuses_a_nonexistent_path() -> void:
+	# The folded TASK-063 reviewer LOW: select_index must guard with ResourceLoader.exists()
+	# before change_scene_to_file, so a typo'd / dangling path can't hard-crash the game.
+	# We drive it through the _path_for seam by overriding the resolved path indirectly:
+	# select_index reads _path_for(index); to test the guard in isolation we assert that a
+	# selection whose resolved path does NOT exist NEVER emits level_selected (the announce
+	# that immediately precedes the swap), so the swap is refused.
+	var menu: LevelSelect = await _make_selector()
+	watch_signals(menu)
+	# An out-of-range index already yields "" (existing safe no-op) — exercise that the
+	# guard ALSO refuses a non-existent (but non-empty) path via the public seam.
+	menu.select_path_for_test("res://levels/does_not_exist.tscn")
+	assert_signal_not_emitted(menu, "level_selected",
+		"a non-existent level path is refused (guarded by ResourceLoader.exists) — no swap")
+
+
+func test_select_index_still_accepts_a_real_path() -> void:
+	# Sanity: the new guard does NOT block a REAL listed path — a valid selection still
+	# announces level_selected (and would swap in game).
+	var menu: LevelSelect = await _make_selector()
+	var captured: Array = []
+	menu.level_selected.connect(func(path: String) -> void: captured.append(path))
+	menu.select_index(0)
+	assert_eq(captured.size(), 1, "a real listed path is still accepted (guard is fail-safe only)")

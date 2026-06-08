@@ -42,6 +42,13 @@ enum AimDevice {NONE, PAD, MOUSE}
 ## fire -> leap+dash, ice -> glide, electricity -> flight.
 @export var abilities: Dictionary = {"fire": true, "ice": true, "electricity": true}
 
+## TASK-065 (DD-014): per-level shmup scoping flag. DEFAULTS FALSE so sector_01/02 behavior
+## is byte-identical. The shmup_01 level controller sets it TRUE on _ready; FlightState reads
+## it to SUPPRESS the DD-008/TASK-062 double-tap-stop-flight exit AND the landing exit so the
+## always-flying hero never drops out of flight (dropping = falling off-screen = death). It is
+## ONLY ever read in FlightState's exit guards — it changes no other Player/combat default.
+var shmup_mode := false
+
 ## -1 = facing left, +1 = facing right. Used by air dash for its burst direction.
 var facing := 1.0
 

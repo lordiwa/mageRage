@@ -78,53 +78,64 @@ func physics_update(delta: float) -> void:
 		transition_to("MoveState")
 		return
 
-	# TASK-062 (extends DD-008) + TASK-068 (regression fix): GRACE + RELEASE-GATED
-	# double-tap JUMP to stop flying. A second CLEAN tap within DOUBLE_TAP_WINDOW
-	# drops to MoveState — a PURE FALL, the same target as the landing exit, never
-	# a re-launch (JumpState.enter would add a fresh upward impulse). This only ever
-	# REMOVES flight: it cannot grant traversal, so it can never bypass a gate
-	# (anti-magic zone / FIRE gate / boss flight gap).
-	#
-	# Read BOTH the rising edge (just_pressed) and the held state (pressed) through
-	# the InputGate seam so tests are deterministic (TASK-024) and the entry latch
-	# is defeated:
-	#   1. ENTRY GRACE: while _entry_grace > 0 we tick it down and SKIP all exit
-	#      detection. The entry double-jump (and Godot's multi-physics-frame
-	#      just_pressed latch) therefore can NEVER drop the hero.
-	#   2. RELEASE-GATING: a tap counts only when it is a rising edge that FOLLOWS
-	#      a release (jump was up last frame), and only once the detector is ARMED
-	#      — armed after JUMP has been observed released at least once post-grace.
-	#      A single held/latched press can never register as two taps.
-	# Track the previous-frame held state up front so every early-return below
-	# leaves it consistent for the next frame.
-	var jump_down := InputGate.pressed("jump")
-	var jump_edge := InputGate.just_pressed("jump")
-	var was_down := _jump_was_down
-	_jump_was_down = jump_down
+	# TASK-065 (DD-014): per-level shmup scoping. In the auto-scroll shmup the hero is
+	# ALWAYS flying — dropping out (double-tap OR landing) means falling off-screen = an
+	# accidental death. So when player.shmup_mode is set we SKIP the ENTIRE stop-flight
+	# detector below (and the landing exit further down) and keep the hero in FlightState.
+	# The flag defaults FALSE, so for the sectors the TASK-068 grace + release-gated
+	# double-tap detector runs exactly as on master (byte-identical). We still ran the
+	# DD-011 suppression exit above (untouched): the shmup has no anti-magic zones, so that
+	# guard is inert here, and leaving it alone keeps the sector contract intact. When
+	# shmup_mode is true the detector never runs, so its grace/release state simply stays
+	# at its enter()-seeded values — harmless, since nothing reads it while skipped.
+	if not _is_shmup_mode():
+		# TASK-062 (extends DD-008) + TASK-068 (regression fix): GRACE + RELEASE-GATED
+		# double-tap JUMP to stop flying. A second CLEAN tap within DOUBLE_TAP_WINDOW
+		# drops to MoveState — a PURE FALL, the same target as the landing exit, never
+		# a re-launch (JumpState.enter would add a fresh upward impulse). This only ever
+		# REMOVES flight: it cannot grant traversal, so it can never bypass a gate
+		# (anti-magic zone / FIRE gate / boss flight gap).
+		#
+		# Read BOTH the rising edge (just_pressed) and the held state (pressed) through
+		# the InputGate seam so tests are deterministic (TASK-024) and the entry latch
+		# is defeated:
+		#   1. ENTRY GRACE: while _entry_grace > 0 we tick it down and SKIP all exit
+		#      detection. The entry double-jump (and Godot's multi-physics-frame
+		#      just_pressed latch) therefore can NEVER drop the hero.
+		#   2. RELEASE-GATING: a tap counts only when it is a rising edge that FOLLOWS
+		#      a release (jump was up last frame), and only once the detector is ARMED
+		#      — armed after JUMP has been observed released at least once post-grace.
+		#      A single held/latched press can never register as two taps.
+		# Track the previous-frame held state up front so every early-return below
+		# leaves it consistent for the next frame.
+		var jump_down := InputGate.pressed("jump")
+		var jump_edge := InputGate.just_pressed("jump")
+		var was_down := _jump_was_down
+		_jump_was_down = jump_down
 
-	if _entry_grace > 0.0:
-		# During grace: ignore all jump input for exit, just tick the timer down.
-		# Do NOT arm and do NOT count taps; the entry presses pass through harmless.
-		_entry_grace -= delta
-	else:
-		# Arm only after observing a genuine release (jump up this frame) so the
-		# entry hold/latch has fully cleared before any tap can count.
-		if not jump_down:
-			_exit_armed = true
-		# Expire a stale pending first tap so a later lone tap starts fresh.
-		if _jump_tap_pending:
-			_tap_window_elapsed += delta
-			if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
-				_jump_tap_pending = false
-				_tap_window_elapsed = 0.0
-		# A CLEAN tap = an armed rising edge that follows a release (was up last
-		# frame). Held/latched presses (was_down true) never count.
-		if _exit_armed and jump_edge and not was_down:
+		if _entry_grace > 0.0:
+			# During grace: ignore all jump input for exit, just tick the timer down.
+			# Do NOT arm and do NOT count taps; the entry presses pass through harmless.
+			_entry_grace -= delta
+		else:
+			# Arm only after observing a genuine release (jump up this frame) so the
+			# entry hold/latch has fully cleared before any tap can count.
+			if not jump_down:
+				_exit_armed = true
+			# Expire a stale pending first tap so a later lone tap starts fresh.
 			if _jump_tap_pending:
-				transition_to("MoveState")
-				return
-			_jump_tap_pending = true
-			_tap_window_elapsed = 0.0
+				_tap_window_elapsed += delta
+				if _tap_window_elapsed > DOUBLE_TAP_WINDOW:
+					_jump_tap_pending = false
+					_tap_window_elapsed = 0.0
+			# A CLEAN tap = an armed rising edge that follows a release (was up last
+			# frame). Held/latched presses (was_down true) never count.
+			if _exit_armed and jump_edge and not was_down:
+				if _jump_tap_pending:
+					transition_to("MoveState")
+					return
+				_jump_tap_pending = true
+				_tap_window_elapsed = 0.0
 
 	# Resolve the shared DashComponent and tick its timers.
 	var dash := player.get_node_or_null("DashComponent") as DashComponent
@@ -160,6 +171,17 @@ func physics_update(delta: float) -> void:
 
 	# DD-008: flight ends only on landing (no toggle-out). Landed while flying ->
 	# grounded handling (no free re-launch through Jump).
-	if player.is_on_floor():
+	# TASK-065 (DD-014): suppressed in the shmup (player.shmup_mode) — the always-flying hero
+	# must never drop to platformer movement (off-screen fall). Default FALSE keeps the sector
+	# landing exit byte-identical.
+	if player.is_on_floor() and not _is_shmup_mode():
 		transition_to("MoveState")
 		return
+
+
+## TASK-065 (DD-014): true when the per-level shmup flag is set on the player, meaning the
+## hero is in the always-flying auto-scroll mode and FlightState's exits (double-tap +
+## landing) must NOT fire. Read defensively ("shmup_mode" in player) so a minimal fake/player
+## without the field defaults to FALSE — the sectors are byte-identical.
+func _is_shmup_mode() -> bool:
+	return "shmup_mode" in player and player.shmup_mode
