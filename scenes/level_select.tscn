@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8mageragelvlsel0"]
+
+[ext_resource type="Script" path="res://scripts/ui/level_select.gd" id="1_levelselect"]
+
+[node name="LevelSelect" type="CanvasLayer"]
+script = ExtResource("1_levelselect")
+button_container_path = NodePath("Backdrop/Center/Column/Buttons")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.05, 0.08, 1)
+
+[node name="Center" type="CenterContainer" parent="Backdrop"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Column" type="VBoxContainer" parent="Backdrop/Center"]
+custom_minimum_size = Vector2(320, 0)
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Title" type="Label" parent="Backdrop/Center/Column"]
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 40
+text = "MAGE RAGE"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Backdrop/Center/Column"]
+theme_override_colors/font_color = Color(0.85, 1, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "SELECT A LEVEL"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Backdrop/Center/Column"]
+custom_minimum_size = Vector2(0, 16)
+
+[node name="Buttons" type="VBoxContainer" parent="Backdrop/Center/Column"]
+theme_override_constants/separation = 8
+alignment = 1
