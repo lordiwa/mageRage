@@ -69,6 +69,21 @@ func test_spawner_motion_enum_mirrors_shmup_motion_one_to_one() -> void:
 		"DIVE int matches across the spawner + motion enums")
 
 
+func test_drift_speed_is_a_small_frame_relative_cross_speed() -> void:
+	# TASK-070: with the spawner now FRAME-CARRYING enemies (carry = the scroller's per-tick x
+	# delta added on top of the pattern step), DRIFT_SPEED is no longer the camera-relative exit
+	# speed — it is the small FRAME-RELATIVE cross-drift that governs dwell. A STRAIGHT/SINE enemy
+	# must traverse the ~1152px frame SLOWLY: at this speed it lingers ~25-40s (vs the old ~4.6s).
+	assert_gt(ShmupMotion.DRIFT_SPEED, 0.0,
+		"DRIFT_SPEED is a positive cross-drift (enemies still slowly traverse the frame)")
+	assert_lte(ShmupMotion.DRIFT_SPEED, 40.0,
+		"DRIFT_SPEED is now SMALL (frame-relative cross speed), so carried enemies dwell ~25-40s")
+	# Concrete dwell sanity over a ~1152px frame: > 20s to cross (markedly longer than the old ~4.6s).
+	var frame_width := 1152.0
+	assert_gt(frame_width / ShmupMotion.DRIFT_SPEED, 20.0,
+		"at DRIFT_SPEED a STRAIGHT enemy takes > 20s to cross a ~1152px frame (dwell, not exit)")
+
+
 func test_entry_lock_delay_is_a_short_positive_beat() -> void:
 	# A brief read-the-armor beat before lock-on (~0.5s, telegraph-before-threat, DD-001).
 	assert_gt(ShmupMotion.ENTRY_LOCK_DELAY, 0.0,
