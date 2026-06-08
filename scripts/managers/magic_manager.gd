@@ -279,6 +279,9 @@ func _held_cast(
 	# TASK-067: scale the per-element interval by the per-level cadence_scale (default 1.0
 	# = no-op; the shmup sets < 1.0 for faster fire). Reads the SpellData interval; never
 	# mutates it. A null spell stays at READY_MARGIN (the scale is irrelevant there).
+	# PRECONDITION: cadence_scale is intended < 1.0 (faster). A value > 1.0 large enough to
+	# push the scaled interval past the accum cap (_READY_MARGIN) would STARVE fire (the accum
+	# can never reach it). Tuning seam, not a general slowdown knob.
 	var interval := spell.fire_interval * cadence_scale if spell != null else _READY_MARGIN
 	# Advance the timer; cap at READY_MARGIN so a long release doesn't overflow but a
 	# ready slot still fires on the first held tick.

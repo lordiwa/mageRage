@@ -12,13 +12,16 @@
 ##
 ## SCOPE of this ticket is the FOUNDATION ONLY. Enemy streaming (TASK-066) and win/lose
 ## (TASK-067) are SEPARATE later tickets. DD-014 intent: Win = reach the end of the scroll,
-## Lose = respawn — NOT implemented here, only documented.
+## Lose = revive in-frame and continue — NOT implemented here, only documented.
 ## TASK-067 (DD-014): adds the win/lose LOOP + the per-level SPEED/CADENCE tuning that makes
 ## the shmup FEEL fast. WIN = the auto-scroll camera travels a fixed LEVEL_LENGTH from its
 ## start -> shmup_victory (mirrors sector_02's sector_victory). LOSE = the hero's HP reaches 0
-## -> respawn at the level start (DD-009) + brief defeat feedback (shmup_defeat); the loop
-## continues. Tuning is applied via SCOPED override seams set here on _ready (Player.fly_speed_scale
-## + MagicManager.cadence_scale), both defaulting to the no-op 1.0 so the sectors are byte-identical.
+## -> the hero REVIVES IN-FRAME and the loop continues: Player.respawn (DD-009) snaps it to the
+## recorded start x, but the auto-scroll camera has advanced, so the next per-frame clamp
+## (clamp_player_to_view) carries the revived hero into the LIVE scroll frame; brief defeat
+## feedback (shmup_defeat) fires. Tuning is applied via SCOPED override seams set here on _ready
+## (Player.fly_speed_scale + MagicManager.cadence_scale), both defaulting to the no-op 1.0 so
+## the sectors are byte-identical.
 class_name Shmup01 extends Node2D
 
 ## TASK-067: per-level FLY-SPEED override factor set on the reused Player on _ready. The hero
@@ -40,7 +43,8 @@ const LEVEL_LENGTH := 6400.0
 ## sector_02.sector_victory).
 signal shmup_victory
 ## TASK-067: emitted each time the hero dies (HP->0) — drives the brief defeat/retry banner.
-## The hero respawns at the level start (DD-009) so the loop continues.
+## The hero revives in-frame (Player.respawn + the per-frame clamp carry it into the live
+## scroll frame) so the loop continues.
 signal shmup_defeat
 
 @onready var _player: Node2D = get_node_or_null("Player")
@@ -191,12 +195,14 @@ func is_victory() -> bool:
 	return _victory
 
 
-# --- TASK-067 LOSE: HP -> 0 respawns at the start ----------------------------
+# --- TASK-067 LOSE: HP -> 0 revives the hero in-frame, loop continues --------
 
-## The hero's Health emitted `died` (HP reached 0). The Player already respawned itself at the
-## recorded level-start spawn (DD-009 Player.respawn); here we latch the death + fire the brief
-## defeat/retry feedback so the minimal banner reads. The loop continues (the hero is alive
-## again at the start).
+## The hero's Health emitted `died` (HP reached 0). The Player already revived itself via
+## Player.respawn (DD-009), which snaps it to the recorded level-start x — but the auto-scroll
+## camera has advanced, so the next per-frame clamp_player_to_view() carries the revived hero
+## back into the LIVE scroll frame (an in-frame revive, NOT a jump back to the level start).
+## Here we just latch the death + fire the brief defeat/retry feedback so the minimal banner
+## reads. The loop continues (the hero is alive again, in-frame).
 func _on_player_died() -> void:
 	_died = true
 	shmup_defeat.emit()

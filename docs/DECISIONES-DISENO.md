@@ -586,8 +586,9 @@ sólo la FUNDACIÓN** (cámara + clamp + concesión de vuelo + esqueleto de nive
   **byte-idéntica** (verificado por tests). El scoping por-nivel es el punto central: el modo
   shmup NO altera ningún default de Player/FlightState/combate de los sectores.
 - **Victoria/derrota (INTENCIÓN, se implementa en TASK-067):** **Victoria = llegar al final
-  del scroll** (recorrer el carril); **Derrota = respawn** (caer fuera/morir reaparece en el
-  spawn registrado, DD-009). No se construye en TASK-065, sólo se documenta aquí.
+  del scroll** (recorrer el carril); **Derrota = revivir en el frame y continuar** (morir
+  revive con vida llena, DD-009, y el clamp de auto-scroll lo arrastra de vuelta al frame
+  vivo — no salta al inicio del nivel). No se construye en TASK-065, sólo se documenta aquí.
 
 **Coherencia con canon:** el shmup encaja en el pilar **"vuelo = libertad y condena"** — es
 el clímax del verbo de vuelo llevado a un carril aéreo abierto donde el mundo corre hacia ti.
@@ -624,11 +625,16 @@ distancia de meta medida desde la x de la cámara capturada en `_ready` (`progre
 directamente por el test) ve `progress() >= LEVEL_LENGTH`, latcha el estado de victoria y
 emite `shmup_victory` UNA sola vez — espejo de `sector_02.sector_victory`.
 
-**Derrota = HP a 0 -> respawn en el inicio (DD-009).** La muerte usa el camino existente:
-`Player.take_player_damage` lleva el HP a 0, la salud emite `died` y `Player.respawn()`
-devuelve al héroe al spawn registrado (el inicio del nivel). `Shmup01` escucha el `died` de
-la salud para emitir `shmup_defeat` (feedback breve de reintento); el bucle continúa (el héroe
-revive en el inicio). No hay penalización dura — es demo/greybox.
+**Derrota = HP a 0 -> revivir EN EL FRAME y continuar.** La muerte usa el camino existente:
+`Player.take_player_damage` lleva el HP a 0, la salud emite `died` y `Player.respawn()` (DD-009)
+revive al héroe (vida llena) y lo coloca en la x del spawn registrado. Pero la cámara de
+auto-scroll ya avanzó, así que el héroe NO se queda en el inicio: el clamp por frame
+(`clamp_player_to_view()`) del siguiente frame de física lo arrastra de vuelta dentro del rect
+visible vivo — es un **revivir en el frame**, no un salto al inicio del nivel. `Shmup01` escucha
+el `died` de la salud para emitir `shmup_defeat` (feedback breve de reintento); el bucle continúa
+y el carril sigue scrolleando. No hay penalización dura — es demo/greybox.
+> Nota: es el clamp de auto-scroll (no `respawn()`) lo que carga al héroe revivido de vuelta al
+> frame; sin él el héroe quedaría varado en la x del inicio detrás del frame.
 
 **HUD mínimo (`ShmupBanner`, espejo del label de victoria de `boss_hud`):** dos Labels (VICTORY
 terminal + DOWNED—RETRY breve auto-ocultable) que arrancan ocultos y se muestran por las señales
@@ -698,5 +704,5 @@ PROVISIONALES.
 **Estado:** **ACEPTADA** el **modelo** (nivel separado de auto-scroll; héroe siempre volando
 con vuelo pre-concedido + gravedad off; clamp al rect visible; stop-flight deshabilitado por
 flag por-nivel con default FALSE → sectores byte-idénticos; victoria = fin del scroll /
-derrota = respawn como intención). **PROVISIONALES** los números (SCROLL_SPEED, métricas del
+derrota = revivir en el frame y continuar como intención). **PROVISIONALES** los números (SCROLL_SPEED, métricas del
 carril, tuning de vuelo/cadencia) y los tickets de enemigos/victoria-derrota (TASK-066/067).

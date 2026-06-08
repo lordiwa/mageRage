@@ -4,12 +4,15 @@
 ##   WIN  : the auto-scroll camera travels a fixed LEVEL_LENGTH from its start; once the
 ##          camera's progress passes LEVEL_LENGTH the controller fires `shmup_victory`
 ##          (mirroring sector_02's `sector_victory`) exactly once and latches is_victory().
-##   LOSE : the hero's HP reaching 0 respawns it at the recorded level start (DD-009
-##          record_spawn/respawn) and shows brief defeat feedback; the loop continues.
+##   LOSE : the hero's HP reaching 0 REVIVES it in-frame and the loop continues. Player.respawn
+##          (DD-009) puts the hero back at the recorded level-start x, but the auto-scroll
+##          camera keeps advancing — so the very next per-frame clamp_player_to_view() snaps
+##          the revived hero into the LIVE visible rect and the lane keeps scrolling. Brief
+##          defeat feedback (shmup_defeat / has_died) fires.
 ##
 ## Win is driven DETERMINISTICALLY by advancing the scroller + calling the controller's
 ## progress check directly (no real frames). Lose is driven by dealing lethal damage to the
-## player's Health and asserting the respawn anchor.
+## player's Health, then STEPPING the controller's clamp so the in-frame revive is real.
 extends GutTest
 
 const SHMUP := preload("res://levels/shmup_01.tscn")
@@ -74,29 +77,54 @@ func test_before_the_finish_no_victory() -> void:
 	assert_signal_not_emitted(shmup, "shmup_victory", "shmup_victory does not fire before the finish")
 
 
-# --- LOSE: HP -> 0 respawns at the level start -------------------------------
+# --- LOSE: HP -> 0 revives in-frame and the loop continues -------------------
 
-func test_player_death_respawns_at_the_level_start() -> void:
+func test_player_death_revives_in_frame_and_loop_continues() -> void:
 	var level: Node2D = await _make_level()
 	var shmup := level as Shmup01
 	var player := level.get_node_or_null("Player") as Node2D
 	var spawn := level.get_node_or_null("PlayerSpawn") as Marker2D
+	var scroller := shmup.scroller()
 	assert_not_null(player, "the Player resolves")
 	assert_not_null(spawn, "PlayerSpawn resolves")
+	assert_not_null(scroller, "the scroller resolves")
+	watch_signals(shmup)
 
-	# Move the hero far from the spawn (as if it flew down the lane), then kill it.
-	player.global_position = spawn.global_position + Vector2(400.0, 120.0)
+	# Drive the auto-scroll camera WELL PAST the start so the recorded level-start x is far
+	# off the left edge of the live view. Respawn alone (Player.respawn -> spawn x) would
+	# leave the hero stranded behind the frame; only the per-frame clamp can carry it in.
+	scroller.global_position.x += Shmup01.LEVEL_LENGTH * 0.5
+	var live_rect: Rect2 = scroller.visible_world_rect()
+	assert_lt(spawn.global_position.x, live_rect.position.x,
+		"the recorded level-start x is now BEHIND the left edge of the live view")
+
+	# Move the hero somewhere in-frame (as if maneuvering), then deal lethal damage. This
+	# drives take_player_damage -> Health.died -> Player.respawn (snap to the stale start x).
+	player.global_position = live_rect.get_center()
 	var health := player.get_node_or_null("Health") as Health
 	assert_not_null(health, "the Player has a Health child (DD-009)")
-	# Lethal damage drives the player's take_player_damage -> respawn path.
 	player.take_player_damage(health.max_health + 10.0)
 
-	# DD-009: respawn returns the hero to the recorded spawn (the level start).
+	# After respawn (before any clamp) the hero is at the STALE start x — behind the frame.
 	assert_almost_eq(player.global_position.x, spawn.global_position.x, 8.0,
-		"on death the hero respawns at the level-start spawn x (DD-009)")
-	assert_almost_eq(player.global_position.y, spawn.global_position.y, 8.0,
-		"on death the hero respawns at the level-start spawn y")
-	assert_false(health.is_dead(), "after respawn the hero is alive again (full health)")
+		"Player.respawn snaps to the recorded start x (DD-009) — momentarily behind the frame")
+
+	# STEP the controller's per-frame clamp: this is the seam that revives the hero IN-FRAME.
+	shmup.clamp_player_to_view()
+
+	# The hero is now INSIDE the live visible rect (clamped in from the stale start x), NOT
+	# left stranded at the start. This FAILS for an implementation that respawns-and-stops.
+	var p := player.global_position
+	assert_true(live_rect.has_point(p),
+		"after the per-frame clamp the revived hero is INSIDE the live scroll frame (in-frame revive)")
+	assert_gt(p.x, spawn.global_position.x,
+		"the clamp carried the hero forward off the stale start x into the live frame")
+
+	# The loop continues: full health, not dead, and the defeat feedback fired.
+	assert_false(health.is_dead(), "after revive the hero is alive again (full health)")
+	assert_true(shmup.has_died(), "the controller recorded the death for defeat feedback")
+	assert_signal_emitted(shmup, "shmup_defeat",
+		"the in-frame revive still fires the brief defeat feedback")
 
 
 func test_defeat_feedback_latches_on_death() -> void:
